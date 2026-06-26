@@ -425,10 +425,12 @@ def agent_from_name(
 
     """
     name = name.strip()
-    if name.lower() in ("n. n.", "nn"):
+    lower_name = name.lower()
+    if lower_name in ("n. n.", "nn"):
         return None
-    if type is None and any(
-        expr in name.lower() for expr in CORPORATE_BODY_FLAG_WORDS
+    if type is None and (
+        any(expr in lower_name for expr in CORPORATE_BODY_FLAG_WORDS)
+        or lower_name.endswith(" ag")
     ):
         agent = efi.Agent(
             has_name=name, type=efi.AgentTypeEnum("CorporateBody")
