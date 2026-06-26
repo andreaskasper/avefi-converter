@@ -107,9 +107,7 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
                 efi.GeographicName(has_name=match_dict["location"])
             )
 
-        agent = agent_from_name(
-            match_dict["name"], type=efi.AgentTypeEnum("CorporateBody")
-        )
+        agent = agent_from_name(match_dict["name"])
         if agent is None:
             continue
 
