@@ -445,9 +445,10 @@ def agent_from_name(
                 log.warning(f"Left unusual name unchanged: {name}")
             else:
                 name_components = name.rsplit(maxsplit=1)
-                orig_name = name
-                name = ", ".join(reversed(name_components))
-                log.info(f"Replaced name '{orig_name}' by '{name}'")
+                if len(name_components) > 1:
+                    orig_name = name
+                    name = ", ".join(reversed(name_components))
+                    log.info(f"Replaced name '{orig_name}' by '{name}'")
         elif len(name_components) != 2:
             raise ValueError(
                 f"Name probably not in correct format"
