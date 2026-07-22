@@ -209,12 +209,22 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
             ).groupdict()
 
             if match_dict["location"]:
-                append_if_no_equal(
-                    efi.GeographicName(has_name=match_dict["location"]),
-                    publication.located_in,
-                )
+                location_lower = match_dict["location"].lower()
+                if any(
+                    expr in location_lower
+                    for expr in CORPORATE_BODY_FLAG_WORDS
+                ):
+                    publisher_name = p.publisher_name
+                else:
+                    append_if_no_equal(
+                        efi.GeographicName(has_name=match_dict["location"]),
+                        publication.located_in,
+                    )
+                    publisher_name = match_dict["name"]
+            else:
+                publisher_name = p.publisher_name
 
-            agent = agent_from_name(match_dict["name"])
+            agent = agent_from_name(publisher_name)
             if agent is None:
                 continue
 
