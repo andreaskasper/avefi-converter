@@ -42,7 +42,7 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
         has_alternative_title=alternative_titles,
     )
     production_year = get_iso_date(
-        str(input.production_year), str(input.iwf_production_year)
+        input.production_year, input.iwf_production_year
     )
     if production_year:
         if (
@@ -190,7 +190,7 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
         if note:
             manifestation.has_note.append(note)
     publication_year = get_iso_date(
-        str(input.publication_year), str(input.iwf_publication_year)
+        input.publication_year, input.iwf_publication_year
     )
     if (
         publication_year
@@ -306,7 +306,7 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
     return efi_records
 
 
-def get_iso_date(year: str, iwf_year: str) -> str | None:
+def get_iso_date(year: str | None, iwf_year: str | None) -> str | None:
     """Extract a year or period in keeping with ISO 8601.
 
     iwf_production_year and iwf_publication_year in the NTM schema
@@ -326,17 +326,36 @@ def get_iso_date(year: str, iwf_year: str) -> str | None:
     for iso_date in (iwf_year, year):
         if not iso_date:
             continue
-        if "-" in iso_date:
-            iso_date = iso_date.replace("-", "/")
+        if not isinstance(iso_date, str):
+            iso_date = str(iso_date)
+        m = re.match(
+            r"^(?P<from_year>(?P<from_cent>\d\d)\d\d)\D.*?"
+            r"(?P<to_cent>\d\d)?(?P<to>\d\d)$",
+            iso_date,
+        )
+        if m:
+            period = m.groupdict()
+            to_cent = period["to_cent"] or period["from_cent"]
+            from_year = period["from_year"]
+            to_year = f"{to_cent}{period['to']}"
+            if from_year >= to_year:
+                raise ValueError(f"Unable to parse period: {iso_date}")
+            iso_date = f"{from_year}/{to_year}"
+        else:
+            m = re.match(r"^ca. (?P<year>\d\d\d\d)([,; ]|$)", iso_date)
+            if m:
+                iso_date = f"{m.groupdict()['year']}~"
         if is_iso_date(iso_date):
             break
     else:
-        if year or iwf_year:
-            log.warning(
+        year = year or iwf_year
+        if not year or re.match(r"o. *a.", year.lower()):
+            return None
+        else:
+            raise ValueError(
                 f"Expected date or interval according to ISO 8601,"
                 f" got: {year or iwf_year}"
             )
-        return None
     return iso_date
 
 
