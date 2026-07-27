@@ -23,6 +23,7 @@ get in touch and let us jointly work on your mapping.
 
 **Contents** · [What it does](#what-it-does) · [Quick start](#quick-start) ·
 [Commands](#commands) · [Converters](#available-converters) ·
+[Profiles](#profiles) · [Harvesting](#harvesting-from-an-endpoint) ·
 [Conversion report](#conversion-report) · [Comparing against AVefi](#comparing-against-avefi) ·
 [Writing a converter](#writing-a-converter) · [Development](#development) ·
 [Troubleshooting](#troubleshooting)
@@ -39,7 +40,10 @@ in a machine readable protocol.
 
 ```mermaid
 flowchart LR
-    A[Institutional export<br/>CSV · NTM XML · LIDO XML] --> B[efi-conv from]
+    O[OAI-PMH · SRU<br/>endpoint] --> N[efi-conv harvest]
+    N --> A
+    A[Institutional export<br/>CSV · LIDO · EN 15907 · MARC21 · PBCore · EBUCore · DC] --> B[efi-conv from]
+    P[Mapping profile<br/>--profile] -.-> B
     B --> C[AVefi records<br/>JSON]
     B -.-> R[Conversion report<br/>--report]
     C --> D[efi-conv check]
@@ -151,9 +155,10 @@ Usage: efi-conv [OPTIONS] COMMAND [ARGS]...
   Convert collection metadata to the AVefi schema and check it.
 
 Commands:
-  check  Sanity check EFI_FILES and optionally remove invalid records.
-  diff   Compare CANDIDATE against REFERENCE and report the deviations.
-  from   Convert files from some schema into a JSON file with AVefi records.
+  check    Sanity check EFI_FILES and optionally remove invalid records.
+  diff     Compare CANDIDATE against REFERENCE and report the deviations.
+  from     Convert files from some schema into a JSON file with AVefi records.
+  harvest  Fetch records from an OAI-PMH or SRU endpoint into a directory.
 ```
 
 ### Global options
@@ -171,6 +176,7 @@ Commands:
 | `-f`, `--format` | Source data format; see [converters](#available-converters) |
 | `-o`, `--output FILE` | Output file, stdout if not specified |
 | `--report FILE` | Write a structured JSON report of unconvertible values |
+| `--profile FILE` | Bind the converter to a [mapping profile](#profiles) |
 | `--continue-on-error` | Skip what fails to convert and exit non-zero at the end |
 | `--list-formats` | List the available converters and exit |
 
@@ -198,6 +204,18 @@ so an interrupted run cannot truncate your data.
 | `--ignore FIELD` | Ignore a top level field, repeatable |
 | `-o`, `--output FILE` | Write the comparison to a file |
 
+### `efi-conv harvest`
+
+| Option | Description |
+| --- | --- |
+| `-p`, `--protocol [oai\|sru]` | Protocol the endpoint speaks |
+| `-u`, `--url URL` | Base URL of the endpoint |
+| `-o`, `--output DIR` | Directory to write the harvested pages to |
+| `-m`, `--metadata-prefix` | OAI-PMH metadata prefix, e.g. `lido`, `marc21`, `oai_dc` |
+| `--set`, `--from`, `--until` | Selective OAI-PMH harvesting |
+| `-q`, `--query`, `--record-schema` | SRU query in CQL and the schema to request |
+| `--limit N` | Stop after N records, for trying an endpoint out |
+
 ---
 
 ## Available converters
@@ -206,17 +224,107 @@ so an interrupted run cannot truncate your data.
 $ uv run efi-conv from --list-formats
 ```
 
+There are two kinds. An **institution converter** reads one
+institution's export and knows whose it is, so it can be run as it
+stands:
+
 | Format | Institution | Input |
 | --- | --- | --- |
 | `avportal` | TIB AV-Portal | XML, in-house NTM metadata schema 2.5 |
 | `fmdu` | Filmmuseum der Landeshauptstadt Düsseldorf | CSV, semicolon separated |
 | `fmdu.lido` | Filmmuseum der Landeshauptstadt Düsseldorf | XML, [LIDO 1.1](./src/efi_conv/lido/README.md) |
+| `mdigital.lido` | [museum-digital](./src/efi_conv/mdigital/README.md) | XML, LIDO 1.1 |
+| `ddb.lido` | [Deutsche Digitale Bibliothek](./src/efi_conv/ddb/README.md) | XML, LIDO 1.1 |
 
-`fmdu.lido` is a thin profile on top of the generic
-[`efi_conv.lido`](./src/efi_conv/lido/README.md) package: LIDO is a
+A **format converter** reads a standard rather than one institution's
+export. It cannot know whose collection it is pointed at, so it ships
+with a placeholder issuer and needs a [profile](#profiles):
+
+| Format | Standard | Input |
+| --- | --- | --- |
+| [`en15907`](./src/efi_conv/en15907/README.md) | EN 15907, the film identification standard | XML, EFG 3.2.07 |
+| [`marc21`](./src/efi_conv/marc21/README.md) | MARC21 bibliographic | XML, MARC21 slim |
+| [`pbcore`](./src/efi_conv/pbcore/README.md) | PBCore 2.1 | XML |
+| [`ebucore`](./src/efi_conv/ebucore/README.md) | EBUCore, EBU Tech 3293 | XML |
+| [`dc`](./src/efi_conv/dc/README.md) | Unqualified Dublin Core | XML, oai_dc |
+
+If your data is EN 15907, start there: it is the standard the AVefi
+schema follows, so its work, variant, manifestation and item levels
+arrive already separated instead of having to be reconstructed. Dublin
+Core is the weakest of the five and exists mainly because `oai_dc` is
+the one metadata prefix every OAI-PMH endpoint has to offer; each
+package README says plainly where its schema does not fit.
+
+Every LIDO converter above is a thin profile on top of the generic
+[`efi_conv.lido`](./src/efi_conv/lido/README.md) package. LIDO is a
 standard, so the mapping is written once and an institution supplies
 its issuer information and vocabularies. If your data is LIDO, you very
 probably need a profile rather than a converter.
+
+---
+
+## Profiles
+
+A profile is everything that differs between data providers: the
+issuer, the house vocabularies, the terms marking an event or a role.
+Supplying it as a file means a conversion agreed once with a provider
+can be repeated for every later delivery, unattended, and it is how a
+format converter is told whose collection it is converting:
+
+```console
+$ uv run efi-conv from -f en15907 \
+    --profile examples/profiles/filmarchiv-musterstadt.en15907.toml \
+    -o efi_records.json export.xml
+```
+
+The document is JSON or TOML; see
+[`examples/profiles/`](./examples/profiles) for both:
+
+```json
+{
+  "profile_format_version": "1.0",
+  "format": "fmdu.lido",
+  "issuer": {
+    "has_issuer_id": "https://w3id.org/isil/DE-MUS-000000",
+    "has_issuer_name": "Filmarchiv Musterstadt"
+  },
+  "settings": {
+    "default_language": "ger",
+    "colour_type_map": { "s/w": "BlackAndWhite", "farbe": "Colour" }
+  }
+}
+```
+
+Anything under `settings` names a field of that converter's profile
+class. A name the class does not have is an error rather than
+something to ignore: a misspelt vocabulary would otherwise look like a
+working profile and quietly lose every value it was meant to map.
+Configuring a run leaves the converter's own defaults alone, so one
+conversion cannot change what the next one does.
+
+---
+
+## Harvesting from an endpoint
+
+Most institutions that can deliver metadata at all already serve it
+over OAI-PMH or SRU, so the usual first step — asking somebody to
+produce an export and send it — can be skipped:
+
+```console
+$ uv run efi-conv harvest -u https://example.org/oai -m lido -o harvest/
+$ uv run efi-conv from -f mdigital.lido -o efi_records.json harvest/*.xml
+```
+
+What is written is the payload exactly as the provider publishes it;
+nothing is converted. Harvesting is a separate command on purpose. It
+is slow, it should not be repeated against somebody else's server while
+a mapping is being worked out, and the harvest is worth keeping as
+evidence of what the provider actually sent on the day.
+
+A 503 with `Retry-After` is waited out rather than hammered, a
+resumption token replaces the other arguments as the protocol requires,
+a repeated token is refused instead of harvesting for ever, and deleted
+records are counted and reported rather than silently ignored.
 
 ---
 
@@ -313,6 +421,17 @@ What your module has to provide:
 | `DESCRIPTION` | no | One line shown by `--list-formats` |
 | `INPUT_FORMAT` | no | Expected input, shown by `--list-formats` |
 | `continue_on_error` parameter | no | Lets `from` skip a single bad record instead of the whole file |
+| `PROFILE_CLASS` and `convert(input_file, profile, continue_on_error)` | no | Lets the converter be bound to a [profile](#profiles) |
+
+Before writing one, check what is already there. The shared layer in
+[`core`](./src/efi_conv/core) carries the parts every converter needs:
+`normalise.py` for dates, durations and titles, so that two converters
+cannot arrive at different AVefi values for the same source
+expression; `records.py` for identifiers, titles and the sharing of a
+work between the copies describing it; `xmlrecords.py` for streaming
+records out of a document whatever wraps them. If your data is a
+standard somebody else also holds their collection in, a profile on an
+existing converter is very likely the right answer.
 
 Because the value of `-f` is resolved as a module path below
 `efi_conv`, a converter nested inside an institution package is
@@ -389,6 +508,21 @@ whole export at once, or pass all the files to a single invocation.
 **A conversion produces no output.** With `-o` and an input that yields
 no records, nothing is written and a warning says so. Check the report
 for the reason.
+
+**The records name an unspecified data provider.** A format converter
+was run without `--profile`, so it used the placeholder issuer it ships
+with rather than inventing an ISIL for your collection. Supply a
+[profile](#profiles).
+
+**A harvest stops with a resumption token error.** The endpoint
+returned a token it had already returned, which would harvest for ever.
+Report it to whoever runs the server; the pages fetched up to that
+point are usable.
+
+**Every record is skipped as not being a film.** The converter is
+filtering on the work type or record type vocabulary in its profile,
+and your provider uses different terms. The conversion report names the
+values it saw; add them to the profile.
 
 ---
 
