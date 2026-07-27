@@ -5,20 +5,34 @@ description = "Convert from other metadata schemas to AVefi (and possibly back a
 authors = [
     {name = "AVefi Working Group", email = "contact@av-efi.net"},
 ]
-repository = "https://github.com/AV-EFI/efi-conv"
-documentation = "https://github.com/AV-EFI/efi-conv"
 requires-python = ">=3.11"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["AVefi", "LIDO", "metadata", "film", "archives", "PID"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Markup :: XML",
+]
 dependencies = [
-    "xsdata[cli,lxml]>=26.2",
+    "xsdata[lxml]>=26.2",
     "click>=8.3.3",
     "appdirs>=1.4.4",
-    "avefi_schema @ git+https://github.com/AV-EFI/av-efi-schema.git",
+    "avefi_schema @ git+https://github.com/AV-EFI/av-efi-schema.git@672f68f4fec3094534354ef775323a1301cedd27",
     "jsonschema>=4.25.1",
     "requests>=2.32.5",
     "pydantic-settings>=2.14.0",
 ]
+
+[project.urls]
+Homepage = "https://projects.tib.eu/av-efi/"
+Repository = "https://github.com/AV-EFI/efi-conv"
+Documentation = "https://av-efi.github.io/av-efi-schema/"
+Issues = "https://github.com/AV-EFI/efi-conv/issues"
 
 [project.scripts]
 efi-conv = "efi_conv.main:cli_main"
@@ -35,12 +49,26 @@ dev = [
     "coverage>=7.13.4",
     "pytest>=8.4.1",
     "ruff>=0.15.11",
+    "xsdata[cli]>=26.2",
 ]
 
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q"
+minversion = "8.0"
+addopts = "-ra -q --strict-markers --strict-config"
 testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/efi_conv"]
+omit = ["*/generated/*"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 60
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
 
 [tool.ruff]
 # Set the maximum line length to 79.

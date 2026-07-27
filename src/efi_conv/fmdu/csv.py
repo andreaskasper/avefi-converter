@@ -1,3 +1,4 @@
+import codecs
 import csv
 import logging
 import pathlib
@@ -10,6 +11,8 @@ from ..core.utils import described_by_issuer
 log = logging.getLogger(__name__)
 FILE_ENCODING = "iso8859-1"
 DELIMITER = ";"
+# Key under which csv.DictReader collects unexpected extra columns
+EXTRA_COLUMNS = "_unexpected_columns"
 FIELD_NAMES = (
     "source_key",
     "_object_number",
@@ -38,19 +41,89 @@ def efi_import(input_file) -> list[efi.MovingImageRecord]:
     return map_to_efi(parsed_input)
 
 
-def read_input(input_file) -> list[csv.DictReader]:
-    with pathlib.Path(input_file).open(encoding=FILE_ENCODING) as f:
+def read_input(input_file, encoding=FILE_ENCODING) -> list[dict]:
+    """Read the export and return its data rows.
+
+    Column names are taken from the positional ``FIELD_NAMES`` tuple,
+    so the header line of the input is validated rather than silently
+    discarded: a changed column count would otherwise shift every value
+    into the wrong AVefi field without any error.
+
+    """
+    with pathlib.Path(input_file).open(encoding=encoding) as f:
         parsed_input = list(
-            csv.DictReader(f, delimiter=DELIMITER, fieldnames=FIELD_NAMES)
+            csv.DictReader(
+                f,
+                delimiter=DELIMITER,
+                fieldnames=FIELD_NAMES,
+                restkey=EXTRA_COLUMNS,
+            )
         )
 
+    if not parsed_input:
+        log.warning(f"No rows found in {input_file}")
+        return []
+
+    header = parsed_input[0]
+    check_header(header, input_file)
+    warn_about_encoding(header, encoding, input_file)
+
     # Drop the header line
-    parsed_input = parsed_input[1:]
-    return parsed_input
+    return parsed_input[1:]
+
+
+def check_header(header: dict, input_file):
+    """Fail loudly when the input does not have the expected columns."""
+    if header.get(EXTRA_COLUMNS):
+        raise ValueError(
+            f"{input_file} has more columns than expected"
+            f" ({len(FIELD_NAMES)}); unexpected values:"
+            f" {header[EXTRA_COLUMNS]}"
+        )
+    missing = [name for name in FIELD_NAMES if header.get(name) is None]
+    if missing:
+        raise ValueError(
+            f"{input_file} is missing expected column(s): {', '.join(missing)}"
+        )
+    log.debug(
+        f"Header of {input_file} mapped positionally to {FIELD_NAMES}:"
+        f" {[header[name] for name in FIELD_NAMES]}"
+    )
+
+
+def warn_about_encoding(header: dict, encoding: str, input_file):
+    """Warn when the input looks like UTF-8 read as an 8 bit encoding.
+
+    Single byte encodings decode any byte sequence, so a UTF-8 export
+    is not rejected but silently turned into mojibake. Spotting the
+    typical sequences is the only chance to notice.
+
+    """
+    if codecs.lookup(encoding).name.startswith("utf"):
+        return
+    suspicious = ("Ã¤", "Ã¶", "Ã¼", "ÃŸ", "Ã©", "Ã\x9f", "â€")
+    sample = "".join(str(value) for value in header.values())
+    if any(marker in sample for marker in suspicious):
+        log.warning(
+            f"{input_file} looks like UTF-8 but is being read as"
+            f" {encoding}; non-ASCII characters will be mangled"
+        )
+
+
+def lookup(mapping: dict, value, field: str, source_key: str):
+    """Return ``mapping[value]`` or raise a message naming the row."""
+    try:
+        return mapping[value]
+    except KeyError:
+        raise ValueError(
+            f"No mapping specified for {field} value '{value}'"
+            f" in record {source_key}; known values:"
+            f" {', '.join(sorted(str(k) for k in mapping))}"
+        ) from None
 
 
 def map_to_efi(
-    parsed_input: list[csv.DictReader],
+    parsed_input: list[dict],
 ) -> list[efi.MovingImageRecord]:
     efi_records = []
     work_man_lookup = {}
@@ -176,10 +249,15 @@ def map_to_efi(
             is_item_of=manifestation.has_identifier[0],
             has_primary_title=item_title,
         )
-        access_status = access_status_map[row["access_status"]]
+        access_status = lookup(
+            access_status_map,
+            row["access_status"],
+            "access_status",
+            source_key,
+        )
         if access_status:
             item.has_access_status = efi.ItemAccessStatusEnum(access_status)
-        item_format = format_map[row["format"]]
+        item_format = lookup(format_map, row["format"], "format", source_key)
         if item_format:
             item.has_format.append(efi.Film(type=item_format))
         spoken_lang = row["SpokenLanguage"]
@@ -193,14 +271,21 @@ def map_to_efi(
             item.in_language.extend(
                 [
                     efi.Language(
-                        code=language_map[row[usage]],
+                        code=lookup(
+                            language_map, row[usage], usage, source_key
+                        ),
                         usage=[efi.LanguageUsageEnum(usage)],
                     )
                     for usage in ("SpokenLanguage", "Subtitles", "Intertitles")
                     if row[usage]
                 ]
             )
-        colour_type = colour_type_map[row["colour_type"]]
+        colour_type = lookup(
+            colour_type_map,
+            row["colour_type"],
+            "colour_type",
+            source_key,
+        )
         if colour_type:
             item.has_colour_type = efi.ColourTypeEnum(colour_type)
         item_id = efi.LocalResource(id=source_key)
@@ -219,6 +304,9 @@ _title_cache = {}
 
 
 def make_title(input_title: str, type_hint: str) -> efi.Title:
+    input_title = (input_title or "").strip()
+    if not input_title:
+        raise ValueError("Cannot build a title from an empty value")
     if input_title[0] == "[" and input_title[-1] == "]":
         title_type = efi.TitleTypeEnum("SuppliedDevisedTitle")
         title_string = input_title[1:-1]
@@ -300,11 +388,18 @@ def sanitise_year_of_reference(date_string, source_key):
 
 month_map = {
     "Jan": "01",
+    "Feb": "02",
     "Mrz": "03",
+    "Mär": "03",
+    "Apr": "04",
+    "Mai": "05",
     "Jun": "06",
+    "Jul": "07",
+    "Aug": "08",
     "Sep": "09",
     "Okt": "10",
     "Nov": "11",
+    "Dez": "12",
 }
 language_map = {
     "Arabisch": "ara",

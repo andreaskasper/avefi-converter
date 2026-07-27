@@ -90,7 +90,9 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
             role = "publisher"
         else:
             role = "creator"
-        activity_type = role_mapping[role]
+        activity_type = resolve_role(role, c.creator_name)
+        if activity_type is None:
+            continue
         append_if_no_equal(agent, contrib_dict[activity_type])
 
     for p in input.producers.producer if input.producers else []:
@@ -137,27 +139,38 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
                 re.sub(r" +und ", ", ", roles),
             ):
                 role = match.groups()[0].strip()
-                append_if_no_equal(agent, contrib_dict[role_mapping[role]])
+                activity_type = resolve_role(role, roles)
+                if activity_type is None:
+                    continue
+                append_if_no_equal(agent, contrib_dict[activity_type])
 
     extract_activities_for_event(event, contrib_dict)
 
     if input.genre and input.genre.value:
         work.has_genre.append(efi.Genre(has_name=input.genre.value))
-    for subject_area in input.subject_areas.subject_area:
+    for subject_area in (
+        input.subject_areas.subject_area if input.subject_areas else []
+    ):
         if subject_area.value == "Arts and Media":
             keywords = ["Arts", "Media"]
         else:
             keywords = subject_area.value.split("/")
         for k in keywords:
+            gnd_id = subject_area_to_gnd_mapping.get(k)
+            if gnd_id is None:
+                log.warning(
+                    f"No GND identifier known for subject area '{k}',"
+                    f" keeping the subject without an authority link"
+                )
+                work.has_subject.append(efi.Subject(has_name=k))
+                continue
             work.has_subject.append(
                 efi.Subject(
                     has_name=k,
-                    same_as=[
-                        efi.GNDResource(id=subject_area_to_gnd_mapping[k])
-                    ],
+                    same_as=[efi.GNDResource(id=gnd_id)],
                 )
             )
-    for k in input.keywords.keyword:
+    for k in input.keywords.keyword if input.keywords else []:
         work.has_subject.append(efi.Subject(has_name=k.value))
     identifiers = input.alternate_identifiers
     if identifiers:
@@ -178,11 +191,9 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
     manifestation = efi.Manifestation(
         is_manifestation_of=[work_id], has_primary_title=manifestation_title
     )
-    if manifestation.has_primary_title.type == efi.TitleTypeEnum(
-        "PreferredTitle"
+    for description in (
+        input.descriptions.description if input.descriptions else []
     ):
-        manifestation.has_primary_title.type = efi.TitleTypeEnum("TitleProper")
-    for description in input.descriptions.description:
         # Recon with <br/> elements accepted by the NTM schema
         note = "\n".join(
             [text for text in description.content if isinstance(text, str)]
@@ -194,7 +205,7 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
     )
     if (
         publication_year
-        or input.publishers.publisher
+        or (input.publishers and input.publishers.publisher)
         or any(contrib_dict.get(role) for role in manifestation_roles)
     ):
         publication = efi.PublicationEvent(
@@ -338,8 +349,12 @@ def get_iso_date(year: str | None, iwf_year: str | None) -> str | None:
             to_cent = period["to_cent"] or period["from_cent"]
             from_year = period["from_year"]
             to_year = f"{to_cent}{period['to']}"
-            if from_year >= to_year:
-                raise ValueError(f"Unable to parse period: {iso_date}")
+            if from_year > to_year:
+                log.warning(
+                    f"Ignoring implausible period '{iso_date}', falling"
+                    f" back to the simpler field"
+                )
+                continue
             iso_date = f"{from_year}/{to_year}"
         else:
             m = re.match(r"^ca. (?P<year>\d\d\d\d)([,; ]|$)", iso_date)
@@ -349,7 +364,9 @@ def get_iso_date(year: str | None, iwf_year: str | None) -> str | None:
             break
     else:
         year = year or iwf_year
-        if not year or re.match(r"o. *a.", year.lower()):
+        if year is not None and not isinstance(year, str):
+            year = str(year)
+        if not year or re.match(r"o\. *a\.", year.lower()):
             return None
         else:
             raise ValueError(
@@ -560,6 +577,10 @@ def process_titles(
             )
         else:
             raise RuntimeError(f"No mapping specified for title type: {title}")
+    if input_primary_title is None:
+        raise ValueError(
+            f"No untyped title available to serve as primary title: {titles}"
+        )
     if input_subtitle and input_subtitle.value.strip() not in [
         t.has_name for t in alternative_titles
     ]:
@@ -576,14 +597,37 @@ def process_titles(
     return primary_title, alternative_titles
 
 
+def resolve_role(role: str, context: str):
+    """Return the activity type for ``role`` or None if unknown.
+
+    The role strings come from free text supplied by a third party, so
+    an unknown value must not abort the conversion of a whole file.
+
+    """
+    try:
+        return role_mapping[role]
+    except KeyError:
+        log.warning(
+            f"No mapping specified for role '{role}', skipping the"
+            f" corresponding agent: {context}"
+        )
+        return None
+
+
 def make_title(input_title, title_type: efi.TitleTypeEnum) -> efi.Title:
     display_title = re.sub(r"\s+", " ", input_title.value.strip())
     result = efi.Title(type=title_type, has_name=display_title)
     split_title = display_title.split(maxsplit=1)
-    if (
-        len(split_title) > 1
-        and split_title[0].lower() in articles[input_title.language]
-    ):
+    known_articles = articles.get(input_title.language)
+    if known_articles is None:
+        if input_title.language is not None:
+            log.warning(
+                f"No article list configured for language"
+                f" '{input_title.language}', leaving ordering name unset:"
+                f" {display_title}"
+            )
+        known_articles = ()
+    if len(split_title) > 1 and split_title[0].lower() in known_articles:
         first, rest = split_title
         result.has_ordering_name = f"{rest}, {first}"
         log.warning(

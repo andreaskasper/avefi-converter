@@ -3,6 +3,8 @@ name: Test package
 on: [push, pull_request, workflow_dispatch]
 
 env:
+  # Version used for the quality checks. The test matrix below covers
+  # every version declared in requires-python.
   PYTHON_VERSION: "3.14"
 
 jobs:
@@ -36,11 +38,13 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev --locked
 
-      - name: Run ruff check
-        run: uv run -- ruff check --output-format=github
-
-      - name: Run ruff format
-        run: uv run -- ruff format --diff
+      # Runs every hook configured for this repository, not just the
+      # two ruff ones: trailing whitespace, end-of-file, YAML and TOML
+      # syntax, large files and uv.lock freshness are checked here as
+      # well, so contributors without a local pre-commit installation
+      # get the same feedback.
+      - name: Run pre-commit hooks
+        uses: pre-commit/action@v3.0.1
 
       - name: Save uv caches
         if: steps.cache-restore.outputs.cache-hit != 'true'
@@ -55,9 +59,20 @@ jobs:
   tests:
     needs:
       - quality-checks
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        include:
+          # Data providers run this tool on Windows, where the default
+          # encoding is not UTF-8. Cover that platform explicitly.
+          - os: windows-latest
+            python-version: "3.14"
 
     steps:
       - name: Checkout repository
@@ -65,23 +80,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Restore global uv cache
-        uses: actions/cache/restore@v5
-        id: cache-restore
-        with:
-          path: |
-            ~/.cache/uv
-            ~/.local/share/uv
-            .venv
-          key: uv-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-
-
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          enable-cache: false
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
 
       - name: Install dependencies
         run: uv sync --group dev --locked
@@ -91,13 +94,3 @@ jobs:
           uv run coverage run -m pytest
           uv run coverage report -m
         shell: bash
-
-      - name: Save uv caches
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
-        with:
-          path: |
-            ~/.cache/uv
-            ~/.local/share/uv
-            .venv
-          key: uv-${{ hashFiles('uv.lock') }}

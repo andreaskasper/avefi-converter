@@ -2,9 +2,11 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import logging
+import os
 import pathlib
 import re
 import sys
+import tempfile
 
 import appdirs
 from avefi_schema import model_pydantic_v2 as efi
@@ -23,11 +25,14 @@ CACHE_DIR = pathlib.Path(
     appdirs.user_cache_dir(appname=__name__.split(".")[0])
 )
 SCHEMA_FILE = CACHE_DIR / "avefi_schema.json"
+SCHEMA_TIMEOUT = 30
+ENCODING = "utf-8"
 
 
 @cli_main.command()
 @click.option(
     "--preserve-status-removed",
+    is_flag=True,
     default=False,
     help="Preserve items with access status Removed even without a PID yet.",
 )
@@ -60,7 +65,12 @@ def check(
         log.info(f"Processing {efi_file}")
         efi_records = avefi.load(efi_file)
         old_count = len(efi_records)
-        if not pass_checks(efi_records, schema_validator, remove_invalid=True):
+        if not pass_checks(
+            efi_records,
+            schema_validator,
+            remove_invalid=remove_invalid,
+            preserve_status_removed=preserve_status_removed,
+        ):
             if remove_invalid:
                 avefi.dump(efi_records, efi_file)
                 log.info(
@@ -80,12 +90,11 @@ def check(
 def get_schema_validator(update_schema=False):
     """Load AVefi JSON schema and initialise validator."""
     if update_schema:
-        r = requests.get(SCHEMA_SOURCE)
+        r = requests.get(SCHEMA_SOURCE, timeout=SCHEMA_TIMEOUT)
         r.raise_for_status()
         schema = r.json()
         CACHE_DIR.mkdir(exist_ok=True, parents=True)
-        with SCHEMA_FILE.open("w") as f:
-            json.dump(schema, f, indent=2, ensure_ascii=False)
+        write_schema_cache(schema)
     else:
         try:
             if (
@@ -96,15 +105,55 @@ def get_schema_validator(update_schema=False):
                     f"{SCHEMA_FILE} has not been updated in 30 days, please"
                     f" consider using the --update-schema option"
                 )
-            with SCHEMA_FILE.open() as f:
+            with SCHEMA_FILE.open(encoding=ENCODING) as f:
                 schema = json.load(f)
         except FileNotFoundError:
+            return get_schema_validator(update_schema=True)
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
+            log.warning(f"Discarding unusable schema cache {SCHEMA_FILE}: {e}")
             return get_schema_validator(update_schema=True)
 
     cls = validator_for(schema)
     cls.check_schema(schema)
     validator = cls(schema)
     return validator
+
+
+def write_schema_cache(schema):
+    """Write the schema cache atomically.
+
+    A truncated cache file is what makes a later run fail, so the new
+    content is written to a temporary file next to the target and moved
+    into place only once it is complete.
+
+    """
+    fd, tmp_name = tempfile.mkstemp(
+        dir=CACHE_DIR, prefix=".avefi_schema.", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(fd, "w", encoding=ENCODING) as f:
+            json.dump(schema, f, indent=2, ensure_ascii=False)
+        os.replace(tmp_name, SCHEMA_FILE)
+    except BaseException:
+        pathlib.Path(tmp_name).unlink(missing_ok=True)
+        raise
+
+
+def discard_record(
+    record_list: list[efi.MovingImageRecord],
+    record: efi.MovingImageRecord,
+):
+    """Remove ``record`` from ``record_list`` by identity.
+
+    ``list.remove`` compares by equality, and pydantic models compare
+    field by field. Two structurally identical records would therefore
+    make the wrong object disappear.
+
+    """
+    for index, candidate in enumerate(record_list):
+        if candidate is record:
+            del record_list[index]
+            return
 
 
 class HashableId:
@@ -129,6 +178,7 @@ def pass_checks(
     efi_records: list[efi.MovingImageRecord],
     schema_validator,
     remove_invalid=False,
+    preserve_status_removed=False,
 ) -> bool:
     """Check records against schema and additional rules.
 
@@ -147,6 +197,9 @@ def pass_checks(
         Validator instance as returned by get_schema_validator().
     remove_invalid : bool
         Remove records from the list if they violate any of the rules.
+    preserve_status_removed : bool
+        Accept items with access status Removed even when they do not
+        carry an AVefi PID yet.
 
     Returns
     -------
@@ -168,14 +221,16 @@ def pass_checks(
         if not rec.has_identifier:
             raise ValueError(f"has_identifier is missing in record: {rec}")
         try:
-            if has_invalid_value(rec):
+            if has_invalid_value(
+                rec, preserve_status_removed=preserve_status_removed
+            ):
                 if all_was_fine:
                     all_was_fine = False
                 if remove_invalid:
                     removed_refs.extend(
                         [HashableId(id_) for id_ in rec.has_identifier]
                     )
-                    efi_records.remove(rec)
+                    discard_record(efi_records, rec)
                     continue
         except Exception as e:
             raise RuntimeError(
@@ -191,7 +246,10 @@ def pass_checks(
                 err_msg = f"Identifier is not unique: {record_id}"
                 if remove_invalid:
                     log.error(err_msg)
-                    efi_records.remove(rec)
+                    removed_refs.extend(
+                        [HashableId(id_) for id_ in rec.has_identifier]
+                    )
+                    discard_record(efi_records, rec)
                 else:
                     raise ValueError(err_msg)
                 for record_id in record_ids:
@@ -265,6 +323,7 @@ def purge_dependant_records(
     ],
     dependants_by_ref: dict[HashableId, list[HashableId]],
     removed_refs: list[HashableId],
+    visited: set[HashableId] | None = None,
 ):
     """Remove all records identified by or dependant on ``ref``.
 
@@ -273,13 +332,22 @@ def purge_dependant_records(
     ``id_lookup``. Recursively apply this function to all dependants
     of ``ref`` and all known identifiers of the same record.
 
+    Records may reference each other in a cycle. ``visited`` keeps
+    track of the identifiers already handled during one descent so that
+    such a cycle terminates instead of exhausting the stack.
+
     """
+    if visited is None:
+        visited = set()
+    if ref in visited:
+        return
+    visited.add(ref)
     try:
         rec, ids = id_lookup[ref]
     except KeyError:
         ids = [ref]
     else:
-        record_list.remove(rec)
+        discard_record(record_list, rec)
         for record_id in ids:
             del id_lookup[record_id]
             removed_refs.append(record_id)
@@ -288,6 +356,7 @@ def purge_dependant_records(
             )
 
     for record_id in ids:
+        visited.add(record_id)
         for dep_ref in dependants_by_ref[record_id]:
             purge_dependant_records(
                 dep_ref,
@@ -295,6 +364,7 @@ def purge_dependant_records(
                 id_lookup,
                 dependants_by_ref,
                 removed_refs,
+                visited,
             )
         del dependants_by_ref[record_id]
 
@@ -362,7 +432,15 @@ def dangling_record(
                     if identifier.category != "avefi:LocalResource":
                         continue
                     ref = HashableId(identifier)
-                    parent, p_ids = id_lookup[ref]
+                    try:
+                        parent, p_ids = id_lookup[ref]
+                    except KeyError:
+                        log.error(
+                            f"Analytic work is part of an unresolvable"
+                            f" record: {rec.has_identifier[0].id}"
+                        )
+                        is_dangling = True
+                        continue
                     # TODO: Uncomment if approved by Metadaten-experts
                     # if parent.type != "Monographic":
                     #     log.error(
@@ -443,9 +521,9 @@ def has_invalid_value(efi_record, preserve_status_removed=False):
 
     if exceeds_field_limit(efi_record):
         return True
+    if has_invalid_date(efi_record):
+        return True
     for event in efi_record.has_event:
-        if has_invalid_date(efi_record):
-            return True
         for activity in event.has_activity:
             if any_empty_has_name(activity.has_agent):
                 return True
@@ -488,7 +566,8 @@ def has_invalid_value(efi_record, preserve_status_removed=False):
             )
             return True
         if (
-            isinstance(efi_record, efi.Item)
+            not preserve_status_removed
+            and isinstance(efi_record, efi.Item)
             and efi_record.has_access_status == "Removed"
             and not any(
                 ident.category == "avefi:AVefiResource"

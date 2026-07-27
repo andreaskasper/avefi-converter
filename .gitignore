@@ -4,7 +4,18 @@ __pycache__/
 *$py.class
 
 # Distribution / packaging
+build/
 dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment files read by pydantic-settings
+.env
+.env.*
+!.env.example
 
 # Unit test / coverage reports
 htmlcov/
@@ -33,6 +44,15 @@ __pypackages__/
 
 # mkdocs documentation
 /site
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
+
+# Editors
+.idea/
+.vscode/
+*.swp
 
 # backup files
 *~

@@ -41,6 +41,11 @@ def efi_from(input_files, output=None, **kwargs):
             avefi.dump(generated_records, output)
         else:
             print(avefi.dumps(generated_records, indent=2))
+    else:
+        log.warning(
+            f"No records generated from {len(input_files)} input file(s),"
+            f" nothing written"
+        )
 
 
 def import_file(

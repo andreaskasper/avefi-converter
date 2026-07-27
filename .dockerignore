@@ -1,0 +1,21 @@
+# Keep the build context small and reproducible
+.git/
+.github/
+.agents/
+.opencode/
+.venv/
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+dist/
+build/
+*.egg-info/
+tests/
+docs/
+CHANGELOG.md
+docker-compose.yml
+.pre-commit-config.yaml

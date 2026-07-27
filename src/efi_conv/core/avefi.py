@@ -1,12 +1,16 @@
+import os
 import pathlib
+import tempfile
 
 from avefi_schema import model_pydantic_v2 as efi
 from pydantic import ValidationError
 
+ENCODING = "utf-8"
+
 
 def load(source: pathlib.Path | str) -> list[efi.MovingImageRecord]:
     """Load AVefi records from file."""
-    with pathlib.Path(source).open() as f:
+    with pathlib.Path(source).open(encoding=ENCODING) as f:
         input = f.read()
     return loads(input)
 
@@ -25,9 +29,26 @@ def loads(input: str) -> list[efi.MovingImageRecord]:
 
 
 def dump(records: list[efi.MovingImageRecord], to_file: str):
-    """Dump AVefi records to JSON file."""
-    with open(to_file, "w") as f:
-        f.write(dumps(records, indent=2))
+    """Dump AVefi records to JSON file.
+
+    The file is written atomically: output goes to a temporary file in
+    the same directory which is then moved into place. An interrupted
+    or failing write therefore cannot truncate an existing file.
+
+    """
+    target = pathlib.Path(to_file)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=target.parent or pathlib.Path(),
+        prefix=f".{target.name}.",
+        suffix=".tmp",
+    )
+    try:
+        with os.fdopen(fd, "w", encoding=ENCODING) as f:
+            f.write(dumps(records, indent=2))
+        os.replace(tmp_name, target)
+    except BaseException:
+        pathlib.Path(tmp_name).unlink(missing_ok=True)
+        raise
 
 
 def dumps(records: list[efi.MovingImageRecord], indent=None) -> str:

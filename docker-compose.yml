@@ -3,6 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Match the image user to the host user so that generated files
+        # are owned by you, not by root.
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
     image: ghcr.io/av-efi/efi-conv:latest
     volumes:
       - .:/data:Z

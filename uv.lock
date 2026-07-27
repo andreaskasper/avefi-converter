@@ -32,7 +32,7 @@ wheels = [
 [[package]]
 name = "avefi-schema"
 version = "0.1.0"
-source = { git = "https://github.com/AV-EFI/av-efi-schema.git#672f68f4fec3094534354ef775323a1301cedd27" }
+source = { git = "https://github.com/AV-EFI/av-efi-schema.git?rev=672f68f4fec3094534354ef775323a1301cedd27#672f68f4fec3094534354ef775323a1301cedd27" }
 dependencies = [
     { name = "pydantic" },
 ]
@@ -236,7 +236,7 @@ dependencies = [
     { name = "jsonschema" },
     { name = "pydantic-settings" },
     { name = "requests" },
-    { name = "xsdata", extra = ["cli", "lxml"] },
+    { name = "xsdata", extra = ["lxml"] },
 ]
 
 [package.dev-dependencies]
@@ -244,17 +244,18 @@ dev = [
     { name = "coverage" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "xsdata", extra = ["cli"] },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "appdirs", specifier = ">=1.4.4" },
-    { name = "avefi-schema", git = "https://github.com/AV-EFI/av-efi-schema.git" },
+    { name = "avefi-schema", git = "https://github.com/AV-EFI/av-efi-schema.git?rev=672f68f4fec3094534354ef775323a1301cedd27" },
     { name = "click", specifier = ">=8.3.3" },
     { name = "jsonschema", specifier = ">=4.25.1" },
     { name = "pydantic-settings", specifier = ">=2.14.0" },
     { name = "requests", specifier = ">=2.32.5" },
-    { name = "xsdata", extras = ["cli", "lxml"], specifier = ">=26.2" },
+    { name = "xsdata", extras = ["lxml"], specifier = ">=26.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -262,6 +263,7 @@ dev = [
     { name = "coverage", specifier = ">=7.13.4" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "ruff", specifier = ">=0.15.11" },
+    { name = "xsdata", extras = ["cli"], specifier = ">=26.2" },
 ]
 
 [[package]]
