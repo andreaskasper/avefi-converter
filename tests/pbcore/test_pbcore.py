@@ -96,9 +96,9 @@ def test_instantiations_become_items_and_manifestations(input_path):
         "PBCORE-0001_PBCORE-0001-1",
         "PBCORE-0001_PBCORE-0001-2",
     }
-    assert (
-        len({item.is_item_of.id for item in from_first_asset}) == 2
-    ), "Copies differing in format belong to different manifestations"
+    assert len({item.is_item_of.id for item in from_first_asset}) == 2, (
+        "Copies differing in format belong to different manifestations"
+    )
 
 
 def test_manifestations_hang_off_their_work(input_path):
@@ -112,9 +112,7 @@ def test_manifestations_hang_off_their_work(input_path):
         if r.category == "avefi:WorkVariant"
     }
     assert len(manifestations) == 5
-    assert all(
-        m.is_manifestation_of[0].id in works for m in manifestations
-    )
+    assert all(m.is_manifestation_of[0].id in works for m in manifestations)
 
 
 def test_audio_only_records_are_not_imported(input_path):
@@ -284,9 +282,7 @@ class TestReporting:
         ):
             assert value in raw_values, f"{value} was dropped silently"
 
-    def test_unmapped_elements_are_reported_with_their_value(
-        self, input_path
-    ):
+    def test_unmapped_elements_are_reported_with_their_value(self, input_path):
         entries = [
             entry
             for entry in self._report(input_path).entries
@@ -374,9 +370,7 @@ class TestProfile:
             for record in records
         )
 
-    def test_a_real_issuer_is_not_reported_as_a_placeholder(
-        self, input_path
-    ):
+    def test_a_real_issuer_is_not_reported_as_a_placeholder(self, input_path):
         custom = profile.PbcoreProfile(
             issuer_info={
                 "has_issuer_id": "https://w3id.org/isil/DE-TEST-1",
@@ -387,8 +381,7 @@ class TestProfile:
         with collecting(report):
             mapping.efi_import(input_path("sample_data.xml"), custom)
         assert not any(
-            "placeholder issuer" in entry.message
-            for entry in report.entries
+            "placeholder issuer" in entry.message for entry in report.entries
         )
 
 
@@ -421,8 +414,7 @@ class TestModuleEntryPoint:
     def test_writes_to_a_file(self, tmp_path, input_path):
         target = tmp_path / "out.json"
         assert (
-            pbcore.main([str(input_path("sample_data.xml")), str(target)])
-            == 0
+            pbcore.main([str(input_path("sample_data.xml")), str(target)]) == 0
         )
         assert json.loads(target.read_text(encoding="utf-8"))
 

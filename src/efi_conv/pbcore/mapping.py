@@ -178,8 +178,7 @@ MAPPING_RULES = (
         "primary_title",
         "Work, Manifestation, Item",
         "pbcoreTitle[@titleType in profile primary_title_types]",
-        "has_primary_title.has_name,"
-        " has_primary_title.has_ordering_name",
+        "has_primary_title.has_name, has_primary_title.has_ordering_name",
         "Article handling in both directions",
         "The first title of the record is used when no titleType is"
         " eligible; bracketed titles become SuppliedDevisedTitle. On a"
@@ -263,8 +262,7 @@ MAPPING_RULES = (
     MappingRule(
         "relation",
         "Work",
-        "pbcoreRelation[pbcoreRelationType in profile"
-        " part_of_relation_types]",
+        "pbcoreRelation[pbcoreRelationType in profile part_of_relation_types]",
         "is_part_of (LocalResource)",
         notes="Other relation types are reported",
     ),
@@ -286,8 +284,7 @@ MAPPING_RULES = (
     MappingRule(
         "instantiation_date",
         "Item",
-        "instantiationDate[@dateType in profile"
-        " manufacture_date_types]",
+        "instantiationDate[@dateType in profile manufacture_date_types]",
         "has_event.has_date (ManufactureEvent)",
         "ISODate",
         "The date the copy was made, not the date of the film",
@@ -352,8 +349,7 @@ MAPPING_RULES = (
         "instantiationDimensions, else instantiationFileSize",
         "has_extent.has_value, has_extent.has_unit",
         "Profile extent_unit_map",
-        "has_extent holds one value, so the second measurement is"
-        " reported",
+        "has_extent holds one value, so the second measurement is reported",
     ),
     MappingRule(
         "essence_track",
@@ -620,9 +616,7 @@ def map_record(
     work_key = make_work_key(profile, source_key, primary[0], production)
 
     def new_work():
-        work = build_work(
-            document, primary, alternatives, profile, source_key
-        )
+        work = build_work(document, primary, alternatives, profile, source_key)
         if production is not None:
             work.has_event.append(production)
         return work
@@ -684,9 +678,7 @@ def collect_identifiers(
     for identifier in document.pbcore_identifier or []:
         value = text_of(identifier)
         if value:
-            entries.append(
-                (str(identifier.source or "").strip(), value)
-            )
+            entries.append((str(identifier.source or "").strip(), value))
     if not entries:
         raise ValueError("PBCore record without a usable pbcoreIdentifier")
     chosen = 0
@@ -702,9 +694,7 @@ def collect_identifiers(
         if matching:
             chosen = matching[0]
             break
-    others = [
-        entry for index, entry in enumerate(entries) if index != chosen
-    ]
+    others = [entry for index, entry in enumerate(entries) if index != chosen]
     return entries[chosen][1], others
 
 
@@ -742,9 +732,9 @@ def item_identifier(
     if len(instantiations) <= 1:
         return source_key
     local = None
-    for identifier in getattr(
-        instantiation, "instantiation_identifier", None
-    ) or []:
+    for identifier in (
+        getattr(instantiation, "instantiation_identifier", None) or []
+    ):
         local = text_of(identifier)
         if local:
             break
@@ -844,9 +834,7 @@ def build_work(document, primary, alternatives, profile, source_key):
             raw_value=primary[1],
         )
     work = efi.WorkVariant(
-        type=efi.WorkVariantTypeEnum(
-            work_type(document, profile, source_key)
-        ),
+        type=efi.WorkVariantTypeEnum(work_type(document, profile, source_key)),
         has_primary_title=as_title(primary[0], "PreferredTitle"),
     )
     for title, title_type in alternatives:
@@ -876,8 +864,7 @@ def work_type(document, profile, source_key) -> str:
     if len(terms) > 1:
         report_issue(
             "warning",
-            "AVefi allows one work type; only the first asset type is"
-            " mapped",
+            "AVefi allows one work type; only the first asset type is mapped",
             record_id=source_key,
             source_field="pbcoreAssetType",
             target_field="type",
@@ -921,9 +908,7 @@ def genre_and_subject_terms(document, profile):
 def part_of_resources(document, profile, source_key):
     """Yield the works this record says it is a part of."""
     for relation in document.pbcore_relation or []:
-        kind = (
-            text_of(relation.pbcore_relation_type) or ""
-        ).strip().lower()
+        kind = (text_of(relation.pbcore_relation_type) or "").strip().lower()
         identifier = text_of(relation.pbcore_relation_identifier)
         if not identifier:
             continue
@@ -1010,9 +995,7 @@ def asset_dates(document, profile, source_key):
         kind = str(element.date_type or "").strip().lower()
         if kind in profile.production_date_types and production is None:
             target = "production"
-        elif (
-            kind in profile.publication_date_types and publication is None
-        ):
+        elif kind in profile.publication_date_types and publication is None:
             target = "publication"
         else:
             report_issue(
@@ -1232,9 +1215,7 @@ def build_publication_event(
     event_type = profile.publication_event_type_map.get(
         publication_kind, profile.default_publication_event_type
     )
-    event = efi.PublicationEvent(
-        type=efi.PublicationEventTypeEnum(event_type)
-    )
+    event = efi.PublicationEvent(type=efi.PublicationEventTypeEnum(event_type))
     if publication_date:
         event.has_date = publication_date
     for activity in activities:
@@ -1357,8 +1338,10 @@ def usable_instantiations(document, profile, source_key) -> list:
     result = []
     for instantiation in document.pbcore_instantiation or []:
         media_type = (
-            text_of(instantiation.instantiation_media_type) or ""
-        ).strip().lower()
+            (text_of(instantiation.instantiation_media_type) or "")
+            .strip()
+            .lower()
+        )
         if (
             profile.moving_image_media_types
             and media_type not in profile.moving_image_media_types
@@ -1412,9 +1395,7 @@ def add_duration(item, instantiation, profile, source_key):
     value = text_of(instantiation.instantiation_duration)
     if not value:
         return
-    has_value = mapped_duration(
-        value, source_key, "instantiationDuration"
-    )
+    has_value = mapped_duration(value, source_key, "instantiationDuration")
     if has_value:
         item.has_duration = efi.Duration(has_value=has_value)
 
@@ -1621,9 +1602,7 @@ def build_extent(element, profile, source_key, name):
     value = text_of(element)
     if not value:
         return None
-    unit = str(
-        getattr(element, "units_of_measure", "") or ""
-    ).strip().lower()
+    unit = str(getattr(element, "units_of_measure", "") or "").strip().lower()
     mapped = profile.extent_unit_map.get(unit)
     number = re.sub(r"[\s,]", "", value).replace(",", ".")
     try:
@@ -1680,9 +1659,7 @@ def add_instantiation_dates(item, instantiation, profile, source_key):
                 raw_value=f"{element.date_type or ''}: {value}",
             )
             continue
-        mapped = mapped_date(
-            value, profile, source_key, "instantiationDate"
-        )
+        mapped = mapped_date(value, profile, source_key, "instantiationDate")
         if mapped:
             item.has_event.append(efi.ManufactureEvent(has_date=mapped))
 
@@ -1690,9 +1667,7 @@ def add_instantiation_dates(item, instantiation, profile, source_key):
 def add_essence_tracks(item, instantiation, profile, source_key):
     """Map the essence tracks of a copy as far as AVefi allows."""
     for track in instantiation.instantiation_essence_track or []:
-        kind = (
-            text_of(track.essence_track_type) or ""
-        ).strip().lower()
+        kind = (text_of(track.essence_track_type) or "").strip().lower()
         if kind in profile.audio_track_types and item.has_sound_type is None:
             item.has_sound_type = efi.SoundTypeEnum(profile.sound_type)
         add_frame_rate(item, track, profile, source_key)

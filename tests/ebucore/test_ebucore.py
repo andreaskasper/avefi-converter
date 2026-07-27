@@ -50,12 +50,8 @@ def test_schema_compliance(input_path):
 
 def test_conversion_is_idempotent(input_path):
     """Converting the same input twice must give identical output."""
-    first = avefi.dumps(
-        avefi.sort_records(convert(input_path)), indent=2
-    )
-    second = avefi.dumps(
-        avefi.sort_records(convert(input_path)), indent=2
-    )
+    first = avefi.dumps(avefi.sort_records(convert(input_path)), indent=2)
+    second = avefi.dumps(avefi.sort_records(convert(input_path)), indent=2)
     assert first == second
 
 
@@ -82,9 +78,10 @@ def test_records_of_one_programme_share_a_work(input_path):
         "EBU-0001",
         "EBU-0002",
     ]
-    assert [
-        title.has_name for title in shared.has_alternative_title
-    ] == ["The Bridge", "Die Bruecke (Fernsehfassung)"]
+    assert [title.has_name for title in shared.has_alternative_title] == [
+        "The Bridge",
+        "Die Bruecke (Fernsehfassung)",
+    ]
 
 
 def test_carriers_differing_get_their_own_manifestation(input_path):
@@ -206,9 +203,7 @@ def test_placeholder_issuer_is_reported_once(input_path):
 
 def test_unmapped_role_is_reported(input_path):
     report = report_for(input_path)
-    roles = entries_for(
-        report, "EBU-0001", "contributor/role/@typeLabel"
-    )
+    roles = entries_for(report, "EBU-0001", "contributor/role/@typeLabel")
     assert roles and roles[0].severity == "warning"
     assert roles[0].raw_value == ["Camera Operator"]
 
@@ -269,17 +264,13 @@ def test_further_identifiers_are_reported(input_path):
 def test_timecode_frames_are_reported(input_path):
     """ISODurationInHours cannot hold the frame count of a timecode."""
     report = report_for(input_path)
-    entries = entries_for(
-        report, "EBU-0002", "format/duration/timecode"
-    )
+    entries = entries_for(report, "EBU-0002", "format/duration/timecode")
     assert entries and entries[0].raw_value == "01:43:12:10"
 
 
 def test_metadata_provider_is_not_used_as_the_issuer(input_path):
     report = report_for(input_path)
-    entries = entries_for(
-        report, "EBU-0001", "ebuCoreMain/metadataProvider"
-    )
+    entries = entries_for(report, "EBU-0001", "ebuCoreMain/metadataProvider")
     assert entries and entries[0].raw_value == "Beispielarchiv"
 
 
@@ -323,9 +314,7 @@ def test_unmappable_date_raises(tmp_path, input_path):
         ebucore.efi_import(broken)
 
 
-def test_one_bad_record_does_not_cost_the_whole_file(
-    tmp_path, input_path
-):
+def test_one_bad_record_does_not_cost_the_whole_file(tmp_path, input_path):
     """File level containment would lose every record of an export."""
     broken = broken_copy(
         tmp_path,
@@ -390,9 +379,7 @@ class TestModuleEntryPoint:
     def test_writes_to_a_file(self, tmp_path, input_path):
         target = tmp_path / "out.json"
         assert (
-            ebucore.main(
-                [str(input_path("sample_data.xml")), str(target)]
-            )
+            ebucore.main([str(input_path("sample_data.xml")), str(target)])
             == 0
         )
         assert json.loads(target.read_text(encoding="utf-8"))

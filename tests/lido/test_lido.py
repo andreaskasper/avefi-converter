@@ -411,7 +411,5 @@ class TestDocumentShapes:
 
     def test_a_document_without_records_yields_none(self, tmp_path):
         source = tmp_path / "empty.xml"
-        source.write_text(
-            self.HEADER + "<somethingElse/>\n", encoding="utf-8"
-        )
+        source.write_text(self.HEADER + "<somethingElse/>\n", encoding="utf-8")
         assert mapping.parse_lido(source) == []

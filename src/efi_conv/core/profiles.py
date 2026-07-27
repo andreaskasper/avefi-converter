@@ -16,17 +16,17 @@ converter gets to take; a profile is where the real one comes from.
 The document is JSON or TOML::
 
     {
-      "profile_format_version": "1.0",
-      "format": "lido",
-      "description": "Filmarchiv Musterstadt, delivery 2026-07",
-      "issuer": {
-        "has_issuer_id": "https://w3id.org/isil/DE-MUS-000000",
-        "has_issuer_name": "Filmarchiv Musterstadt"
-      },
-      "settings": {
-        "default_language": "ger",
-        "colour_type_map": {"sw": "BlackAndWhite"}
-      }
+        "profile_format_version": "1.0",
+        "format": "lido",
+        "description": "Filmarchiv Musterstadt, delivery 2026-07",
+        "issuer": {
+            "has_issuer_id": "https://w3id.org/isil/DE-MUS-000000",
+            "has_issuer_name": "Filmarchiv Musterstadt",
+        },
+        "settings": {
+            "default_language": "ger",
+            "colour_type_map": {"sw": "BlackAndWhite"},
+        },
     }
 
 Anything under ``settings`` names a field of that converter's profile
@@ -198,9 +198,9 @@ class ConfiguredImporter:
     @property
     def DESCRIPTION(self) -> str:  # noqa: N802 - mirrors the module
         """Return the description of the configured conversion."""
-        return getattr(
-            self.profile, "description", None
-        ) or getattr(self.module, "DESCRIPTION", "")
+        return getattr(self.profile, "description", None) or getattr(
+            self.module, "DESCRIPTION", ""
+        )
 
     @property
     def INPUT_FORMAT(self) -> str:  # noqa: N802 - mirrors the module
@@ -214,9 +214,7 @@ class ConfiguredImporter:
 
     def efi_import(self, input_file, continue_on_error: bool = False):
         """Convert ``input_file`` using the configured profile."""
-        return self.module.convert(
-            input_file, self.profile, continue_on_error
-        )
+        return self.module.convert(input_file, self.profile, continue_on_error)
 
 
 def configure(module: types.ModuleType, path) -> ConfiguredImporter:

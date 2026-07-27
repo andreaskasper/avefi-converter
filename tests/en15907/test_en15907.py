@@ -57,12 +57,8 @@ def test_schema_compliance(input_path):
 
 def test_conversion_is_idempotent(input_path):
     """Converting the same input twice must give identical output."""
-    first = avefi.dumps(
-        avefi.sort_records(records_for(input_path)), indent=2
-    )
-    second = avefi.dumps(
-        avefi.sort_records(records_for(input_path)), indent=2
-    )
+    first = avefi.dumps(avefi.sort_records(records_for(input_path)), indent=2)
+    second = avefi.dumps(avefi.sort_records(records_for(input_path)), indent=2)
     assert first == second
 
 
@@ -133,11 +129,7 @@ def test_manifestation_without_items_yields_one(input_path):
 
 def test_manifestation_level_description_reaches_every_item(input_path):
     efi_records = records_for(input_path)
-    item = next(
-        r
-        for r in efi_records
-        if r.has_identifier[0].id == "ITEM-001"
-    )
+    item = next(r for r in efi_records if r.has_identifier[0].id == "ITEM-001")
     assert item.has_duration.has_value == "PT01H43M00S"
     assert item.has_frame_rate == "24fps"
     assert item.has_colour_type == "BlackAndWhite"
@@ -156,9 +148,7 @@ def test_manifestation_level_description_reaches_every_item(input_path):
 
 def test_digital_carrier_becomes_the_matching_format_classes(input_path):
     efi_records = records_for(input_path)
-    item = next(
-        r for r in efi_records if r.has_identifier[0].id == "ITEM-003"
-    )
+    item = next(r for r in efi_records if r.has_identifier[0].id == "ITEM-003")
     assert [(f.category, f.type) for f in item.has_format] == [
         ("avefi:Optical", "DVD"),
         ("avefi:DigitalFile", "MP4"),
@@ -282,9 +272,7 @@ class TestReporting:
         }
         assert {"Cinematographer", "Production company"} <= roles
 
-    def test_an_item_that_is_not_a_moving_image_is_reported(
-        self, input_path
-    ):
+    def test_an_item_that_is_not_a_moving_image_is_reported(self, input_path):
         report = report_for(input_path)
         assert any(
             entry.record_id == "ITEM-900"
@@ -310,9 +298,7 @@ class TestProfile:
         efi_records = mapping.efi_import(
             input_path("sample_data.xml"), profile
         )
-        works = [
-            r for r in efi_records if r.category == "avefi:WorkVariant"
-        ]
+        works = [r for r in efi_records if r.category == "avefi:WorkVariant"]
         assert sorted(w.has_identifier[0].id for w in works) == [
             "Brücke_Die_1959_work",
             "Sanitätshunde_1916_work",
@@ -325,9 +311,7 @@ class TestProfile:
         with pytest.raises(ValueError, match="Unknown work key field"):
             mapping.efi_import(input_path("sample_data.xml"), profile)
 
-    def test_the_description_can_become_a_manifestation_note(
-        self, input_path
-    ):
+    def test_the_description_can_become_a_manifestation_note(self, input_path):
         profile = dataclasses.replace(
             en15907.PROFILE, work_description_target="manifestation_note"
         )
@@ -353,9 +337,7 @@ class TestProfile:
         ):
             mapping.efi_import(input_path("sample_data.xml"), profile)
 
-    def test_a_real_profile_replaces_the_placeholder_issuer(
-        self, input_path
-    ):
+    def test_a_real_profile_replaces_the_placeholder_issuer(self, input_path):
         profile = EfgProfile(
             issuer_info={
                 "has_issuer_id": "https://w3id.org/isil/XX-EXAMPLE",
@@ -462,9 +444,7 @@ class TestModuleEntryPoint:
     def test_writes_to_a_file(self, tmp_path, input_path):
         target = tmp_path / "out.json"
         assert (
-            en15907.main(
-                [str(input_path("sample_data.xml")), str(target)]
-            )
+            en15907.main([str(input_path("sample_data.xml")), str(target)])
             == 0
         )
         assert json.loads(target.read_text(encoding="utf-8"))

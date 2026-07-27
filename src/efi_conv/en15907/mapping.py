@@ -105,8 +105,7 @@ MAPPING_RULES = (
         "work_title",
         "Work",
         "avcreation/title[relation in preferred relations]/text",
-        "has_primary_title.has_name,"
-        " has_primary_title.has_ordering_name",
+        "has_primary_title.has_name, has_primary_title.has_ordering_name",
         "Article handling in both directions",
         "A title without a relation counts as preferred; the first"
         " title is used when no relation marks one; a title in square"
@@ -124,8 +123,7 @@ MAPPING_RULES = (
     MappingRule(
         "title_detail",
         "Work, Manifestation",
-        "title/partDesignation, title/temporalScope,"
-        " title/geographicScope",
+        "title/partDesignation, title/temporalScope, title/geographicScope",
         "—",
         notes="Reported as unmapped rather than dropped silently",
     ),
@@ -174,8 +172,7 @@ MAPPING_RULES = (
     MappingRule(
         "other_agent",
         "Work",
-        "avcreation/relPerson, avcreation/relCorporate"
-        " (remaining roles)",
+        "avcreation/relPerson, avcreation/relCorporate (remaining roles)",
         "—",
         notes="Reported as unmapped rather than dropped silently",
     ),
@@ -210,8 +207,7 @@ MAPPING_RULES = (
         "Work",
         "—",
         "type",
-        notes="Always Monographic; EFG does not state the level of a"
-        " creation",
+        notes="Always Monographic; EFG does not state the level of a creation",
     ),
     MappingRule(
         "manifestation_title",
@@ -236,8 +232,7 @@ MAPPING_RULES = (
     MappingRule(
         "publication_event",
         "Manifestation",
-        "avManifestation/relPublicationEvent →"
-        " efgEntity/publicationEvent",
+        "avManifestation/relPublicationEvent → efgEntity/publicationEvent",
         "has_event (PublicationEvent)",
         "Profile publication_event_type_map",
         "A type outside the vocabulary becomes UnknownEvent, which"
@@ -297,8 +292,7 @@ MAPPING_RULES = (
         "Item",
         "avManifestation/format/carrier, avManifestation/format/gauge",
         "has_format (Film, Video, Optical)",
-        "Profile film_format_map, video_format_map,"
-        " optical_format_map",
+        "Profile film_format_map, video_format_map, optical_format_map",
     ),
     MappingRule(
         "colour",
@@ -306,8 +300,7 @@ MAPPING_RULES = (
         "avManifestation/format/colour",
         "has_colour_type",
         "Profile colour_type_map",
-        "The hasColor attribute is used when the element carries no"
-        " term",
+        "The hasColor attribute is used when the element carries no term",
     ),
     MappingRule(
         "sound",
@@ -315,8 +308,7 @@ MAPPING_RULES = (
         "avManifestation/format/sound",
         "has_sound_type",
         "Profile sound_type_map",
-        "The hasSound attribute is used when the element carries no"
-        " term",
+        "The hasSound attribute is used when the element carries no term",
     ),
     MappingRule(
         "digital_format",
@@ -501,8 +493,7 @@ def render_mapping_markdown(rules=MAPPING_RULES) -> str:
         "Generated from `MAPPING_RULES` in `efi_conv.en15907.mapping`;",
         "do not edit by hand.",
         "",
-        "| Rule | Level | EFG source | AVefi target |"
-        " Normalisation | Notes |",
+        "| Rule | Level | EFG source | AVefi target | Normalisation | Notes |",
         "| --- | --- | --- | --- | --- | --- |",
     ]
     for rule in rules:
@@ -1182,7 +1173,8 @@ def safe_entity_identifier(
 def first_production_year(avcreation, record_id) -> str | None:
     """Return the production year to map, reporting any further one."""
     years = [
-        text for text in (text_of(y) for y in avcreation.production_year or [])
+        text
+        for text in (text_of(y) for y in avcreation.production_year or [])
         if text
     ]
     if not years:
@@ -1259,8 +1251,7 @@ def report_unmapped(element, entries, record_id):
             continue
         report_issue(
             "info",
-            "No AVefi counterpart for this element; value not"
-            " transferred",
+            "No AVefi counterpart for this element; value not transferred",
             record_id=record_id,
             source_field=source_field,
             target_field="—",
@@ -1325,9 +1316,7 @@ def collect_keyword_terms(
     """Return the genre and subject terms of a creation."""
     genres, subjects = [], []
     for keywords in avcreation.keywords or []:
-        kind = (
-            str(getattr(keywords, "type_value", "") or "").strip().lower()
-        )
+        kind = str(getattr(keywords, "type_value", "") or "").strip().lower()
         if kind in profile.genre_keyword_types:
             target = genres
         elif kind in profile.subject_keyword_types:
@@ -1381,8 +1370,7 @@ def build_production_event(avcreation, profile: EfgProfile, record_id):
         if reference:
             report_issue(
                 "info",
-                "AVefi has no field for the code list a country refers"
-                " to",
+                "AVefi has no field for the code list a country refers to",
                 record_id=record_id,
                 source_field="avcreation/countryOfReference/@reference",
                 target_field="—",
@@ -1738,16 +1726,15 @@ class CopyDescription:
         for class_name, type_value in self.formats:
             format_class = getattr(efi, class_name)
             item.has_format.append(
-                format_class() if type_value is None
+                format_class()
+                if type_value is None
                 else format_class(type=type_value)
             )
         for code, usages in self.languages:
             item.in_language.append(
                 efi.Language(
                     code=efi.LanguageCodeEnum(code),
-                    usage=[
-                        efi.LanguageUsageEnum(usage) for usage in usages
-                    ],
+                    usage=[efi.LanguageUsageEnum(usage) for usage in usages],
                 )
             )
         if self.extent is not None:
@@ -1757,9 +1744,7 @@ class CopyDescription:
             )
 
 
-def describe_copy(
-    element, profile: EfgProfile, record_id
-) -> CopyDescription:
+def describe_copy(element, profile: EfgProfile, record_id) -> CopyDescription:
     """Return what an avManifestation says about its copies."""
     duration_element = first(element.duration)
     duration = None
@@ -2050,8 +2035,7 @@ def map_digital_format(element, profile: EfgProfile, record_id) -> list:
         if mapped is None:
             report_issue(
                 "warning",
-                "No AVefi format configured for this digital format"
-                " term",
+                "No AVefi format configured for this digital format term",
                 record_id=record_id,
                 source_field=f"avManifestation/format/digital/{name}",
                 target_field="has_format",
@@ -2063,8 +2047,7 @@ def map_digital_format(element, profile: EfgProfile, record_id) -> list:
     if status:
         report_issue(
             "info",
-            "AVefi has no field for the original status of a digital"
-            " file",
+            "AVefi has no field for the original status of a digital file",
             record_id=record_id,
             source_field="avManifestation/format/digital/originalstatus",
             target_field="—",

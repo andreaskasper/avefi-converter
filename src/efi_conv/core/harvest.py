@@ -115,15 +115,12 @@ def fetch(
         if response.status_code in RETRY_STATUS and attempt <= retries:
             wait = retry_after(response, backoff * attempt)
             log.warning(
-                f"{url}: HTTP {response.status_code},"
-                f" retrying in {wait} s"
+                f"{url}: HTTP {response.status_code}, retrying in {wait} s"
             )
             sleep(wait)
             continue
         if response.status_code != 200:
-            raise HarvestError(
-                f"{url} answered HTTP {response.status_code}"
-            )
+            raise HarvestError(f"{url} answered HTTP {response.status_code}")
         return response.content
 
 

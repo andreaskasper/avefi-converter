@@ -38,9 +38,7 @@ def oai_response(numbers, token=None, deleted=0):
         f"<identifier>GONE-{index}</identifier></header></record>"
         for index in range(deleted)
     )
-    resumption = (
-        f"<resumptionToken>{token}</resumptionToken>" if token else ""
-    )
+    resumption = f"<resumptionToken>{token}</resumptionToken>" if token else ""
     return (
         f'<?xml version="1.0" encoding="UTF-8"?>'
         f'<OAI-PMH xmlns="{OAI}"><ListRecords>{records}{resumption}'
@@ -172,7 +170,9 @@ class TestOai:
         )
         with pytest.raises(HarvestError, match="cannotDisseminateFormat"):
             harvest.harvest_oai(
-                "http://example.org/oai", "nonsense", tmp_path,
+                "http://example.org/oai",
+                "nonsense",
+                tmp_path,
                 session=session,
             )
 
@@ -185,7 +185,9 @@ class TestOai:
         )
         with pytest.raises(HarvestError, match="for ever"):
             harvest.harvest_oai(
-                "http://example.org/oai", "oai_dc", tmp_path,
+                "http://example.org/oai",
+                "oai_dc",
+                tmp_path,
                 session=session,
             )
 
@@ -207,7 +209,9 @@ class TestOai:
         session = FakeSession([FakeResponse(b"<not xml")])
         with pytest.raises(HarvestError, match="did not answer with XML"):
             harvest.harvest_oai(
-                "http://example.org/oai", "oai_dc", tmp_path,
+                "http://example.org/oai",
+                "oai_dc",
+                tmp_path,
                 session=session,
             )
 
@@ -247,7 +251,9 @@ class TestRetrying:
         session = FakeSession([FakeResponse(b"", 503)] * 5)
         with pytest.raises(HarvestError, match="503"):
             harvest.harvest_oai(
-                "http://example.org/oai", "oai_dc", tmp_path,
+                "http://example.org/oai",
+                "oai_dc",
+                tmp_path,
                 session=session,
             )
 
@@ -255,7 +261,9 @@ class TestRetrying:
         session = FakeSession([FakeResponse(b"", 404)])
         with pytest.raises(HarvestError, match="404"):
             harvest.harvest_oai(
-                "http://example.org/oai", "oai_dc", tmp_path,
+                "http://example.org/oai",
+                "oai_dc",
+                tmp_path,
                 session=session,
             )
         assert len(session.calls) == 1

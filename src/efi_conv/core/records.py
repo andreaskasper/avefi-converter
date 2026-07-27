@@ -115,9 +115,7 @@ class GroupingContext:
         if work is not None:
             return work, False
         work = factory()
-        work.has_identifier.append(
-            efi.LocalResource(id=f"{slug(key)}_work")
-        )
+        work.has_identifier.append(efi.LocalResource(id=f"{slug(key)}_work"))
         self.works[key] = work
         return work, True
 

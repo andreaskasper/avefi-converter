@@ -120,9 +120,7 @@ def parse_records(input_file, clazz, namespace: str | None, local_name: str):
 
     """
     parser = xml_parser()
-    for serialised in iter_record_elements(
-        input_file, namespace, local_name
-    ):
+    for serialised in iter_record_elements(input_file, namespace, local_name):
         yield parser.from_bytes(serialised, clazz)
 
 

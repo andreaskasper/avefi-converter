@@ -1288,8 +1288,7 @@ def edit_unit_expression(edit_unit) -> str:
     denominator = edit_unit.factor_denominator or 1
     if not rate or not numerator:
         raise NormalisationError(
-            f"Edit unit number without a usable edit rate:"
-            f" {edit_unit.value}"
+            f"Edit unit number without a usable edit rate: {edit_unit.value}"
         )
     seconds = edit_unit.value * denominator / (rate * numerator)
     return f"{seconds:.0f}"
@@ -1500,8 +1499,7 @@ def report_out_of_scope(main, core, source_key):
     if main.metadata_provider is not None:
         report_issue(
             "info",
-            "The issuer comes from the profile, metadataProvider is"
-            " not used",
+            "The issuer comes from the profile, metadataProvider is not used",
             record_id=source_key,
             source_field="ebuCoreMain/metadataProvider",
             target_field="described_by.has_issuer_id",
@@ -1514,9 +1512,7 @@ def report_out_of_scope(main, core, source_key):
             record_id=source_key,
             source_field="rights",
             target_field="—",
-            raw_value=[
-                text_of(first(entry.rights)) for entry in core.rights
-            ],
+            raw_value=[text_of(first(entry.rights)) for entry in core.rights],
         )
     if core.part:
         report_issue(
@@ -1541,8 +1537,7 @@ def report_out_of_scope(main, core, source_key):
             MAPPED_FORMAT_ELEMENTS,
             source_key,
             "format",
-            "Technical detail without an AVefi equivalent, not"
-            " transferred",
+            "Technical detail without an AVefi equivalent, not transferred",
         )
         for video in fmt.video_format or []:
             report_unmapped_elements(

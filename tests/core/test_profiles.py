@@ -128,9 +128,7 @@ class TestBuilding:
 
 
 class TestConfiguring:
-    def test_the_configured_importer_stands_in_for_the_module(
-        self, tmp_path
-    ):
+    def test_the_configured_importer_stands_in_for_the_module(self, tmp_path):
         path = write(tmp_path, {"issuer": ISSUER})
         importer = profiles.configure(fmdu_lido, path)
         assert importer.ISSUER_INFO == ISSUER
@@ -219,8 +217,8 @@ class TestShippedExamples:
             / "filmarchiv-musterstadt.lido.json"
         )
         importer = profiles.configure(fmdu_lido, path)
-        sample = pathlib.Path(__file__).parent.parent / "lido" / (
-            "sample_data.xml"
+        sample = (
+            pathlib.Path(__file__).parent.parent / "lido" / ("sample_data.xml")
         )
         records = importer.efi_import(sample)
         assert records

@@ -40,9 +40,7 @@ def _preferred_title_relations() -> frozenset:
 
 
 def _supplied_title_relations() -> frozenset:
-    return frozenset(
-        {"devised title", "supplied title", "ermittelter titel"}
-    )
+    return frozenset({"devised title", "supplied title", "ermittelter titel"})
 
 
 def _title_relation_map() -> dict:
