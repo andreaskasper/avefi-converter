@@ -10,40 +10,33 @@ the structure the CSV importer produces for the same institution.
 
 """
 
-from dataclasses import dataclass, field
-import hashlib
+from dataclasses import dataclass
 import logging
 import pathlib
-import re
 
 from avefi_schema import model_pydantic_v2 as efi
-from xsdata.formats.dataclass.context import XmlContext
-from xsdata.formats.dataclass.parsers import XmlParser
-from xsdata.formats.dataclass.parsers.config import ParserConfig
 
-from ..core.report import for_file, report_issue
-from ..core.utils import described_by_issuer
-from .generated.lido_1_1 import Lido, LidoWrap
-from .normalise import (
+from ..core.normalise import (
     NormalisationError,
     language_code,
     normalise_date,
     normalise_duration,
     normalise_title,
 )
+from ..core.records import (
+    GroupingContext,
+    SourceTitle,
+    as_title,
+    attach_source_key,
+    make_key,
+    merge_alternative_titles,
+)
+from ..core.report import for_file, report_issue
+from ..core.xmlrecords import first, text_of, xml_parser
+from .generated.lido_1_1 import Lido, LidoWrap
 from .profile import LidoProfile
 
 log = logging.getLogger(__name__)
-
-# The input comes from third parties, so entity resolution and DTD
-# loading are disabled deliberately rather than inherited from whatever
-# defaults the installed xsdata and lxml versions happen to have.
-PARSER_CONFIG = ParserConfig(
-    process_xinclude=False,
-    load_dtd=False,
-    fail_on_unknown_properties=False,
-    fail_on_unknown_attributes=False,
-)
 
 
 @dataclass(frozen=True)
@@ -272,7 +265,7 @@ def render_mapping_markdown(rules=MAPPING_RULES) -> str:
 
 def parse_lido(input_file) -> list[Lido]:
     """Parse a LIDO document and return its records."""
-    parser = XmlParser(config=PARSER_CONFIG, context=XmlContext())
+    parser = xml_parser()
     path = pathlib.Path(input_file)
     try:
         wrap = parser.parse(str(path), LidoWrap)
@@ -301,7 +294,7 @@ def efi_import(
 
     """
     records = []
-    context = MappingContext(profile)
+    context = MappingContext(profile=profile)
     with for_file(input_file):
         for lido_record in parse_lido(input_file):
             try:
@@ -318,7 +311,7 @@ def efi_import(
 
 
 @dataclass
-class MappingContext:
+class MappingContext(GroupingContext):
     """State shared by all records of one conversion.
 
     Several LIDO records commonly describe several copies of the same
@@ -329,9 +322,7 @@ class MappingContext:
 
     """
 
-    profile: LidoProfile
-    works: dict = field(default_factory=dict)
-    manifestations: dict = field(default_factory=dict)
+    profile: LidoProfile | None = None
 
 
 def map_record(
@@ -341,7 +332,7 @@ def map_record(
 ) -> list[efi.MovingImageRecord]:
     """Return the AVefi records derived from one LIDO record."""
     if context is None:
-        context = MappingContext(profile)
+        context = MappingContext(profile=profile)
     source_key = record_identifier(lido_record)
     descriptive = first(lido_record.descriptive_metadata)
     if descriptive is None:
@@ -370,15 +361,15 @@ def map_record(
 
     new_records = []
     work_key = make_work_key(profile, source_key, primary, production)
-    work = context.works.get(work_key)
-    if work is None:
+
+    def new_work():
         work = build_work(descriptive, primary, alternatives, source_key)
         if production is not None:
             work.has_event.append(production)
-        work.has_identifier.append(
-            efi.LocalResource(id=f"{slug(work_key)}_work")
-        )
-        context.works[work_key] = work
+        return work
+
+    work, is_new = context.work_for(work_key, new_work)
+    if is_new:
         new_records.append(work)
     else:
         merge_alternative_titles(work, alternatives)
@@ -386,29 +377,28 @@ def map_record(
 
     item = build_item(lido_record, descriptive, primary, profile, source_key)
     manifestation_key = make_manifestation_key(work_key, item)
-    manifestation = context.manifestations.get(manifestation_key)
-    if manifestation is None:
+
+    def new_manifestation():
         manifestation = efi.Manifestation(
             is_manifestation_of=[work_id],
             has_primary_title=as_title(primary, "TitleProper"),
         )
         if publication is not None:
             manifestation.has_event.append(publication)
-        manifestation.has_identifier.append(
-            efi.LocalResource(id=f"{slug(manifestation_key)}_manifestation")
-        )
-        context.manifestations[manifestation_key] = manifestation
+        return manifestation
+
+    manifestation, is_new = context.manifestation_for(
+        manifestation_key, new_manifestation
+    )
+    if is_new:
         new_records.append(manifestation)
     item.is_item_of = manifestation.has_identifier[0]
     item.has_identifier.append(efi.LocalResource(id=source_key))
     new_records.append(item)
 
-    for record in (work, manifestation, item):
-        described_by = described_by_issuer(record, profile.issuer_info)
-        if described_by.has_source_key is None:
-            described_by.has_source_key = []
-        if source_key not in described_by.has_source_key:
-            described_by.has_source_key.append(source_key)
+    attach_source_key(
+        (work, manifestation, item), profile.issuer_info, source_key
+    )
     return new_records
 
 
@@ -471,7 +461,7 @@ def make_work_key(profile, source_key, primary, production) -> str:
             )
         else:
             raise ValueError(f"Unknown work key field: {name}")
-    return "__".join(parts)
+    return make_key(*parts)
 
 
 def director_names(production) -> str:
@@ -504,29 +494,7 @@ def make_manifestation_key(work_key: str, item) -> str:
             )
         ),
     ]
-    return "__".join(parts)
-
-
-def slug(value: str) -> str:
-    """Return a compact, stable identifier fragment for ``value``."""
-    cleaned = re.sub(r"\s+", "_", value.strip())
-    cleaned = re.sub(r"[^\w.:/-]", "", cleaned, flags=re.UNICODE)
-    cleaned = re.sub(r"_{2,}", "_", cleaned).strip("_")
-    if len(cleaned) <= 120:
-        return cleaned or "record"
-    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
-    return f"{cleaned[:100]}_{digest}"
-
-
-def merge_alternative_titles(work, alternatives):
-    """Add titles a further record contributes to a known work."""
-    known = {title.has_name for title in work.has_alternative_title}
-    for title in alternatives:
-        if title.display not in known:
-            work.has_alternative_title.append(
-                as_title(title, "AlternativeTitle")
-            )
-            known.add(title.display)
+    return make_key(*parts)
 
 
 def safe_record_identifier(lido_record) -> str | None:
@@ -725,43 +693,6 @@ def build_item(lido_record, descriptive, primary, profile, source_key):
 # --- LIDO traversal helpers -------------------------------------------
 
 
-def first(sequence):
-    """Return the first element of ``sequence`` or None."""
-    if not sequence:
-        return None
-    if isinstance(sequence, (list, tuple)):
-        return sequence[0] if sequence else None
-    return sequence
-
-
-def text_of(element) -> str | None:
-    """Return the string value of a LIDO element, if any.
-
-    LIDO declares several elements as mixed content, which xsdata maps
-    to a ``content`` list rather than to a ``value`` attribute, so both
-    have to be considered.
-
-    """
-    if element is None:
-        return None
-    if isinstance(element, str):
-        text = element.strip()
-        return text or None
-    value = getattr(element, "value", None)
-    if value is None:
-        content = getattr(element, "content", None)
-        if content:
-            value = " ".join(
-                part.strip()
-                for part in content
-                if isinstance(part, str) and part.strip()
-            )
-    if value is None:
-        return None
-    text = str(value).strip()
-    return text or None
-
-
 def term_text(term) -> str | None:
     """Return the text of a lido:term style element."""
     if term is None:
@@ -787,15 +718,6 @@ def record_identifier(lido_record: Lido) -> str:
             if text:
                 return text
     raise ValueError("LIDO record without lidoRecID or recordID")
-
-
-@dataclass(frozen=True)
-class SourceTitle:
-    """A title as found in the LIDO document."""
-
-    display: str
-    ordering: str | None
-    supplied: bool
 
 
 def collect_titles(descriptive, profile, source_key) -> list[SourceTitle]:
@@ -846,17 +768,6 @@ def collect_titles(descriptive, profile, source_key) -> list[SourceTitle]:
             title = SourceTitle(display, ordering, supplied)
             (preferred if is_preferred else others).append(title)
     return preferred + others
-
-
-def as_title(title: SourceTitle, type_hint: str) -> efi.Title:
-    """Return an AVefi title for a parsed source title."""
-    title_type = "SuppliedDevisedTitle" if title.supplied else type_hint
-    result = efi.Title(
-        type=efi.TitleTypeEnum(title_type), has_name=title.display
-    )
-    if title.ordering:
-        result.has_ordering_name = title.ordering
-    return result
 
 
 def classifications(descriptive):
