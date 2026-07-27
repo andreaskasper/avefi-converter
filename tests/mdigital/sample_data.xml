@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand written sample in the museum-digital LIDO dialect: German terms
+  throughout, object URLs as record identifiers, no lido:type on the
+  title set, "Herstellung" as the event type.
+
+  The lido:type values on lido:classification are the ones the generic
+  mapping expects ("colour", "format", "access"). Those attribute
+  values are hard coded in efi_conv.lido.mapping and cannot be
+  configured through the profile; see the README next to
+  src/efi_conv/mdigital/lido.py.
+-->
+<lido:lidoWrap xmlns:lido="http://www.lido-schema.org">
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">https://nat.museum-digital.de/object/70001</lido:lidoRecID>
+    <lido:category>
+      <lido:conceptID lido:type="URI">http://www.cidoc-crm.org/cidoc-crm/E22</lido:conceptID>
+      <lido:term xml:lang="en">Man-Made Object</lido:term>
+    </lido:category>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Schmalfilm</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification lido:type="genre">
+            <lido:term xml:lang="de">Dokumentarfilm</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="colour">
+            <lido:term xml:lang="de">s/w</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="format">
+            <lido:term xml:lang="de">16 mm</lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet>
+            <lido:appellationValue xml:lang="de">Die Saale bei Halle</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+        <lido:objectMeasurementsWrap>
+          <lido:objectMeasurementsSet>
+            <lido:objectMeasurements>
+              <lido:measurementsSet>
+                <lido:measurementType xml:lang="de">Laufzeit</lido:measurementType>
+                <lido:measurementUnit xml:lang="de">min</lido:measurementUnit>
+                <lido:measurementValue>22</lido:measurementValue>
+              </lido:measurementsSet>
+            </lido:objectMeasurements>
+          </lido:objectMeasurementsSet>
+        </lido:objectMeasurementsWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Herstellung</lido:term>
+            </lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Schmidt, Karl</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Regie</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate>
+              <lido:displayDate>1954</lido:displayDate>
+            </lido:eventDate>
+            <lido:eventPlace>
+              <lido:place>
+                <lido:namePlaceSet>
+                  <lido:appellationValue>Halle (Saale)</lido:appellationValue>
+                </lido:namePlaceSet>
+              </lido:place>
+            </lido:eventPlace>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:resourceWrap>
+        <lido:resourceSet>
+          <lido:resourceRepresentation>
+            <lido:linkResource>https://nat.museum-digital.de/object/70001</lido:linkResource>
+          </lido:resourceRepresentation>
+        </lido:resourceSet>
+      </lido:resourceWrap>
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">70001</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+        <lido:recordSource>
+          <lido:legalBodyName>
+            <lido:appellationValue>Stadtmuseum Halle</lido:appellationValue>
+          </lido:legalBodyName>
+        </lido:recordSource>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">https://nat.museum-digital.de/object/70002</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Film</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification lido:type="colour">
+            <lido:term xml:lang="de">s/w</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="format">
+            <lido:term xml:lang="de">35 mm</lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet>
+            <lido:appellationValue xml:lang="de">Die Saale bei Halle</lido:appellationValue>
+          </lido:titleSet>
+          <lido:titleSet>
+            <lido:appellationValue xml:lang="en">The Saale near Halle</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Herstellung</lido:term>
+            </lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Schmidt, Karl</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Regie</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate>
+              <lido:displayDate>1954</lido:displayDate>
+            </lido:eventDate>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">70002</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">https://nat.museum-digital.de/object/70003</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Amateurfilm</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification lido:type="colour">
+            <lido:term xml:lang="de">Farbe</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="format">
+            <lido:term xml:lang="de">8 mm</lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet>
+            <lido:appellationValue xml:lang="de">Winterlandschaft im Harz</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Herstellung</lido:term>
+            </lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Weber, Anneliese</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Kamera</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate>
+              <lido:displayDate>ca. 1962</lido:displayDate>
+            </lido:eventDate>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">70003</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">https://nat.museum-digital.de/object/70004</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Fotografie</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet>
+            <lido:appellationValue xml:lang="de">Filmvorführung im Volkshaus</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+      </lido:objectIdentificationWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">70004</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+</lido:lidoWrap>

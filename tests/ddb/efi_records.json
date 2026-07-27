@@ -1,0 +1,227 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://www.deutsche-digitale-bibliothek.de",
+        "has_issuer_name": "Deutsche Digitale Bibliothek",
+        "has_source_key": [
+          "https://www.deutsche-digitale-bibliothek.de/item/AAAA0001"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "The Ruhr Area",
+        "has_ordering_name": "Ruhr Area, The",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Ruttmann, Walter",
+                "type": "Person"
+              }
+            ],
+            "type": "Director"
+          }
+        ],
+        "has_date": "1927/1928",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Deutschland"
+          }
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Ruhrgebiet_Das_Ruttmann_Walter_1927/1928_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Das Ruhrgebiet",
+      "has_ordering_name": "Ruhrgebiet, Das",
+      "type": "PreferredTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Kulturfilm"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://www.deutsche-digitale-bibliothek.de",
+      "has_issuer_name": "Deutsche Digitale Bibliothek",
+      "has_source_key": [
+        "https://www.deutsche-digitale-bibliothek.de/item/AAAA0001"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_date": "1928",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Berlin"
+          }
+        ],
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Ruhrgebiet_Das_Ruttmann_Walter_1927/1928_BlackAndWhite_35mmFilm_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Das Ruhrgebiet",
+      "has_ordering_name": "Ruhrgebiet, Das",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Ruhrgebiet_Das_Ruttmann_Walter_1927/1928_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://www.deutsche-digitale-bibliothek.de",
+      "has_issuer_name": "Deutsche Digitale Bibliothek",
+      "has_source_key": [
+        "https://www.deutsche-digitale-bibliothek.de/item/AAAA0001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "https://www.deutsche-digitale-bibliothek.de/item/AAAA0001"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Das Ruhrgebiet",
+      "has_ordering_name": "Ruhrgebiet, Das",
+      "type": "TitleProper"
+    },
+    "has_webresource": [
+      "https://www.deutsche-digitale-bibliothek.de/item/AAAA0001"
+    ],
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H18M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "35mmFilm"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Ruhrgebiet_Das_Ruttmann_Walter_1927/1928_BlackAndWhite_35mmFilm_manifestation"
+    }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://www.deutsche-digitale-bibliothek.de",
+        "has_issuer_name": "Deutsche Digitale Bibliothek",
+        "has_source_key": [
+          "https://www.deutsche-digitale-bibliothek.de/item/AAAA0002"
+        ]
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_date": "1930/1932"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Hafenarbeit_in_Hamburg_1930/1932_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Hafenarbeit in Hamburg",
+      "type": "PreferredTitle"
+    },
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://www.deutsche-digitale-bibliothek.de",
+      "has_issuer_name": "Deutsche Digitale Bibliothek",
+      "has_source_key": [
+        "https://www.deutsche-digitale-bibliothek.de/item/AAAA0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Hafenarbeit_in_Hamburg_1930/1932_Tinted_16mmFilm_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Hafenarbeit in Hamburg",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Hafenarbeit_in_Hamburg_1930/1932_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://www.deutsche-digitale-bibliothek.de",
+      "has_issuer_name": "Deutsche Digitale Bibliothek",
+      "has_source_key": [
+        "https://www.deutsche-digitale-bibliothek.de/item/AAAA0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "https://www.deutsche-digitale-bibliothek.de/item/AAAA0002"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Hafenarbeit in Hamburg",
+      "type": "TitleProper"
+    },
+    "has_colour_type": "Tinted",
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "16mmFilm"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Hafenarbeit_in_Hamburg_1930/1932_Tinted_16mmFilm_manifestation"
+    }
+  }
+]

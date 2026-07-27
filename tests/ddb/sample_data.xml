@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand written sample in the LIDO dialect the Deutsche Digitale
+  Bibliothek ingests: German terms, a title set marked as preferred, a
+  separate "Veröffentlichung" event beside "Herstellung", and the DDB
+  item page as the linked resource.
+
+  The lido:type values on lido:classification are the ones the generic
+  mapping expects ("colour", "format", "access"). Those attribute
+  values are hard coded in efi_conv.lido.mapping and cannot be
+  configured through the profile; see the README next to
+  src/efi_conv/ddb/lido.py.
+-->
+<lido:lidoWrap xmlns:lido="http://www.lido-schema.org">
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">https://www.deutsche-digitale-bibliothek.de/item/AAAA0001</lido:lidoRecID>
+    <lido:category>
+      <lido:conceptID lido:type="URI">http://www.cidoc-crm.org/cidoc-crm/E22</lido:conceptID>
+      <lido:term xml:lang="en">Man-Made Object</lido:term>
+    </lido:category>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Dokumentarfilm</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification lido:type="genre">
+            <lido:term xml:lang="de">Kulturfilm</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="colour">
+            <lido:term xml:lang="de">Schwarz-Weiß</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="format">
+            <lido:term xml:lang="de">35 mm</lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="preferred">
+            <lido:appellationValue xml:lang="de" lido:pref="preferred">Ruhrgebiet, Das</lido:appellationValue>
+          </lido:titleSet>
+          <lido:titleSet lido:type="alternate">
+            <lido:appellationValue xml:lang="en">The Ruhr Area</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+        <lido:objectMeasurementsWrap>
+          <lido:objectMeasurementsSet>
+            <lido:objectMeasurements>
+              <lido:measurementsSet>
+                <lido:measurementType xml:lang="de">Laufzeit</lido:measurementType>
+                <lido:measurementUnit xml:lang="de">min</lido:measurementUnit>
+                <lido:measurementValue>78</lido:measurementValue>
+              </lido:measurementsSet>
+            </lido:objectMeasurements>
+          </lido:objectMeasurementsSet>
+        </lido:objectMeasurementsWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Herstellung</lido:term>
+            </lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Ruttmann, Walter</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Regie</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Ufa</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Produktionsfirma</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate>
+              <lido:date>
+                <lido:earliestDate>1927</lido:earliestDate>
+                <lido:latestDate>1928</lido:latestDate>
+              </lido:date>
+              <lido:displayDate>1927/1928</lido:displayDate>
+            </lido:eventDate>
+            <lido:eventPlace>
+              <lido:place>
+                <lido:namePlaceSet>
+                  <lido:appellationValue>Deutschland</lido:appellationValue>
+                </lido:namePlaceSet>
+              </lido:place>
+            </lido:eventPlace>
+          </lido:event>
+        </lido:eventSet>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Veröffentlichung</lido:term>
+            </lido:eventType>
+            <lido:eventDate>
+              <lido:displayDate>1928</lido:displayDate>
+            </lido:eventDate>
+            <lido:eventPlace>
+              <lido:place>
+                <lido:namePlaceSet>
+                  <lido:appellationValue>Berlin</lido:appellationValue>
+                </lido:namePlaceSet>
+              </lido:place>
+            </lido:eventPlace>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:resourceWrap>
+        <lido:resourceSet>
+          <lido:resourceRepresentation>
+            <lido:linkResource>https://www.deutsche-digitale-bibliothek.de/item/AAAA0001</lido:linkResource>
+          </lido:resourceRepresentation>
+        </lido:resourceSet>
+      </lido:resourceWrap>
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">AAAA0001</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+        <lido:recordSource>
+          <lido:legalBodyName>
+            <lido:appellationValue>Filmarchiv im Landesmuseum</lido:appellationValue>
+          </lido:legalBodyName>
+        </lido:recordSource>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">https://www.deutsche-digitale-bibliothek.de/item/AAAA0002</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Stummfilm</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification lido:type="colour">
+            <lido:term xml:lang="de">viragiert</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="format">
+            <lido:term xml:lang="de">16 mm</lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="preferred">
+            <lido:appellationValue xml:lang="de">Hafenarbeit in Hamburg</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Herstellung</lido:term>
+            </lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>unbekannt</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Regie</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate>
+              <lido:displayDate>1930-32</lido:displayDate>
+            </lido:eventDate>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">AAAA0002</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">https://www.deutsche-digitale-bibliothek.de/item/AAAA0003</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Fotografie</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="preferred">
+            <lido:appellationValue xml:lang="de">Standfoto zu Das Ruhrgebiet</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+      </lido:objectIdentificationWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">AAAA0003</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+</lido:lidoWrap>

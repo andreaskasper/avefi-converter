@@ -1,0 +1,274 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://www.museum-digital.de",
+        "has_issuer_name": "museum-digital",
+        "has_source_key": [
+          "https://nat.museum-digital.de/object/70001",
+          "https://nat.museum-digital.de/object/70002"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "The Saale near Halle",
+        "has_ordering_name": "Saale near Halle, The",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Schmidt, Karl",
+                "type": "Person"
+              }
+            ],
+            "type": "Director"
+          }
+        ],
+        "has_date": "1954",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Halle (Saale)"
+          }
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Saale bei Halle",
+      "has_ordering_name": "Saale bei Halle, Die",
+      "type": "PreferredTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Dokumentarfilm"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://www.museum-digital.de",
+      "has_issuer_name": "museum-digital",
+      "has_source_key": [
+        "https://nat.museum-digital.de/object/70001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_BlackAndWhite_16mmFilm_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Saale bei Halle",
+      "has_ordering_name": "Saale bei Halle, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://www.museum-digital.de",
+      "has_issuer_name": "museum-digital",
+      "has_source_key": [
+        "https://nat.museum-digital.de/object/70001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "https://nat.museum-digital.de/object/70001"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Saale bei Halle",
+      "has_ordering_name": "Saale bei Halle, Die",
+      "type": "TitleProper"
+    },
+    "has_webresource": [
+      "https://nat.museum-digital.de/object/70001"
+    ],
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT00H22M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "16mmFilm"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_BlackAndWhite_16mmFilm_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://www.museum-digital.de",
+      "has_issuer_name": "museum-digital",
+      "has_source_key": [
+        "https://nat.museum-digital.de/object/70002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_BlackAndWhite_35mmFilm_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Saale bei Halle",
+      "has_ordering_name": "Saale bei Halle, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://www.museum-digital.de",
+      "has_issuer_name": "museum-digital",
+      "has_source_key": [
+        "https://nat.museum-digital.de/object/70002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "https://nat.museum-digital.de/object/70002"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Saale bei Halle",
+      "has_ordering_name": "Saale bei Halle, Die",
+      "type": "TitleProper"
+    },
+    "has_colour_type": "BlackAndWhite",
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "35mmFilm"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_BlackAndWhite_35mmFilm_manifestation"
+    }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://www.museum-digital.de",
+        "has_issuer_name": "museum-digital",
+        "has_source_key": [
+          "https://nat.museum-digital.de/object/70003"
+        ]
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_date": "1962~"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Winterlandschaft_im_Harz_1962_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Winterlandschaft im Harz",
+      "type": "PreferredTitle"
+    },
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://www.museum-digital.de",
+      "has_issuer_name": "museum-digital",
+      "has_source_key": [
+        "https://nat.museum-digital.de/object/70003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Winterlandschaft_im_Harz_1962_Colour_8mmFilm_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Winterlandschaft im Harz",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Winterlandschaft_im_Harz_1962_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://www.museum-digital.de",
+      "has_issuer_name": "museum-digital",
+      "has_source_key": [
+        "https://nat.museum-digital.de/object/70003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "https://nat.museum-digital.de/object/70003"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Winterlandschaft im Harz",
+      "type": "TitleProper"
+    },
+    "has_colour_type": "Colour",
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "8mmFilm"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Winterlandschaft_im_Harz_1962_Colour_8mmFilm_manifestation"
+    }
+  }
+]
