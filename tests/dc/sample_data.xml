@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand written oai_dc sample. Four records: a film using all fifteen
+  Dublin Core elements, a film identified by a bare local number, a
+  photograph that must not become a film work, and a record without a
+  dc:type at all.
+-->
+<records xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <oai_dc:dc>
+    <dc:title xml:lang="de">Brücke, Die</dc:title>
+    <dc:title xml:lang="en">The Bridge</dc:title>
+    <dc:creator>Wicki, Bernhard</dc:creator>
+    <dc:subject xml:lang="de">Dokumentarfilm</dc:subject>
+    <dc:subject xml:lang="de">Nachkriegszeit</dc:subject>
+    <dc:description xml:lang="de">Sieben Jungen verteidigen eine Brücke.</dc:description>
+    <dc:publisher>Fono Film</dc:publisher>
+    <dc:contributor>Meyer, Hans</dc:contributor>
+    <dc:date>1959</dc:date>
+    <dc:type>MovingImage</dc:type>
+    <dc:format>35mm</dc:format>
+    <dc:identifier>OAI-0001</dc:identifier>
+    <dc:identifier>https://example.org/oai/film/0001</dc:identifier>
+    <dc:source>https://example.org/collection/0001</dc:source>
+    <dc:language>ger</dc:language>
+    <dc:relation>https://example.org/related/0001</dc:relation>
+    <dc:coverage xml:lang="de">Deutschland</dc:coverage>
+    <dc:rights>In Copyright</dc:rights>
+  </oai_dc:dc>
+  <oai_dc:dc>
+    <dc:title xml:lang="de">Werbefilm Persil</dc:title>
+    <dc:type>MovingImage</dc:type>
+    <dc:type xml:lang="de">Werbefilm</dc:type>
+    <dc:date>1962-65</dc:date>
+    <dc:date>1966</dc:date>
+    <dc:format>video/mp4</dc:format>
+    <dc:identifier>OAI-0002</dc:identifier>
+    <dc:language>de</dc:language>
+    <dc:relation>Teil der Sammlung Werbefilm</dc:relation>
+  </oai_dc:dc>
+  <oai_dc:dc>
+    <dc:title xml:lang="de">Plakat zu Die Brücke</dc:title>
+    <dc:type>Image</dc:type>
+    <dc:identifier>OAI-0003</dc:identifier>
+  </oai_dc:dc>
+  <oai_dc:dc>
+    <dc:title xml:lang="de">Unbestimmtes Objekt</dc:title>
+    <dc:identifier>OAI-0004</dc:identifier>
+  </oai_dc:dc>
+</records>

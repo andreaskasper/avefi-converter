@@ -1,0 +1,232 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "https://example.org/oai/film/0001"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "The Bridge",
+        "has_ordering_name": "Bridge, The",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_date": "1959"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "https://example.org/oai/film/0001_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "PreferredTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Dokumentarfilm"
+      },
+      {
+        "has_name": "Nachkriegszeit"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "https://example.org/oai/film/0001"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_activity": [
+          {
+            "category": "avefi:ManifestationActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Fono Film",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "Publisher"
+          }
+        ],
+        "type": "UnknownEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "https://example.org/oai/film/0001_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "https://example.org/oai/film/0001_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "https://example.org/oai/film/0001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "https://example.org/oai/film/0001"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "OAI-0001"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_webresource": [
+      "https://example.org/related/0001",
+      "https://example.org/collection/0001"
+    ],
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "35mmFilm"
+      }
+    ],
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "https://example.org/oai/film/0001_manifestation"
+    }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "OAI-0002"
+        ]
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_date": "1962/1965"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "OAI-0002_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Werbefilm Persil",
+      "type": "PreferredTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Werbefilm"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "OAI-0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "OAI-0002_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Werbefilm Persil",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "OAI-0002_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "OAI-0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "OAI-0002"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Werbefilm Persil",
+      "type": "TitleProper"
+    },
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "OAI-0002_manifestation"
+    }
+  }
+]
