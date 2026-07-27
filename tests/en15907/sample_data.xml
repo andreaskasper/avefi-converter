@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand written EFG 3.2 export covering the cases the mapping has to
+  get right: a work split over two entities, a manifestation with
+  several items, a manifestation without item elements, an entity
+  without an identifier, referenced production and publication events
+  that appear after the creation referring to them, an entity that is
+  not a moving image holding, and several values that cannot be
+  converted and have to be reported.
+-->
+<efgEntities>
+  <efgEntity xmlns="http://www.europeanfilmgateway.eu/efg">
+    <avcreation>
+      <identifier scheme="local">FILM-001</identifier>
+      <title lang="de">
+        <text>Brücke, Die</text>
+        <relation>Original title</relation>
+      </title>
+      <title lang="en">
+        <text>The Bridge</text>
+        <relation>Translated title</relation>
+      </title>
+      <title lang="de">
+        <text>Die sieben Jungen</text>
+        <relation>Working title</relation>
+      </title>
+      <title lang="de">
+        <text>Brücke bei Cham, Die</text>
+        <relation>Verleihtitel</relation>
+      </title>
+      <language usage="Original version">de</language>
+      <countryOfReference reference="ISO 3166-1">DE</countryOfReference>
+      <productionYear>1959</productionYear>
+      <keywords lang="en" type="genre">
+        <term>Fiction</term>
+        <term>War film</term>
+      </keywords>
+      <keywords lang="en" type="subject">
+        <term id="gnd/4079143-9">Second World War</term>
+      </keywords>
+      <description lang="de">Sieben Jungen verteidigen eine Brücke.</description>
+      <relPerson>
+        <identifier scheme="local">PER-11</identifier>
+        <name>Wicki, Bernhard</name>
+        <type>Director</type>
+      </relPerson>
+      <relPerson>
+        <identifier scheme="local">PER-12</identifier>
+        <name>Weiss, Gerd von</name>
+        <type>Cinematographer</type>
+      </relPerson>
+      <relCorporate>
+        <identifier scheme="local">COR-3</identifier>
+        <name>Fono Film GmbH</name>
+        <type>Production company</type>
+      </relCorporate>
+      <relProductionEvent>
+        <identifier scheme="local">PROD-1</identifier>
+        <name>Dreharbeiten Cham</name>
+        <type>Outdoor shooting</type>
+      </relProductionEvent>
+      <avManifestation>
+        <identifier scheme="local">MAN-001</identifier>
+        <title lang="de">
+          <text>Die Brücke</text>
+          <relation>Original title</relation>
+        </title>
+        <language usage="Original version">de</language>
+        <language usage="Subtitles">en</language>
+        <dimension unit="m">2830</dimension>
+        <duration frameRate="24">01:43:00</duration>
+        <format>
+          <carrier>Film</carrier>
+          <gauge>35mm</gauge>
+          <aspectRatio>1:1.37</aspectRatio>
+          <colour hasColor="false">Black and White</colour>
+          <sound hasSound="true">Sound</sound>
+        </format>
+        <thumbnail>https://example.org/thumbnails/man-001.jpg</thumbnail>
+        <provenance>Erworben 1985</provenance>
+        <note>Restaurierte Fassung</note>
+        <item highQuality="true">
+          <identifier scheme="local">ITEM-001</identifier>
+          <isShownAt>https://example.org/objects/item-001</isShownAt>
+          <isShownBy>https://example.org/stream/item-001.mp4</isShownBy>
+          <fileFormat>video/mp4</fileFormat>
+          <provider>Beispielarchiv</provider>
+          <country>DE</country>
+          <type>video</type>
+          <note>Digitalisat der 35mm-Kopie</note>
+        </item>
+        <relPublicationEvent>
+          <identifier scheme="local">PUB-1</identifier>
+          <name>Uraufführung Mannheim</name>
+          <type>Premiere</type>
+        </relPublicationEvent>
+      </avManifestation>
+      <avManifestation>
+        <identifier scheme="local">MAN-002</identifier>
+        <duration>97 min</duration>
+        <format>
+          <gauge>16mm</gauge>
+          <colour hasColor="false">Black and White</colour>
+          <sound hasSound="false"/>
+        </format>
+      </avManifestation>
+    </avcreation>
+  </efgEntity>
+  <efgEntity xmlns="http://www.europeanfilmgateway.eu/efg">
+    <avcreation>
+      <identifier scheme="local">FILM-001</identifier>
+      <title lang="de">
+        <text>Die Brücke</text>
+        <relation>Original title</relation>
+      </title>
+      <title lang="fr">
+        <text>Le pont</text>
+        <relation>Translated title</relation>
+      </title>
+      <productionYear>1959</productionYear>
+      <avManifestation>
+        <identifier scheme="local">MAN-003</identifier>
+        <duration>103 min</duration>
+        <format>
+          <carrier>DVD</carrier>
+          <colour>Black and White</colour>
+          <sound hasSound="true">Sound</sound>
+          <digital>
+            <container>MP4</container>
+            <coding>MPEG-4</coding>
+          </digital>
+        </format>
+        <item>
+          <identifier scheme="local">ITEM-003</identifier>
+          <uri>https://example.org/objects/item-003</uri>
+          <type>video</type>
+        </item>
+      </avManifestation>
+    </avcreation>
+  </efgEntity>
+  <efgEntity xmlns="http://www.europeanfilmgateway.eu/efg">
+    <avcreation>
+      <title lang="de">
+        <text>Sanitätshunde</text>
+      </title>
+      <productionYear>1916</productionYear>
+      <keywords lang="de" type="Sachgruppe">
+        <term>Kurz-Dokumentarfilm</term>
+      </keywords>
+      <avManifestation>
+        <language>xx</language>
+        <format>
+          <carrier>Nitratfilm</carrier>
+          <colour hasColor="false"/>
+          <sound hasSound="false">stumm</sound>
+        </format>
+        <item>
+          <isShownAt>https://example.org/objects/sanitaetshunde</isShownAt>
+          <type>video</type>
+        </item>
+        <item>
+          <identifier scheme="local">ITEM-900</identifier>
+          <isShownBy>https://example.org/stills/sanitaetshunde.jpg</isShownBy>
+          <type>image</type>
+        </item>
+      </avManifestation>
+    </avcreation>
+  </efgEntity>
+  <efgEntity xmlns="http://www.europeanfilmgateway.eu/efg">
+    <productionEvent>
+      <identifier scheme="local">PROD-1</identifier>
+      <type>Outdoor shooting</type>
+      <location>Cham</location>
+      <date>1959-04</date>
+      <relPerson>
+        <identifier scheme="local">PER-11</identifier>
+        <name>Wicki, Bernhard</name>
+        <type>Director</type>
+      </relPerson>
+    </productionEvent>
+  </efgEntity>
+  <efgEntity xmlns="http://www.europeanfilmgateway.eu/efg">
+    <publicationEvent>
+      <identifier scheme="local">PUB-1</identifier>
+      <type>Premiere</type>
+      <date>1959-10-22</date>
+      <place>Mannheim</place>
+      <publisher>Fono Film GmbH</publisher>
+    </publicationEvent>
+  </efgEntity>
+  <efgEntity xmlns="http://www.europeanfilmgateway.eu/efg">
+    <person>
+      <identifier scheme="local">PER-11</identifier>
+      <name type="Preferred">Wicki, Bernhard</name>
+    </person>
+  </efgEntity>
+</efgEntities>

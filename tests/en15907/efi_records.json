@@ -1,0 +1,493 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "FILM-001"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "The Bridge",
+        "has_ordering_name": "Bridge, The",
+        "type": "TranslatedTitle"
+      },
+      {
+        "has_name": "Die sieben Jungen",
+        "has_ordering_name": "sieben Jungen, Die",
+        "type": "WorkingTitle"
+      },
+      {
+        "has_name": "Die Brücke bei Cham",
+        "has_ordering_name": "Brücke bei Cham, Die",
+        "type": "AlternativeTitle"
+      },
+      {
+        "has_name": "Le pont",
+        "has_ordering_name": "pont, Le",
+        "type": "TranslatedTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Wicki, Bernhard",
+                "type": "Person"
+              }
+            ],
+            "type": "Director"
+          }
+        ],
+        "has_date": "1959",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "DE"
+          }
+        ]
+      },
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Wicki, Bernhard",
+                "type": "Person"
+              }
+            ],
+            "type": "Director"
+          }
+        ],
+        "has_date": "1959-04",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Cham"
+          }
+        ],
+        "type": "OutdoorShootingEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FILM-001_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "PreferredTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Fiction"
+      },
+      {
+        "has_name": "War film"
+      }
+    ],
+    "has_subject": [
+      {
+        "category": "avefi:Subject",
+        "has_name": "Second World War"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "MAN-001"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_activity": [
+          {
+            "category": "avefi:ManifestationActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Fono Film GmbH",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "Publisher"
+          }
+        ],
+        "has_date": "1959-10-22",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Mannheim"
+          }
+        ],
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "MAN-001_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Restaurierte Fassung",
+      "Erworben 1985"
+    ],
+    "has_webresource": [
+      "https://example.org/thumbnails/man-001.jpg"
+    ],
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FILM-001_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "ITEM-001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "ITEM-001"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Digitalisat der 35mm-Kopie"
+    ],
+    "has_webresource": [
+      "https://example.org/objects/item-001",
+      "https://example.org/stream/item-001.mp4"
+    ],
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H43M00S"
+    },
+    "has_extent": {
+      "has_unit": "Metre",
+      "has_value": "2830"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "35mmFilm"
+      },
+      {
+        "category": "avefi:DigitalFile",
+        "type": "MP4"
+      }
+    ],
+    "has_frame_rate": "24fps",
+    "has_sound_type": "Sound",
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      },
+      {
+        "code": "eng",
+        "usage": [
+          "Subtitles"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "MAN-001_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "MAN-002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "MAN-002_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FILM-001_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "MAN-002#item"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "MAN-002#item"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H37M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "16mmFilm"
+      }
+    ],
+    "has_sound_type": "Silent",
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "MAN-002_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "MAN-003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "MAN-003_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FILM-001_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "ITEM-003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "ITEM-003"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_webresource": [
+      "https://example.org/objects/item-003"
+    ],
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H43M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Optical",
+        "type": "DVD"
+      },
+      {
+        "category": "avefi:DigitalFile",
+        "type": "MP4"
+      },
+      {
+        "category": "avefi:DigitalFileEncoding",
+        "type": "MPEG4"
+      }
+    ],
+    "has_sound_type": "Sound",
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "MAN-003_manifestation"
+    }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "Sanitätshunde_1916"
+        ]
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_date": "1916"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Sanitätshunde_1916_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Sanitätshunde",
+      "type": "PreferredTitle"
+    },
+    "has_subject": [
+      {
+        "category": "avefi:Subject",
+        "has_name": "Kurz-Dokumentarfilm"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "Sanitätshunde_1916#manifestation1"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Sanitätshunde_1916_1_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Sanitätshunde",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Sanitätshunde_1916_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "Sanitätshunde_1916#manifestation1#item1"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Sanitätshunde_1916#manifestation1#item1"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Sanitätshunde",
+      "type": "TitleProper"
+    },
+    "has_webresource": [
+      "https://example.org/objects/sanitaetshunde"
+    ],
+    "has_colour_type": "BlackAndWhite",
+    "has_sound_type": "Silent",
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Sanitätshunde_1916_1_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "ITEM-900"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "ITEM-900"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Sanitätshunde",
+      "type": "TitleProper"
+    },
+    "has_webresource": [
+      "https://example.org/stills/sanitaetshunde.jpg"
+    ],
+    "has_colour_type": "BlackAndWhite",
+    "has_sound_type": "Silent",
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Sanitätshunde_1916_1_manifestation"
+    }
+  }
+]
