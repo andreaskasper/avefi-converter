@@ -14,6 +14,8 @@ from .generated.ntm_4_avefi import ntm_4_av_efi_schema as ntm_main
 ROOT_CLASS = ntm_main.Resource
 log = logging.getLogger(__name__)
 parser = XmlParser()
+DESCRIPTION = "TIB AV-Portal, records in the in-house NTM schema"
+INPUT_FORMAT = "XML (NTM metadata schema 2.5)"
 ISSUER_INFO = {
     "has_issuer_id": "https://w3id.org/isil/DE-89",
     "has_issuer_name": "Technische Informationsbibliothek (TIB)",

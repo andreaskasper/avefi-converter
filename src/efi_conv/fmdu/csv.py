@@ -30,6 +30,8 @@ FIELD_NAMES = (
     "access_status",
     "format",
 )
+DESCRIPTION = "Filmmuseum der Landeshauptstadt Düsseldorf, holdings export"
+INPUT_FORMAT = "CSV (semicolon separated, ISO 8859-1)"
 ISSUER_INFO = {
     "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
     "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
