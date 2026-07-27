@@ -7,7 +7,9 @@ from avefi_schema import model_pydantic_v2 as efi
 import click
 
 from . import avefi
+from .check import schema_fingerprint
 from .cli import IMPORTERS, cli_main
+from .report import ConversionReport, collecting, for_file
 from .utils import described_by_issuer
 
 log = logging.getLogger(__name__)
@@ -67,26 +69,50 @@ def print_formats(ctx, param, value):
     help="Output file (stdout if not specified).",
 )
 @click.option(
+    "--report",
+    "report_file",
+    type=click.Path(dir_okay=False, writable=True),
+    help="Write a structured JSON report of unconvertible values.",
+)
+@click.option(
     "--continue-on-error",
     is_flag=True,
     default=False,
     help="Skip input files that fail to convert instead of aborting.",
 )
 @click.argument("input_files", nargs=-1, type=click.Path(exists=True))
-def efi_from(input_files, output=None, continue_on_error=False, **kwargs):
+def efi_from(
+    input_files,
+    output=None,
+    report_file=None,
+    continue_on_error=False,
+    **kwargs,
+):
     """Convert files from some schema into a JSON file with AVefi records."""
     mod = import_module_for(kwargs["format"])
     generated_records = []
     failed_files = []
-    for input_file in input_files:
-        try:
-            generated_records.extend(import_file(mod, input_file))
-        except Exception as e:
-            if not continue_on_error:
-                raise RuntimeError(f"Failed to convert {input_file}") from e
-            failed_files.append(input_file)
-            log.error(f"Failed to convert {input_file}: {e}")
+    report = ConversionReport(avefi_schema_version=schema_fingerprint())
+    with collecting(report):
+        for input_file in input_files:
+            try:
+                with for_file(input_file):
+                    generated_records.extend(import_file(mod, input_file))
+            except Exception as e:
+                report.add(
+                    "error",
+                    f"Failed to convert file: {e}",
+                    source_file=str(input_file),
+                )
+                if not continue_on_error:
+                    if report_file:
+                        report.write(report_file)
+                    raise RuntimeError(
+                        f"Failed to convert {input_file}"
+                    ) from e
+                failed_files.append(input_file)
     if generated_records:
+        generated_records = avefi.sort_records(generated_records)
         if output and output != "-":
             avefi.dump(generated_records, output)
         else:
@@ -96,12 +122,15 @@ def efi_from(input_files, output=None, continue_on_error=False, **kwargs):
             f"No records generated from {len(input_files)} input file(s),"
             f" nothing written"
         )
-    log_summary(input_files, generated_records, failed_files)
+    log_summary(input_files, generated_records, failed_files, report)
+    if report_file:
+        report.write(report_file)
+        log.info(f"Wrote conversion report to {report_file}")
     if failed_files:
         raise SystemExit(1)
 
 
-def log_summary(input_files, generated_records, failed_files):
+def log_summary(input_files, generated_records, failed_files, report=None):
     """Report what the run produced, per record category."""
     counts = Counter(record.category for record in generated_records)
     breakdown = ", ".join(

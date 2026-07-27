@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lido:lidoWrap xmlns:lido="http://www.lido-schema.org"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">FMDU-0001</lido:lidoRecID>
+    <lido:category>
+      <lido:conceptID lido:type="URI">http://www.cidoc-crm.org/cidoc-crm/E22</lido:conceptID>
+      <lido:term xml:lang="en">Man-Made Object</lido:term>
+    </lido:category>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Film</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification lido:type="genre">
+            <lido:term xml:lang="de">Dokumentarfilm</lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="preferred">
+            <lido:appellationValue xml:lang="de" lido:pref="preferred">Brücke, Die</lido:appellationValue>
+          </lido:titleSet>
+          <lido:titleSet lido:type="alternate">
+            <lido:appellationValue xml:lang="en">The Bridge</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+        <lido:objectMeasurementsWrap>
+          <lido:objectMeasurementsSet>
+            <lido:objectMeasurements>
+              <lido:measurementsSet>
+                <lido:measurementType xml:lang="de">Laufzeit</lido:measurementType>
+                <lido:measurementUnit xml:lang="de">min</lido:measurementUnit>
+                <lido:measurementValue>103</lido:measurementValue>
+              </lido:measurementsSet>
+            </lido:objectMeasurements>
+          </lido:objectMeasurementsSet>
+        </lido:objectMeasurementsWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Produktion</lido:term>
+            </lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Wicki, Bernhard</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Regie</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate>
+              <lido:date>
+                <lido:earliestDate>1959</lido:earliestDate>
+                <lido:latestDate>1959</lido:latestDate>
+              </lido:date>
+              <lido:displayDate>1959</lido:displayDate>
+            </lido:eventDate>
+            <lido:eventPlace>
+              <lido:place>
+                <lido:namePlaceSet>
+                  <lido:appellationValue>Deutschland</lido:appellationValue>
+                </lido:namePlaceSet>
+              </lido:place>
+            </lido:eventPlace>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">FMDU-0001</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+        <lido:recordSource>
+          <lido:legalBodyID lido:type="URI">https://w3id.org/isil/DE-MUS-432511</lido:legalBodyID>
+          <lido:legalBodyName>
+            <lido:appellationValue>Filmmuseum der Landeshauptstadt Düsseldorf</lido:appellationValue>
+          </lido:legalBodyName>
+        </lido:recordSource>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">FMDU-0002</lido:lidoRecID>
+    <lido:category>
+      <lido:term xml:lang="en">Man-Made Object</lido:term>
+    </lido:category>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Film</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification lido:type="genre">
+            <lido:term xml:lang="de">Spielfilm</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="colour">
+            <lido:term xml:lang="de">Schwarz-Weiß</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="format">
+            <lido:term xml:lang="de">35mm</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="access">
+            <lido:term xml:lang="de">Archivkopie</lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="preferred">
+            <lido:appellationValue xml:lang="de">[Ohne Titel, Werbefilm]</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+        <lido:objectMeasurementsWrap>
+          <lido:objectMeasurementsSet>
+            <lido:objectMeasurements>
+              <lido:measurementsSet>
+                <lido:measurementType xml:lang="de">Laufzeit</lido:measurementType>
+                <lido:measurementUnit xml:lang="de">min</lido:measurementUnit>
+                <lido:measurementValue>12</lido:measurementValue>
+              </lido:measurementsSet>
+            </lido:objectMeasurements>
+          </lido:objectMeasurementsSet>
+        </lido:objectMeasurementsWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Produktion</lido:term>
+            </lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>unbekannt</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Regie</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Meyer, Hans</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Kamera</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate>
+              <lido:displayDate>1962-65</lido:displayDate>
+            </lido:eventDate>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">FMDU-0002</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+</lido:lidoWrap>

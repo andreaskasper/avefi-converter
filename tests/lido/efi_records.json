@@ -1,0 +1,213 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+        "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+        "has_source_key": [
+          "FMDU-0001"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "The Bridge",
+        "has_ordering_name": "Bridge, The",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Wicki, Bernhard",
+                "type": "Person"
+              }
+            ],
+            "type": "Director"
+          }
+        ],
+        "has_date": "1959",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Deutschland"
+          }
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0001_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "PreferredTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Dokumentarfilm"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+      "has_source_key": [
+        "FMDU-0001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0001_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0001_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+      "has_source_key": [
+        "FMDU-0001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0001"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_duration": {
+      "has_value": "PT01H43M00S"
+    },
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "FMDU-0001_manifestation"
+    }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+        "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+        "has_source_key": [
+          "FMDU-0002"
+        ]
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_date": "1962/1965"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0002_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Ohne Titel, Werbefilm",
+      "type": "SuppliedDevisedTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Spielfilm"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+      "has_source_key": [
+        "FMDU-0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0002_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Ohne Titel, Werbefilm",
+      "type": "SuppliedDevisedTitle"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0002_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+      "has_source_key": [
+        "FMDU-0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0002"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Ohne Titel, Werbefilm",
+      "type": "SuppliedDevisedTitle"
+    },
+    "has_access_status": "Archive",
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT00H12M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "35mmFilm"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "FMDU-0002_manifestation"
+    }
+  }
+]

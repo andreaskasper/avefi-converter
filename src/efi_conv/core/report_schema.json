@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.av-efi.net/efi-conv/conversion-report.schema.json",
+  "title": "efi-conv conversion report",
+  "description": "Structured record of values that could not be converted as intended. Written by `efi-conv from --report FILE`.",
+  "type": "object",
+  "required": ["report_format_version", "summary", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "report_format_version": {
+      "type": "string",
+      "description": "Version of this report format, incremented when the structure changes incompatibly.",
+      "examples": ["1.0"]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Time the report was written, in UTC."
+    },
+    "efi_conv_version": {
+      "type": "string",
+      "description": "Version of the converter that produced the report."
+    },
+    "avefi_schema_version": {
+      "description": "Identification of the AVefi schema the conversion was checked against. Null when no schema was cached.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "source": {
+              "type": "string",
+              "description": "URL the schema was fetched from."
+            },
+            "id": {
+              "type": ["string", "null"],
+              "description": "$id declared by the schema."
+            },
+            "version": {
+              "type": ["string", "null"],
+              "description": "Version declared by the schema, if any."
+            },
+            "metamodel_version": {
+              "type": ["string", "null"],
+              "description": "LinkML metamodel version the schema was generated with."
+            },
+            "sha256": {
+              "type": "string",
+              "description": "Hash of the schema document. The schema is fetched from a branch rather than a release, so this is the only reliable identification."
+            },
+            "cached_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Time the cached schema was last written."
+            }
+          }
+        }
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "description": "Number of entries per severity.",
+      "additionalProperties": false,
+      "required": ["info", "warning", "error"],
+      "properties": {
+        "info": { "type": "integer", "minimum": 0 },
+        "warning": { "type": "integer", "minimum": 0 },
+        "error": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "description": "One entry per value that could not be converted as intended.",
+      "items": {
+        "type": "object",
+        "required": ["severity", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "severity": {
+            "enum": ["info", "warning", "error"],
+            "description": "info: a documented decision was taken. warning: information was not transferred. error: the value could not be converted at all."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human readable explanation."
+          },
+          "source_file": {
+            "type": ["string", "null"],
+            "description": "Input file the value came from."
+          },
+          "record_id": {
+            "type": ["string", "null"],
+            "description": "Identifier of the affected record in the source data."
+          },
+          "source_field": {
+            "type": ["string", "null"],
+            "description": "Field or path in the source schema."
+          },
+          "target_field": {
+            "type": ["string", "null"],
+            "description": "Field in the AVefi schema that could not be filled."
+          },
+          "raw_value": {
+            "description": "The value as found in the source data."
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,3372 @@
+{
+  "$defs": {
+    "AATResource": {
+      "additionalProperties": false,
+      "description": "Getty Thesaurus of Geographic Names ID. Check id slot range documentation for examples",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:AATResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^300\\d{6}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "AATResource",
+      "type": "object"
+    },
+    "AVefiResource": {
+      "additionalProperties": false,
+      "description": "Handle with the prefix allocated for AVefi (eventually). Check id slot range documentation for examples",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:AVefiResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^21(\\.([0-9A-Za-z])+)*/[!-~]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "AVefiResource",
+      "type": "object"
+    },
+    "Agent": {
+      "additionalProperties": false,
+      "description": "Agent involved in some activity related to the moving image resource. For agents of type \"Person\" specify name according to the convention \"family name, given name\"",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:Agent"
+          ],
+          "type": "string"
+        },
+        "has_alternate_name": {
+          "description": "Alternative human-readable name(s) for a thing. Whereas has_name provides the preferred display name for the described entity, alternatives can be recorded here in order to be indexed in search engines, for instance",
+          "items": {
+            "pattern": "^.+$",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_name": {
+          "description": "For natural persons, always use the convention \"family name, given name\"",
+          "pattern": "^.+$",
+          "type": "string"
+        },
+        "same_as": {
+          "description": "See [AuthorityResource doucmentation](AuthorityResource.md) for accepted identifiers",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FilmportalResource"
+              },
+              {
+                "$ref": "#/$defs/GNDResource"
+              },
+              {
+                "$ref": "#/$defs/VIAFResource"
+              },
+              {
+                "$ref": "#/$defs/WikidataResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/$defs/AgentTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_name",
+        "category"
+      ],
+      "title": "Agent",
+      "type": "object"
+    },
+    "AgentTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual 1.4.1",
+      "enum": [
+        "CorporateBody",
+        "Family",
+        "Person",
+        "PersonGroup"
+      ],
+      "title": "AgentTypeEnum",
+      "type": "string"
+    },
+    "AnimationActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.13",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:AnimationActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/AnimationActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "AnimationActivity",
+      "type": "object"
+    },
+    "AnimationActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.13",
+      "enum": [
+        "Animation",
+        "AnimationDirector",
+        "AnimationLighter",
+        "Animator",
+        "CharacterDesigner",
+        "Cleanup",
+        "ComputerAnimation",
+        "LeadAnimator",
+        "ModelMaker"
+      ],
+      "title": "AnimationActivityTypeEnum",
+      "type": "string"
+    },
+    "Audio": {
+      "additionalProperties": false,
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:Audio"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FormatAudioTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "title": "Audio",
+      "type": "object"
+    },
+    "CastActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.7",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:CastActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/CastActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "CastActivity",
+      "type": "object"
+    },
+    "CastActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.7",
+      "enum": [
+        "AnimalTrainer",
+        "CastMember",
+        "Dancer",
+        "DialogueCoach",
+        "Double",
+        "Extra",
+        "Interviewer",
+        "Narrator",
+        "Singer",
+        "StandIn",
+        "StuntPerformer",
+        "Voices",
+        "Wrangler"
+      ],
+      "title": "CastActivityTypeEnum",
+      "type": "string"
+    },
+    "CensorshipActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms C.1",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:CensorshipActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/CensorshipActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "CensorshipActivity",
+      "type": "object"
+    },
+    "CensorshipActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms C.1",
+      "enum": [
+        "Censor"
+      ],
+      "title": "CensorshipActivityTypeEnum",
+      "type": "string"
+    },
+    "CinematographyActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.5",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:CinematographyActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/CinematographyActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "CinematographyActivity",
+      "type": "object"
+    },
+    "CinematographyActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.5",
+      "enum": [
+        "AerialPhotography",
+        "BestBoy",
+        "CameraAssistant",
+        "CameraOperator",
+        "Cinematographer",
+        "ColorConsultant",
+        "CraneOperator",
+        "DollyGrip",
+        "Electrician",
+        "FocusPuller",
+        "GafferLighting",
+        "GeneratorOperator",
+        "Grip",
+        "Lenses",
+        "LoaderClapper",
+        "SecondUnitDirectorofPhotography",
+        "SteadicamOperator",
+        "StillPhotographer",
+        "UnderwaterPhotography",
+        "VideoAssist"
+      ],
+      "title": "CinematographyActivityTypeEnum",
+      "type": "string"
+    },
+    "ColourTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual 2.3.4.4, 3.1.5.6, D.7.11",
+      "enum": [
+        "BlackAndWhite",
+        "BlackAndWhiteTinted",
+        "BlackAndWhiteTintedAndToned",
+        "BlackAndWhiteToned",
+        "Colour",
+        "ColourBlackAndWhite",
+        "Sepia",
+        "Tinted"
+      ],
+      "title": "ColourTypeEnum",
+      "type": "string"
+    },
+    "CopyrightAndDistributionActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms C.2",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:CopyrightAndDistributionActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/CopyrightAndDistributionActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "CopyrightAndDistributionActivity",
+      "type": "object"
+    },
+    "CopyrightAndDistributionActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms C.2",
+      "enum": [
+        "Distributor",
+        "NationalDistributor",
+        "OriginalCopyrightOwner",
+        "OriginalDistributor",
+        "PresentCopyrightOwner",
+        "RegionalDistributor",
+        "WorldDistributor"
+      ],
+      "title": "CopyrightAndDistributionActivityTypeEnum",
+      "type": "string"
+    },
+    "DOIResource": {
+      "additionalProperties": false,
+      "description": "Digital Object Identifier maintained by the DOI Foundation and commonly used for scientific publications including films. Check id slot range documentation for examples",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:DOIResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^10\\.[0-9]{4,9}(\\.[0-9]+)*(/|%2F)((?![\\\"&\\'])\\S)+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "DOIResource",
+      "type": "object"
+    },
+    "DescriptionResource": {
+      "additionalProperties": false,
+      "description": "Metadata about the PID rather than the identified object, i.e. who modified the PID metadata record when, making what changes",
+      "properties": {
+        "has_history": {
+          "description": "Link to revision history of this PID",
+          "pattern": "^https?://[^/?#]+(/[^?#]*(\\?([^#]*))?(#(.*))?)?$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "has_issuer_id": {
+          "description": "Identifier for the responsible party as an URI suitable for linked data",
+          "pattern": "^https?://[^/?#]+(/[^?#]*(\\?([^#]*))?(#(.*))?)?$",
+          "type": "string"
+        },
+        "has_issuer_name": {
+          "description": "Name of the responsible party",
+          "pattern": "^.+$",
+          "type": "string"
+        },
+        "has_source_key": {
+          "description": "Indicate a dataset this record has been generated or derived from. For example, a converter generating AVefi moving image records from data in some other schema may record the original identifier here.",
+          "items": {
+            "pattern": "^((?![\\\"&\\'])\\S)+$",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "last_modified": {
+          "description": "Timestamp (in UTC) for the latest modification to any field in the PID metadata record",
+          "format": "date-time",
+          "pattern": "^2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([0-1][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|\\+00:00)$",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "has_issuer_id",
+        "has_issuer_name"
+      ],
+      "title": "DescriptionResource",
+      "type": "object"
+    },
+    "DigitalFile": {
+      "additionalProperties": false,
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:DigitalFile"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FormatDigitalFileTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "title": "DigitalFile",
+      "type": "object"
+    },
+    "DigitalFileEncoding": {
+      "additionalProperties": false,
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:DigitalFileEncoding"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FormatDigitalFileEncodingTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "title": "DigitalFileEncoding",
+      "type": "object"
+    },
+    "DirectingActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.3",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:DirectingActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/DirectingActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "DirectingActivity",
+      "type": "object"
+    },
+    "DirectingActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.3",
+      "enum": [
+        "AssistantDirector",
+        "CastingDirector",
+        "Continuity",
+        "Creator",
+        "Director",
+        "FightArranger",
+        "Filmmaker",
+        "SecondUnitDirector",
+        "StuntArranger"
+      ],
+      "title": "DirectingActivityTypeEnum",
+      "type": "string"
+    },
+    "Duration": {
+      "additionalProperties": false,
+      "description": "Total running time of the described object in ISO 8601 duration format. Check has_value slot range documentation for examples of permissible values. See also: FIAF Moving Image Cataloguing Manual 2.3.5.3, 3.1.5.11",
+      "properties": {
+        "has_precision": {
+          "$ref": "#/$defs/PrecisionEnum",
+          "description": "Qualifier indicating the precision of an extent value or duration"
+        },
+        "has_value": {
+          "description": "Value of some quantity",
+          "pattern": "^PT[1-9]*[0-9][0-9]H[0-5][0-9]M[0-5][0-9]S$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "has_value"
+      ],
+      "title": "Duration",
+      "type": "object"
+    },
+    "EIDRResource": {
+      "additionalProperties": false,
+      "description": "Entertainment Identifier Registry ID. Check id slot range documentation for examples",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:EIDRResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^10\\.5240(/|%2F)((?![\\\"&\\'])\\S)+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "EIDRResource",
+      "type": "object"
+    },
+    "EditingActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.10",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:EditingActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/EditingActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "EditingActivity",
+      "type": "object"
+    },
+    "EditingActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.10",
+      "enum": [
+        "AssistantFilmEditor",
+        "FilmEditor"
+      ],
+      "title": "EditingActivityTypeEnum",
+      "type": "string"
+    },
+    "Extent": {
+      "additionalProperties": false,
+      "description": "Physical length or size of the described object. See also: FIAF Moving Image Cataloguing Manual 2.3.5.2, 3.1.5.8",
+      "properties": {
+        "has_precision": {
+          "$ref": "#/$defs/PrecisionEnum",
+          "description": "Qualifier indicating the precision of an extent value or duration"
+        },
+        "has_unit": {
+          "$ref": "#/$defs/UnitEnum",
+          "description": "Unit of some quantity"
+        },
+        "has_value": {
+          "description": "Value of some quantity",
+          "type": "number"
+        }
+      },
+      "required": [
+        "has_unit",
+        "has_value"
+      ],
+      "title": "Extent",
+      "type": "object"
+    },
+    "Film": {
+      "additionalProperties": false,
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:Film"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FormatFilmTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "title": "Film",
+      "type": "object"
+    },
+    "FilmportalResource": {
+      "additionalProperties": false,
+      "description": "Identifier of the German Filmportal.de. Check id slot range documentation for examples",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:FilmportalResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^[\\da-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "FilmportalResource",
+      "type": "object"
+    },
+    "FormatAudioTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "enum": [
+        "16mmMagneticTrack",
+        "17.5mmMagneticTrack",
+        "35mmMagneticTrack",
+        "Audiocassette",
+        "HalfInchAudioReel",
+        "OneInchAudioReel",
+        "QuarterInchAudioReel",
+        "TwoInchAudioReel"
+      ],
+      "title": "FormatAudioTypeEnum",
+      "type": "string"
+    },
+    "FormatDigitalFileEncodingTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "enum": [
+        "MPEG4",
+        "Quicktime",
+        "RealVideo",
+        "SVCD",
+        "VCD",
+        "WindowsMedia"
+      ],
+      "title": "FormatDigitalFileEncodingTypeEnum",
+      "type": "string"
+    },
+    "FormatDigitalFileTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "enum": [
+        "AVI",
+        "DPX",
+        "DV",
+        "MOV",
+        "MP4",
+        "MXF",
+        "VOB",
+        "WebM"
+      ],
+      "title": "FormatDigitalFileTypeEnum",
+      "type": "string"
+    },
+    "FormatFilmTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "enum": [
+        "16mmFilm",
+        "17.5mmFilm",
+        "35mmFilm",
+        "70mmFilm",
+        "8mmFilm",
+        "9.5mmFilm",
+        "Super16mmFilm",
+        "Super8mmFilm"
+      ],
+      "title": "FormatFilmTypeEnum",
+      "type": "string"
+    },
+    "FormatOpticalTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "enum": [
+        "BluRay",
+        "CD",
+        "DVD",
+        "LaserDisc"
+      ],
+      "title": "FormatOpticalTypeEnum",
+      "type": "string"
+    },
+    "FormatVideoTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "enum": [
+        "1InchCFormat",
+        "2InchQuadruplex",
+        "BetacamSP",
+        "D1",
+        "D5",
+        "Digital8",
+        "DigitalBetacam",
+        "DV",
+        "DVCAM",
+        "DVCPro",
+        "DVCPro50",
+        "DVCPROHD",
+        "HDCAM",
+        "HDCAMSR",
+        "HDV",
+        "MiniDV",
+        "SVHS",
+        "UMatic",
+        "IMX",
+        "VHS"
+      ],
+      "title": "FormatVideoTypeEnum",
+      "type": "string"
+    },
+    "FrameRateEnum": {
+      "description": "Frames per second of an item.",
+      "enum": [
+        "16fps",
+        "23.98fps",
+        "24fps",
+        "25fps",
+        "30fps",
+        "48fps",
+        "VariableFrameRate"
+      ],
+      "title": "FrameRateEnum",
+      "type": "string"
+    },
+    "GNDResource": {
+      "additionalProperties": false,
+      "description": "Gemeinsame Normdatei (GND) identifier maintained by Deutsche Nationalbibliothek (German National Library)",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:GNDResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^[-\\dX]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "GNDResource",
+      "type": "object"
+    },
+    "Genre": {
+      "additionalProperties": false,
+      "description": "Genre describes categories of Works, characterized by similar plots, themes, settings, situations, and characters. Examples of genres are “westerns” and “thrillers”. See also: FIAF Moving Image Cataloguing Manual 1.4.3 and FIAF Glossary of Filmographic Terms D.2.1",
+      "properties": {
+        "has_alternate_name": {
+          "description": "Alternative human-readable name(s) for a thing. Whereas has_name provides the preferred display name for the described entity, alternatives can be recorded here in order to be indexed in search engines, for instance",
+          "items": {
+            "pattern": "^.+$",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_name": {
+          "description": "Human-readable name for a thing. This is to be treated as the preferred display label in a UI context, whereas has_alternate_name can provide additional terms, e.g. for matching in search operations",
+          "pattern": "^.+$",
+          "type": "string"
+        },
+        "same_as": {
+          "description": "See [AuthorityResource doucmentation](AuthorityResource.md) for accepted identifiers",
+          "items": {
+            "$ref": "#/$defs/GNDResource"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "has_name"
+      ],
+      "title": "Genre",
+      "type": "object"
+    },
+    "GeographicName": {
+      "additionalProperties": false,
+      "description": "Name of country, region or other location. Names should be taken from appropriate authorities (e.g. GND) and recorded as a human readable string in the name attribute and as linked data in the same_as attribute. See also: FIAF Moving Image Cataloguing Manual 1.3.3, D.4",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:GeographicName"
+          ],
+          "type": "string"
+        },
+        "has_alternate_name": {
+          "description": "Alternative human-readable name(s) for a thing. Whereas has_name provides the preferred display name for the described entity, alternatives can be recorded here in order to be indexed in search engines, for instance",
+          "items": {
+            "pattern": "^.+$",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_name": {
+          "description": "Human-readable name for a thing. This is to be treated as the preferred display label in a UI context, whereas has_alternate_name can provide additional terms, e.g. for matching in search operations",
+          "pattern": "^.+$",
+          "type": "string"
+        },
+        "same_as": {
+          "description": "See [AuthorityResource doucmentation](AuthorityResource.md) for accepted identifiers",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/GNDResource"
+              },
+              {
+                "$ref": "#/$defs/TGNResource"
+              },
+              {
+                "$ref": "#/$defs/VIAFResource"
+              },
+              {
+                "$ref": "#/$defs/WikidataResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "has_name",
+        "category"
+      ],
+      "title": "GeographicName",
+      "type": "object"
+    },
+    "ISILResource": {
+      "additionalProperties": false,
+      "description": "International Standard Identifier for Libraries and Related Organizations including (film) archives. Check id slot range documentation for examples",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:ISILResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^[A-Z]{2}-[A-Za-z\\-0-9:/]{1,15}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "ISILResource",
+      "type": "object"
+    },
+    "Item": {
+      "additionalProperties": false,
+      "description": "FIAF Moving Image Cataloguing Manual 3.0",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:Item"
+          ],
+          "type": "string"
+        },
+        "described_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DescriptionResource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Also record some metadata about the PID itself rather than the identified object"
+        },
+        "element_type": {
+          "$ref": "#/$defs/ItemElementTypeEnum",
+          "description": "FIAF Moving Image Cataloguing Manual D.7.8"
+        },
+        "has_access_status": {
+          "$ref": "#/$defs/ItemAccessStatusEnum",
+          "description": "Status of item determining access conditions. See also FIAF Moving Image Cataloguing Manual D.7.1"
+        },
+        "has_alternative_title": {
+          "description": "Additional title(s) associated with the work / variant, manifestation, or item.",
+          "items": {
+            "$ref": "#/$defs/Title"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_colour_type": {
+          "$ref": "#/$defs/ColourTypeEnum",
+          "description": "FIAF Moving Image Cataloguing Manual 2.3.4.4, 3.1.5.6, D.7.11"
+        },
+        "has_duration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Duration"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Total running time of the described object in ISO 8601 duration format. See also: FIAF Moving Image Cataloguing Manual 2.3.5.3, 3.1.5.11"
+        },
+        "has_event": {
+          "description": "Associate event(s) with a moving image record",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ProductionEvent"
+              },
+              {
+                "$ref": "#/$defs/PreservationEvent"
+              },
+              {
+                "$ref": "#/$defs/PublicationEvent"
+              },
+              {
+                "$ref": "#/$defs/ManufactureEvent"
+              },
+              {
+                "$ref": "#/$defs/RightsCopyrightRegistrationEvent"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_extent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Extent"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Physical length or size of the described object. See also: FIAF Moving Image Cataloguing Manual 2.3.5.2, 3.1.5.8"
+        },
+        "has_format": {
+          "description": "FIAF Moving Image Cataloguing Manual 2.3.4.1, 3.1.5.1",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Audio"
+              },
+              {
+                "$ref": "#/$defs/DigitalFile"
+              },
+              {
+                "$ref": "#/$defs/DigitalFileEncoding"
+              },
+              {
+                "$ref": "#/$defs/Film"
+              },
+              {
+                "$ref": "#/$defs/Optical"
+              },
+              {
+                "$ref": "#/$defs/Video"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_frame_rate": {
+          "$ref": "#/$defs/FrameRateEnum",
+          "description": "Frame Rate describes the number of frames per second of an item. See also: FIAF Moving Image Cataloguing Manual 3.1.5.12."
+        },
+        "has_identifier": {
+          "description": "Record PID in this slot when exporting data from the PID system. Use local identifiers instead when PIDs have not been registered yet. The latter is suitable for transferring data to the agent responsible for registering PIDs",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AVefiResource"
+              },
+              {
+                "$ref": "#/$defs/LocalResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_note": {
+          "description": "FIAF Moving Image Cataloguing Manual Appendix B",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_primary_title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Title"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Primary title to be displayed in search results etc. The type should be PreferredTitle for works / variants and TitleProper for manifestations / items. If not available, type must be SuppliedDevisedTitle, instead."
+        },
+        "has_sound_type": {
+          "$ref": "#/$defs/SoundTypeEnum",
+          "description": "FIAF Moving Image Cataloguing Manual 2.3.4.3, 3.1.5.3, D.7.4"
+        },
+        "has_webresource": {
+          "description": "Link to data provider's own presentation of manifestation or item on the web",
+          "items": {
+            "pattern": "^https?://[^/?#]+(/[^?#]*(\\?([^#]*))?(#(.*))?)?$",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "in_language": {
+          "description": "FIAF Moving Image Cataloguing Manual 1.3.5, 2.3.3",
+          "items": {
+            "$ref": "#/$defs/Language"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "is_copy_of": {
+          "description": "Link to AVefi item registered by another institution indicating that the two are known to be copies of each other",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/DOIResource"
+              },
+              {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/AVefiResource"
+                  },
+                  {
+                    "$ref": "#/$defs/LocalResource"
+                  }
+                ]
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "is_derivative_of": {
+          "description": "Link to AVefi item from which this one has been derived in whole or in part, e.g. as a result of a restoration or digitasation project",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AVefiResource"
+              },
+              {
+                "$ref": "#/$defs/LocalResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "is_item_of": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AVefiResource"
+            },
+            {
+              "$ref": "#/$defs/LocalResource"
+            }
+          ],
+          "description": "Indicate AVefi Manifestation the item belongs to. Every item must be associated with a manifestation from the same data provider"
+        },
+        "same_as": {
+          "description": "Another identifier for the same item, e.g. a DOI. Can also be used to link to another AVefi record describing the same item, e.g. when it has changed hands and the new custodian registers its own record for the item",
+          "items": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/AVefiResource"
+                  },
+                  {
+                    "$ref": "#/$defs/LocalResource"
+                  }
+                ]
+              },
+              {
+                "$ref": "#/$defs/DOIResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "is_item_of",
+        "category"
+      ],
+      "title": "Item",
+      "type": "object"
+    },
+    "ItemAccessStatusEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.7.3",
+      "enum": [
+        "Archive",
+        "Distribution",
+        "Master",
+        "Removed",
+        "Viewing"
+      ],
+      "title": "ItemAccessStatusEnum",
+      "type": "string"
+    },
+    "ItemElementTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.7.8",
+      "enum": [
+        "ColourNegative",
+        "ColourPositive",
+        "CopperTonedPositive",
+        "CyanMatrix",
+        "DCDM",
+        "DCP",
+        "DirectBWPositive",
+        "DuplicateNegative",
+        "DuplicatePositive",
+        "EditDecisionList",
+        "ImageNegative",
+        "Lavender",
+        "OriginalNegative",
+        "OriginalPositiveReversalFilm",
+        "Positive",
+        "SoundNegative",
+        "Subtitles"
+      ],
+      "title": "ItemElementTypeEnum",
+      "type": "string"
+    },
+    "LaboratoryActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.12",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:LaboratoryActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/LaboratoryActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "LaboratoryActivity",
+      "type": "object"
+    },
+    "LaboratoryActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.12",
+      "enum": [
+        "Colorist",
+        "Laboratory",
+        "LaboratoryTechnician",
+        "NegativeCutter"
+      ],
+      "title": "LaboratoryActivityTypeEnum",
+      "type": "string"
+    },
+    "Language": {
+      "additionalProperties": false,
+      "description": "Provide language code from ISO 639-2 (Part 2: Alpha-3) and a list of language usage terms from our controlled vocabulary. See also: FIAF Moving Image Cataloguing Manual 1.3.5, 2.3.3",
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/LanguageCodeEnum",
+          "description": "[ISO 639-2 code](https://id.loc.gov/vocabulary/iso639-2.html) for the Representation of Names of Languages (Part 2: Alpha-3)"
+        },
+        "usage": {
+          "description": "FIAF Moving Image Cataloguing Manual 2.3.3.2",
+          "items": {
+            "$ref": "#/$defs/LanguageUsageEnum"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "usage"
+      ],
+      "title": "Language",
+      "type": "object"
+    },
+    "LanguageCodeEnum": {
+      "description": "[ISO 639-2 code](https://id.loc.gov/vocabulary/iso639-2.html) for the Representation of Names of Languages (Part 2: Alpha-3)",
+      "enum": [
+        "aar",
+        "abk",
+        "ace",
+        "ach",
+        "ada",
+        "ady",
+        "afa",
+        "afh",
+        "afr",
+        "ain",
+        "aka",
+        "akk",
+        "alb",
+        "ale",
+        "alg",
+        "alt",
+        "amh",
+        "ang",
+        "anp",
+        "apa",
+        "ara",
+        "arc",
+        "arg",
+        "arm",
+        "arn",
+        "arp",
+        "art",
+        "arw",
+        "asm",
+        "ast",
+        "ath",
+        "aus",
+        "ava",
+        "ave",
+        "awa",
+        "aym",
+        "aze",
+        "bad",
+        "bai",
+        "bak",
+        "bal",
+        "bam",
+        "ban",
+        "baq",
+        "bas",
+        "bat",
+        "bej",
+        "bel",
+        "bem",
+        "ben",
+        "ber",
+        "bho",
+        "bih",
+        "bik",
+        "bin",
+        "bis",
+        "bla",
+        "bnt",
+        "bos",
+        "bra",
+        "bre",
+        "btk",
+        "bua",
+        "bug",
+        "bul",
+        "bur",
+        "byn",
+        "cad",
+        "cai",
+        "car",
+        "cat",
+        "cau",
+        "ceb",
+        "cel",
+        "cha",
+        "chb",
+        "che",
+        "chg",
+        "chi",
+        "chk",
+        "chm",
+        "chn",
+        "cho",
+        "chp",
+        "chr",
+        "chu",
+        "chv",
+        "chy",
+        "cmc",
+        "cnr",
+        "cop",
+        "cor",
+        "cos",
+        "cpe",
+        "cpf",
+        "cpp",
+        "cre",
+        "crh",
+        "crp",
+        "csb",
+        "cus",
+        "cze",
+        "dak",
+        "dan",
+        "dar",
+        "day",
+        "del",
+        "den",
+        "dgr",
+        "din",
+        "div",
+        "doi",
+        "dra",
+        "dsb",
+        "dua",
+        "dum",
+        "dut",
+        "dyu",
+        "dzo",
+        "efi",
+        "egy",
+        "eka",
+        "elx",
+        "eng",
+        "enm",
+        "epo",
+        "est",
+        "ewe",
+        "ewo",
+        "fan",
+        "fao",
+        "fat",
+        "fij",
+        "fil",
+        "fin",
+        "fiu",
+        "fon",
+        "fre",
+        "frm",
+        "fro",
+        "frr",
+        "frs",
+        "fry",
+        "ful",
+        "fur",
+        "gaa",
+        "gay",
+        "gba",
+        "gem",
+        "geo",
+        "ger",
+        "gez",
+        "gil",
+        "gla",
+        "gle",
+        "glg",
+        "glv",
+        "gmh",
+        "goh",
+        "gon",
+        "gor",
+        "got",
+        "grb",
+        "grc",
+        "gre",
+        "grn",
+        "gsw",
+        "guj",
+        "gwi",
+        "hai",
+        "hat",
+        "hau",
+        "haw",
+        "heb",
+        "her",
+        "hil",
+        "him",
+        "hin",
+        "hit",
+        "hmn",
+        "hmo",
+        "hrv",
+        "hsb",
+        "hun",
+        "hup",
+        "iba",
+        "ibo",
+        "ice",
+        "ido",
+        "iii",
+        "ijo",
+        "iku",
+        "ile",
+        "ilo",
+        "ina",
+        "inc",
+        "ind",
+        "ine",
+        "inh",
+        "ipk",
+        "ira",
+        "iro",
+        "ita",
+        "jav",
+        "jbo",
+        "jpn",
+        "jpr",
+        "jrb",
+        "kaa",
+        "kab",
+        "kac",
+        "kal",
+        "kam",
+        "kan",
+        "kar",
+        "kas",
+        "kau",
+        "kaw",
+        "kaz",
+        "kbd",
+        "kha",
+        "khi",
+        "khm",
+        "kho",
+        "kik",
+        "kin",
+        "kir",
+        "kmb",
+        "kok",
+        "kom",
+        "kon",
+        "kor",
+        "kos",
+        "kpe",
+        "krc",
+        "krl",
+        "kro",
+        "kru",
+        "kua",
+        "kum",
+        "kur",
+        "kut",
+        "lad",
+        "lah",
+        "lam",
+        "lao",
+        "lat",
+        "lav",
+        "lez",
+        "lim",
+        "lin",
+        "lit",
+        "lol",
+        "loz",
+        "ltz",
+        "lua",
+        "lub",
+        "lug",
+        "lui",
+        "lun",
+        "luo",
+        "lus",
+        "mac",
+        "mad",
+        "mag",
+        "mah",
+        "mai",
+        "mak",
+        "mal",
+        "man",
+        "mao",
+        "map",
+        "mar",
+        "mas",
+        "may",
+        "mdf",
+        "mdr",
+        "men",
+        "mga",
+        "mic",
+        "min",
+        "mis",
+        "mkh",
+        "mlg",
+        "mlt",
+        "mnc",
+        "mni",
+        "mno",
+        "moh",
+        "mon",
+        "mos",
+        "mul",
+        "mun",
+        "mus",
+        "mwl",
+        "mwr",
+        "myn",
+        "myv",
+        "nah",
+        "nai",
+        "nap",
+        "nau",
+        "nav",
+        "nbl",
+        "nde",
+        "ndo",
+        "nds",
+        "nep",
+        "new",
+        "nia",
+        "nic",
+        "niu",
+        "nno",
+        "nob",
+        "nog",
+        "non",
+        "nor",
+        "nqo",
+        "nso",
+        "nub",
+        "nwc",
+        "nya",
+        "nym",
+        "nyn",
+        "nyo",
+        "nzi",
+        "oci",
+        "oji",
+        "ori",
+        "orm",
+        "osa",
+        "oss",
+        "ota",
+        "oto",
+        "paa",
+        "pag",
+        "pal",
+        "pam",
+        "pan",
+        "pap",
+        "pau",
+        "peo",
+        "per",
+        "phi",
+        "phn",
+        "pli",
+        "pol",
+        "pon",
+        "por",
+        "pra",
+        "pro",
+        "pus",
+        "que",
+        "raj",
+        "rap",
+        "rar",
+        "roa",
+        "roh",
+        "rom",
+        "rum",
+        "run",
+        "rup",
+        "rus",
+        "sad",
+        "sag",
+        "sah",
+        "sai",
+        "sal",
+        "sam",
+        "san",
+        "sas",
+        "sat",
+        "scn",
+        "sco",
+        "sel",
+        "sem",
+        "sga",
+        "sgn",
+        "shn",
+        "sid",
+        "sin",
+        "sio",
+        "sit",
+        "sla",
+        "slo",
+        "slv",
+        "sma",
+        "sme",
+        "smi",
+        "smj",
+        "smn",
+        "smo",
+        "sms",
+        "sna",
+        "snd",
+        "snk",
+        "sog",
+        "som",
+        "son",
+        "sot",
+        "spa",
+        "srd",
+        "srn",
+        "srp",
+        "srr",
+        "ssa",
+        "ssw",
+        "suk",
+        "sun",
+        "sus",
+        "sux",
+        "swa",
+        "swe",
+        "syc",
+        "syr",
+        "tah",
+        "tai",
+        "tam",
+        "tat",
+        "tel",
+        "tem",
+        "ter",
+        "tet",
+        "tgk",
+        "tgl",
+        "tha",
+        "tib",
+        "tig",
+        "tir",
+        "tiv",
+        "tkl",
+        "tlh",
+        "tli",
+        "tmh",
+        "tog",
+        "ton",
+        "tpi",
+        "tsi",
+        "tsn",
+        "tso",
+        "tuk",
+        "tum",
+        "tup",
+        "tur",
+        "tut",
+        "tvl",
+        "twi",
+        "tyv",
+        "udm",
+        "uga",
+        "uig",
+        "ukr",
+        "umb",
+        "und",
+        "urd",
+        "uzb",
+        "vai",
+        "ven",
+        "vie",
+        "vol",
+        "vot",
+        "wak",
+        "wal",
+        "war",
+        "was",
+        "wel",
+        "wen",
+        "wln",
+        "wol",
+        "xal",
+        "xho",
+        "yao",
+        "yap",
+        "yid",
+        "yor",
+        "ypk",
+        "zap",
+        "zbl",
+        "zen",
+        "zgh",
+        "zha",
+        "znd",
+        "zul",
+        "zun",
+        "zxx",
+        "zza"
+      ],
+      "title": "LanguageCodeEnum",
+      "type": "string"
+    },
+    "LanguageUsageEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual 2.3.3, D.6",
+      "enum": [
+        "AudioDescription",
+        "Captions",
+        "ClosingCredits",
+        "Dubbed",
+        "Intertitles",
+        "NoDialogue",
+        "OpeningCredits",
+        "SDHSubtitles",
+        "SignedLanguage",
+        "SpokenLanguage",
+        "Subtitles",
+        "SungLanguage",
+        "VoiceOver"
+      ],
+      "title": "LanguageUsageEnum",
+      "type": "string"
+    },
+    "LocalResource": {
+      "additionalProperties": false,
+      "description": "Some identifier used by data provider to represent relations between work/variant, manifestation and item when PIDs have not been assigned yet. On ingest into AVefi, these identifiers will be replaced by the generated PIDs",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:LocalResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^((?![\\\"&\\'])\\S)+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "LocalResource",
+      "type": "object"
+    },
+    "Manifestation": {
+      "additionalProperties": false,
+      "description": "Manifestation as defined in FIAF Moving Image Cataloguing Manual 2.0. Note that manifestation type is recorded as publication event type",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:Manifestation"
+          ],
+          "type": "string"
+        },
+        "described_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DescriptionResource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Also record some metadata about the PID itself rather than the identified object"
+        },
+        "has_alternative_title": {
+          "description": "Additional title(s) associated with the work / variant, manifestation, or item.",
+          "items": {
+            "$ref": "#/$defs/Title"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_event": {
+          "description": "Associate event(s) with a moving image record",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ProductionEvent"
+              },
+              {
+                "$ref": "#/$defs/PreservationEvent"
+              },
+              {
+                "$ref": "#/$defs/PublicationEvent"
+              },
+              {
+                "$ref": "#/$defs/ManufactureEvent"
+              },
+              {
+                "$ref": "#/$defs/RightsCopyrightRegistrationEvent"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_identifier": {
+          "description": "Record PID in this slot when exporting data from the PID system. Use local identifiers instead when PIDs have not been registered yet. The latter is suitable for transferring data to the agent responsible for registering PIDs",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AVefiResource"
+              },
+              {
+                "$ref": "#/$defs/LocalResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_item": {
+          "description": "Indicate AVefi Items the institution has registered as part of the manifestation",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AVefiResource"
+              },
+              {
+                "$ref": "#/$defs/LocalResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_note": {
+          "description": "FIAF Moving Image Cataloguing Manual Appendix B",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_primary_title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Title"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Primary title to be displayed in search results etc. The type should be PreferredTitle for works / variants and TitleProper for manifestations / items. If not available, type must be SuppliedDevisedTitle, instead."
+        },
+        "has_webresource": {
+          "description": "Link to data provider's own presentation of manifestation or item on the web",
+          "items": {
+            "pattern": "^https?://[^/?#]+(/[^?#]*(\\?([^#]*))?(#(.*))?)?$",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "is_manifestation_of": {
+          "description": "Indicate AVefi WorkVariant (possibly more but no less than one) that is subject of the manifestation",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AVefiResource"
+              },
+              {
+                "$ref": "#/$defs/LocalResource"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "same_as": {
+          "description": "Link to AVefi resource registered by another data provider indicating that the two manifestations are known to be the same. Use this, for instance, when you have cooperated in making a digital restoration of some film work",
+          "items": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/AVefiResource"
+                  },
+                  {
+                    "$ref": "#/$defs/LocalResource"
+                  }
+                ]
+              },
+              {
+                "$ref": "#/$defs/EIDRResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "is_manifestation_of",
+        "category"
+      ],
+      "title": "Manifestation",
+      "type": "object"
+    },
+    "ManifestationActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Moving Image Cataloguing Manual 2.4.1.1, D.8",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:ManifestationActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/ManifestationActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "ManifestationActivity",
+      "type": "object"
+    },
+    "ManifestationActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Moving Image Cataloguing Manual 2.4.1.1, D.8",
+      "enum": [
+        "AgentNotIdentified",
+        "AgentResponsibleForPreservation",
+        "AgentResponsibleForReproductionOrTransfer",
+        "AgentResponsibleForTheArchivalAvailability",
+        "AgentResponsibleForTheMereAvailability",
+        "AgentUnclearOrUndetermined",
+        "Broadcaster",
+        "DistributorNonTheatrical",
+        "DistributorTheatrical",
+        "Manufacturer",
+        "Publisher",
+        "UnknownActivity"
+      ],
+      "title": "ManifestationActivityTypeEnum",
+      "type": "string"
+    },
+    "ManufactureEvent": {
+      "additionalProperties": false,
+      "description": "Manufacture event of a manifestation. Always specify the type of event and if possible a date or a period of time via has_date. Specify located_in as appropriate, e.g. the country where the labratory is located. Involved parties in various roles can be linked via has_activity. See also: FIAF Moving Image Cataloguing Manual D.4.7",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:ManufactureEvent"
+          ],
+          "type": "string"
+        },
+        "has_activity": {
+          "description": "Associate activity (and subsequently agents) with event",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/LaboratoryActivity"
+              },
+              {
+                "$ref": "#/$defs/ManifestationActivity"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_date": {
+          "description": "Date (or interval/period) when an event has taken place. A subset of ISO 8601 is supported, more specifically, EDTF conformance level 0 as well as qualifiers ? (uncertain date) and ~ (approximate date). See type ISODate definition for details",
+          "pattern": "^-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?(/-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?)?$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "located_in": {
+          "description": "Location associated with an event, e.g. the country where the principal offices or production facilities of the production company are located should be associated with the production event",
+          "items": {
+            "$ref": "#/$defs/GeographicName"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/$defs/ManufactureEventTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "title": "ManufactureEvent",
+      "type": "object"
+    },
+    "ManufactureEventTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.4.7, D.14",
+      "enum": [
+        "FilmPrintingEvent",
+        "MasteringEvent",
+        "ScanningEvent",
+        "TelecineEvent",
+        "UploadingEvent",
+        "VideoCopyingEvent"
+      ],
+      "title": "ManufactureEventTypeEnum",
+      "type": "string"
+    },
+    "MovingImageRecordContainer": {
+      "additionalProperties": false,
+      "description": "A holder for MovingImageRecord objects",
+      "properties": {
+        "URL": {
+          "description": "URL specifying the destination where clients should be redirected to when resolving the PID of a moving image record",
+          "pattern": "^https?://[^/?#]+(/[^?#]*(\\?([^#]*))?(#(.*))?)?$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "has_record": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkVariant"
+            },
+            {
+              "$ref": "#/$defs/Manifestation"
+            },
+            {
+              "$ref": "#/$defs/Item"
+            }
+          ],
+          "description": "Root slot holding the moving image metadata record, i.e. metadata describing a work/variant, manifestation or item. See also the Introduction of the FIAF Moving Image Cataloguing Manual"
+        }
+      },
+      "required": [
+        "has_record"
+      ],
+      "title": "MovingImageRecordContainer",
+      "type": "object"
+    },
+    "MusicActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.11",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:MusicActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/MusicActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "MusicActivity",
+      "type": "object"
+    },
+    "MusicActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.11",
+      "enum": [
+        "Choreographer",
+        "Composer",
+        "Lyricist",
+        "MusicArranger",
+        "MusicConductor",
+        "MusicContractor",
+        "MusicEditor",
+        "MusicPerformer",
+        "MusicSupervisor",
+        "SingingVoice",
+        "SongComposer"
+      ],
+      "title": "MusicActivityTypeEnum",
+      "type": "string"
+    },
+    "Optical": {
+      "additionalProperties": false,
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:Optical"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FormatOpticalTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "title": "Optical",
+      "type": "object"
+    },
+    "PrecisionEnum": {
+      "description": "Qualifier indicating the precision of an extent value or duration",
+      "enum": [
+        "Approximate",
+        "Uncertain"
+      ],
+      "title": "PrecisionEnum",
+      "type": "string"
+    },
+    "PreservationEvent": {
+      "additionalProperties": false,
+      "description": "Preservation event originating a manifestation or possibly a vaniant. Always specify the type of event and if possible a date or a period of time via has_date. Specify located_in as appropriate. Involved parties in various roles can be linked via has_activity. See also: FIAF Moving Image Cataloguing Manual D.4.5",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:PreservationEvent"
+          ],
+          "type": "string"
+        },
+        "has_activity": {
+          "description": "Associate activity (and subsequently agents) with event",
+          "items": {
+            "$ref": "#/$defs/ManifestationActivity"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_date": {
+          "description": "Date (or interval/period) when an event has taken place. A subset of ISO 8601 is supported, more specifically, EDTF conformance level 0 as well as qualifiers ? (uncertain date) and ~ (approximate date). See type ISODate definition for details",
+          "pattern": "^-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?(/-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?)?$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "located_in": {
+          "description": "Location associated with an event, e.g. the country where the principal offices or production facilities of the production company are located should be associated with the production event",
+          "items": {
+            "$ref": "#/$defs/GeographicName"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/$defs/PreservationEventTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "type",
+        "category"
+      ],
+      "title": "PreservationEvent",
+      "type": "object"
+    },
+    "PreservationEventTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.4.5",
+      "enum": [
+        "DigitisationEvent",
+        "DuplicationEvent",
+        "ReproductionEvent",
+        "RestorationEvent",
+        "TransferEvent"
+      ],
+      "title": "PreservationEventTypeEnum",
+      "type": "string"
+    },
+    "ProducingActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.2",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:ProducingActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/ProducingActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "ProducingActivity",
+      "type": "object"
+    },
+    "ProducingActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.2",
+      "enum": [
+        "Advisor",
+        "AssistantProducer",
+        "AssociateProducer",
+        "Cooperation",
+        "Coproducer",
+        "ExecutiveProducer",
+        "LineProducer",
+        "LocationManager",
+        "PostProductionSupervisor",
+        "Presenter",
+        "Producer",
+        "ProductionAccountant",
+        "ProductionAssistant",
+        "ProductionCompany",
+        "ProductionCoordinator",
+        "ProductionManager",
+        "Publicist",
+        "SeriesProducer",
+        "Sponsor",
+        "Studio",
+        "TransportationManager"
+      ],
+      "title": "ProducingActivityTypeEnum",
+      "type": "string"
+    },
+    "ProductionDesignActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.6",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:ProductionDesignActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/ProductionDesignActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "ProductionDesignActivity",
+      "type": "object"
+    },
+    "ProductionDesignActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.6",
+      "enum": [
+        "ArtDirector",
+        "AssistantArtDirector",
+        "ConstructionCoordinator",
+        "CostumeDesigner",
+        "CostumeMaker",
+        "CostumeSupervisor",
+        "CostumeSupplier",
+        "Costumer",
+        "Gowns",
+        "Greensperson",
+        "HairStylist",
+        "LeadPerson",
+        "MakeUpArtist",
+        "ProductionDesigner",
+        "PropertyMaster",
+        "ScenicArtist",
+        "SetDecorator",
+        "SetDesigner",
+        "StoryboardArtist",
+        "TitleDesigner",
+        "WardrobeSupervisor"
+      ],
+      "title": "ProductionDesignActivityTypeEnum",
+      "type": "string"
+    },
+    "ProductionEvent": {
+      "additionalProperties": false,
+      "description": "Production event of a work/variant (or manifestation produced as a restoration). Provide a date or a period of time via has_date and specify located_in as appropriate, e.g. the country where the principal offices or production facilities of the production company are located. Involved parties in various roles can be linked via has_activity. See also: FIAF Moving Image Cataloguing Manual D.4.3",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:ProductionEvent"
+          ],
+          "type": "string"
+        },
+        "has_activity": {
+          "description": "Associate activity (and subsequently agents) with event",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AnimationActivity"
+              },
+              {
+                "$ref": "#/$defs/CastActivity"
+              },
+              {
+                "$ref": "#/$defs/CinematographyActivity"
+              },
+              {
+                "$ref": "#/$defs/DirectingActivity"
+              },
+              {
+                "$ref": "#/$defs/EditingActivity"
+              },
+              {
+                "$ref": "#/$defs/MusicActivity"
+              },
+              {
+                "$ref": "#/$defs/ProducingActivity"
+              },
+              {
+                "$ref": "#/$defs/ProductionDesignActivity"
+              },
+              {
+                "$ref": "#/$defs/PuppetActivity"
+              },
+              {
+                "$ref": "#/$defs/SoundActivity"
+              },
+              {
+                "$ref": "#/$defs/SpecialEffectsActivity"
+              },
+              {
+                "$ref": "#/$defs/WritingActivity"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_date": {
+          "description": "Date (or interval/period) when an event has taken place. A subset of ISO 8601 is supported, more specifically, EDTF conformance level 0 as well as qualifiers ? (uncertain date) and ~ (approximate date). See type ISODate definition for details",
+          "pattern": "^-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?(/-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?)?$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "located_in": {
+          "description": "Location associated with an event, e.g. the country where the principal offices or production facilities of the production company are located should be associated with the production event",
+          "items": {
+            "$ref": "#/$defs/GeographicName"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/$defs/ProductionEventTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "title": "ProductionEvent",
+      "type": "object"
+    },
+    "ProductionEventTypeEnum": {
+      "description": "Leave unset for main production event, otherwise see FIAF Moving Image Cataloguing Manual D.4.3, D.11",
+      "enum": [
+        "CastingEvent",
+        "IndoorShootingEvent",
+        "OutdoorShootingEvent",
+        "PostProductionEvent"
+      ],
+      "title": "ProductionEventTypeEnum",
+      "type": "string"
+    },
+    "PublicationEvent": {
+      "additionalProperties": false,
+      "description": "Publication event of a manifestation or possibly the first known publication of a work. Always specify the type of event and if possible a date or a period of time via has_date. Specify located_in as appropriate, e.g. the country where the manifestation was published. Involved parties in various roles can be linked via has_activity. See also: FIAF Moving Image Cataloguing Manual D.4.1",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:PublicationEvent"
+          ],
+          "type": "string"
+        },
+        "has_activity": {
+          "description": "Associate activity (and subsequently agents) with event",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/CopyrightAndDistributionActivity"
+              },
+              {
+                "$ref": "#/$defs/LaboratoryActivity"
+              },
+              {
+                "$ref": "#/$defs/ManifestationActivity"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_date": {
+          "description": "Date (or interval/period) when an event has taken place. A subset of ISO 8601 is supported, more specifically, EDTF conformance level 0 as well as qualifiers ? (uncertain date) and ~ (approximate date). See type ISODate definition for details",
+          "pattern": "^-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?(/-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?)?$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "located_in": {
+          "description": "Location associated with an event, e.g. the country where the principal offices or production facilities of the production company are located should be associated with the production event",
+          "items": {
+            "$ref": "#/$defs/GeographicName"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/$defs/PublicationEventTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "type",
+        "category"
+      ],
+      "title": "PublicationEvent",
+      "type": "object"
+    },
+    "PublicationEventTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.4.1, D.10",
+      "enum": [
+        "BroadcastEvent",
+        "DistributionEvent",
+        "HomeVideoPublicationEvent",
+        "NonTheatricalDistributionEvent",
+        "NotForReleaseEvent",
+        "OnlineTransmissionEvent",
+        "PreReleaseEvent",
+        "ReleaseEvent",
+        "TheatricalDistributionEvent",
+        "UnknownEvent"
+      ],
+      "title": "PublicationEventTypeEnum",
+      "type": "string"
+    },
+    "PuppetActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.14",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:PuppetActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/PuppetActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "PuppetActivity",
+      "type": "object"
+    },
+    "PuppetActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.14",
+      "enum": [
+        "Puppeteer"
+      ],
+      "title": "PuppetActivityTypeEnum",
+      "type": "string"
+    },
+    "RightsCopyrightRegistrationEvent": {
+      "additionalProperties": false,
+      "description": "Copyright and related rights registration event of a manifestation or possibly of a work/variant. Always specify date via has_date. Specify located_in as appropriate, e.g. the country where the copyright was registered. Involved parties in various roles can be linked via has_activity. See also: FIAF Moving Image Cataloguing Manual D.4.4",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:RightsCopyrightRegistrationEvent"
+          ],
+          "type": "string"
+        },
+        "has_activity": {
+          "description": "Associate activity (and subsequently agents) with event",
+          "items": {
+            "$ref": "#/$defs/CopyrightAndDistributionActivity"
+          },
+          "type": "array"
+        },
+        "has_date": {
+          "description": "Date (or interval/period) when an event has taken place. A subset of ISO 8601 is supported, more specifically, EDTF conformance level 0 as well as qualifiers ? (uncertain date) and ~ (approximate date). See type ISODate definition for details",
+          "pattern": "^-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?(/-?([1-9][0-9]{3,}|0[0-9]{3})(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?[?~]?)?$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "located_in": {
+          "description": "Location associated with an event, e.g. the country where the principal offices or production facilities of the production company are located should be associated with the production event",
+          "items": {
+            "$ref": "#/$defs/GeographicName"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "has_activity",
+        "category"
+      ],
+      "title": "RightsCopyrightRegistrationEvent",
+      "type": "object"
+    },
+    "SoundActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.9",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:SoundActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/SoundActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "SoundActivity",
+      "type": "object"
+    },
+    "SoundActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.9",
+      "enum": [
+        "BoomOperator",
+        "DialogueEditor",
+        "DubbingDirector",
+        "DubbingEditor",
+        "DubbingMixer",
+        "DubbingSpeaker",
+        "FoleyArtist",
+        "SoundDesigner",
+        "SoundEditor",
+        "SoundEngineer",
+        "SoundRecorderMixer",
+        "SoundSupervisor",
+        "SupervisingSoundEditor"
+      ],
+      "title": "SoundActivityTypeEnum",
+      "type": "string"
+    },
+    "SoundTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual 2.3.4.3, 3.1.5.3, D.7.4",
+      "enum": [
+        "Combined",
+        "CombinedAsMute",
+        "CombinedAsSound",
+        "MixedSound",
+        "Mute",
+        "Silent",
+        "Sound",
+        "Temporary"
+      ],
+      "title": "SoundTypeEnum",
+      "type": "string"
+    },
+    "SpecialEffectsActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.8",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:SpecialEffectsActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/SpecialEffectsActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "SpecialEffectsActivity",
+      "type": "object"
+    },
+    "SpecialEffectsActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.8",
+      "enum": [
+        "Animatronics",
+        "Armorer",
+        "CGIArtist",
+        "Compositor",
+        "MatteArtist",
+        "MechanicalEffects",
+        "MotionCapture",
+        "Prosthetics",
+        "Pyrotechnics",
+        "RotoscopeArtist",
+        "SpecialEffects",
+        "VisualEffects"
+      ],
+      "title": "SpecialEffectsActivityTypeEnum",
+      "type": "string"
+    },
+    "Subject": {
+      "additionalProperties": false,
+      "description": "Subject descriptor terms for the content of a film specifying its period, themes, locations, etc. Not to be confused with Genre. Provide name and if at all possible identifier(s) from supported authorities in the same_as slot. See also: FIAF Moving Image Cataloguing Manual 1.4.3 and FIAF Glossary of Filmographic Terms D.2.3",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:Subject"
+          ],
+          "type": "string"
+        },
+        "has_alternate_name": {
+          "description": "Alternative human-readable name(s) for a thing. Whereas has_name provides the preferred display name for the described entity, alternatives can be recorded here in order to be indexed in search engines, for instance",
+          "items": {
+            "pattern": "^.+$",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_name": {
+          "description": "Human-readable name for a thing. This is to be treated as the preferred display label in a UI context, whereas has_alternate_name can provide additional terms, e.g. for matching in search operations",
+          "pattern": "^.+$",
+          "type": "string"
+        },
+        "same_as": {
+          "description": "See [AuthorityResource doucmentation](AuthorityResource.md) for accepted identifiers",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AATResource"
+              },
+              {
+                "$ref": "#/$defs/AVefiResource"
+              },
+              {
+                "$ref": "#/$defs/EIDRResource"
+              },
+              {
+                "$ref": "#/$defs/FilmportalResource"
+              },
+              {
+                "$ref": "#/$defs/GNDResource"
+              },
+              {
+                "$ref": "#/$defs/VIAFResource"
+              },
+              {
+                "$ref": "#/$defs/WikidataResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "has_name",
+        "category"
+      ],
+      "title": "Subject",
+      "type": "object"
+    },
+    "TGNResource": {
+      "additionalProperties": false,
+      "description": "Getty Thesaurus of Geographic Names ID. Check id slot range documentation for examples",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:TGNResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^[1-9][0-9]{6}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "TGNResource",
+      "type": "object"
+    },
+    "Title": {
+      "additionalProperties": false,
+      "description": "FIAF Moving Image Cataloguing Manual 1.3.2, 2.3.2, 3.1.2",
+      "properties": {
+        "has_name": {
+          "description": "Human-readable name for a thing. This is to be treated as the preferred display label in a UI context, whereas has_alternate_name can provide additional terms, e.g. for matching in search operations",
+          "pattern": "^.+$",
+          "type": "string"
+        },
+        "has_ordering_name": {
+          "description": "Provide normalised form, e.g. for sorting by title. Only use this slot if value actually if different from has_name",
+          "pattern": "^.+$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/$defs/TitleTypeEnum",
+          "description": "FIAF Moving Image Cataloguing Manual A.2"
+        }
+      },
+      "required": [
+        "has_name",
+        "type"
+      ],
+      "title": "Title",
+      "type": "object"
+    },
+    "TitleTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual A.2",
+      "enum": [
+        "AbbreviatedTitle",
+        "AcquisitionTitle",
+        "AlternativeTitle",
+        "CorrectedTitle",
+        "PreReleaseTitle",
+        "PreferredTitle",
+        "SearchTitle",
+        "SeriesTitle",
+        "SuppliedDevisedTitle",
+        "TitleProper",
+        "TranslatedTitle",
+        "TransliteratedTitle",
+        "WorkingTitle"
+      ],
+      "title": "TitleTypeEnum",
+      "type": "string"
+    },
+    "UnitEnum": {
+      "description": "Units of measurement. Definitions are taken from the Quantities, Units, Dimensions and Data Types Ontologies (QUDT)",
+      "enum": [
+        "Feet",
+        "GigaByte",
+        "KiloByte",
+        "Metre",
+        "MegaByte",
+        "TeraByte"
+      ],
+      "title": "UnitEnum",
+      "type": "string"
+    },
+    "VIAFResource": {
+      "additionalProperties": false,
+      "description": "Virtual International Authority File identifier hosted by OCLC. The data is accumulated from various well established authority files from different parts of the world. Check id slot range documentation for examples",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:VIAFResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^\\d+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "VIAFResource",
+      "type": "object"
+    },
+    "VariantTypeEnum": {
+      "description": "FIAF Moving Image Cataloguing Manual D.2",
+      "enum": [
+        "AbridgedCondensed",
+        "Augmented",
+        "BlackAndWhiteCopyOfWorkOriginallyIssuedInColour",
+        "Censored",
+        "Colourized",
+        "DifferentSoundTrack",
+        "Dubbed",
+        "PreservationRestoration",
+        "Sonorized",
+        "Subtitled"
+      ],
+      "title": "VariantTypeEnum",
+      "type": "string"
+    },
+    "Video": {
+      "additionalProperties": false,
+      "description": "FIAF Moving Image Cataloguing Manual D.7.2",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:Video"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FormatVideoTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "title": "Video",
+      "type": "object"
+    },
+    "WikidataResource": {
+      "additionalProperties": false,
+      "description": "Identifier for Wikidata entities. Check id slot range documentation for examples",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:WikidataResource"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for a thing",
+          "pattern": "^[LPQ]\\d+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "category"
+      ],
+      "title": "WikidataResource",
+      "type": "object"
+    },
+    "WorkFormEnum": {
+      "description": "FIAF Glossary of Filmographic Terms D.1",
+      "enum": [
+        "AmateurFilm",
+        "Compilation",
+        "Documentary",
+        "Excerpt",
+        "Feature",
+        "Featurette",
+        "Fiction",
+        "HomeMovie",
+        "Outtake",
+        "ScreenTest",
+        "Series",
+        "Short",
+        "StockFootage",
+        "Trailer",
+        "UneditedFootage",
+        "AnthologyFilm",
+        "Commercial",
+        "EducationalFilm",
+        "EssayFilm",
+        "ExperimentalFilm",
+        "IndustrialFilm",
+        "MusicVideo",
+        "Newsreel"
+      ],
+      "title": "WorkFormEnum",
+      "type": "string"
+    },
+    "WorkVariant": {
+      "additionalProperties": false,
+      "description": "FIAF Moving Image Cataloguing Manual 1.0",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:WorkVariant"
+          ],
+          "type": "string"
+        },
+        "described_by": {
+          "description": "Also record some metadata about the PID itself rather than the identified object",
+          "items": {
+            "$ref": "#/$defs/DescriptionResource"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_alternative_title": {
+          "description": "Additional title(s) associated with the work / variant, manifestation, or item.",
+          "items": {
+            "$ref": "#/$defs/Title"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_event": {
+          "description": "Associate event(s) with a moving image record",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ProductionEvent"
+              },
+              {
+                "$ref": "#/$defs/PreservationEvent"
+              },
+              {
+                "$ref": "#/$defs/PublicationEvent"
+              },
+              {
+                "$ref": "#/$defs/ManufactureEvent"
+              },
+              {
+                "$ref": "#/$defs/RightsCopyrightRegistrationEvent"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_form": {
+          "description": "Form describes the format and/or purpose of a Work, e.g., “non-fiction”, “short” and “animation”. See also: FIAF Moving Image Cataloguing Manual 1.4.3 and FIAF Glossary of Filmographic Terms D.1",
+          "items": {
+            "$ref": "#/$defs/WorkFormEnum"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_genre": {
+          "description": "Genre describes categories of Works, characterized by similar plots, themes, settings, situations, and characters. Examples of genres are “westerns” and “thrillers”. See also: FIAF Moving Image Cataloguing Manual 1.4.3 and FIAF Glossary of Filmographic Terms D.2.1",
+          "items": {
+            "$ref": "#/$defs/Genre"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_identifier": {
+          "description": "Record PID in this slot when exporting data from the PID system. Use local identifiers instead when PIDs have not been registered yet. The latter is suitable for transferring data to the agent responsible for registering PIDs",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AVefiResource"
+              },
+              {
+                "$ref": "#/$defs/LocalResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "has_primary_title": {
+          "$ref": "#/$defs/Title",
+          "description": "Primary title to be displayed in search results etc. The type should be PreferredTitle for works / variants and TitleProper for manifestations / items. If not available, type must be SuppliedDevisedTitle, instead."
+        },
+        "has_subject": {
+          "description": "Subject descriptor terms for the content of a film specifying its period, themes, locations, etc. Not to be confused with Genre. See also: FIAF Moving Image Cataloguing Manual 1.4.3 and FIAF Glossary of Filmographic Terms D.2.3",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Subject"
+              },
+              {
+                "$ref": "#/$defs/Agent"
+              },
+              {
+                "$ref": "#/$defs/GeographicName"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "is_part_of": {
+          "description": "Relate, for instance, episodes to a series / serial. See also: FIAF Moving Image Cataloguing Manual D.17",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AVefiResource"
+              },
+              {
+                "$ref": "#/$defs/LocalResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "is_variant_of": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AVefiResource"
+            },
+            {
+              "$ref": "#/$defs/LocalResource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Link to the reference WorkVariant for the currently described variant. See also: FIAF Moving Image Cataloguing Manual 1.0.2, 1.1.2, 1.4.5"
+        },
+        "same_as": {
+          "description": "See [AuthorityResource doucmentation](AuthorityResource.md) for accepted identifiers",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/EIDRResource"
+              },
+              {
+                "$ref": "#/$defs/FilmportalResource"
+              },
+              {
+                "$ref": "#/$defs/GNDResource"
+              },
+              {
+                "$ref": "#/$defs/VIAFResource"
+              },
+              {
+                "$ref": "#/$defs/WikidataResource"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/$defs/WorkVariantTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        },
+        "variant_type": {
+          "$ref": "#/$defs/VariantTypeEnum",
+          "description": "FIAF Moving Image Cataloguing Manual D.2"
+        }
+      },
+      "required": [
+        "type",
+        "has_primary_title",
+        "category"
+      ],
+      "title": "WorkVariant",
+      "type": "object"
+    },
+    "WorkVariantTypeEnum": {
+      "description": "Work/Variant description type. See also: FIAF Moving Image Cataloguing Manual 1.2.1, D.1",
+      "enum": [
+        "Analytic",
+        "Collection",
+        "Monographic",
+        "Serial"
+      ],
+      "title": "WorkVariantTypeEnum",
+      "type": "string"
+    },
+    "WritingActivity": {
+      "additionalProperties": false,
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.4",
+      "properties": {
+        "category": {
+          "description": "Designates type, e.g. to distinguish different identifiers (GNDResource vs. VIAFResource)",
+          "enum": [
+            "avefi:WritingActivity"
+          ],
+          "type": "string"
+        },
+        "has_agent": {
+          "description": "Agent involved in some activity related to the moving image resource",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/WritingActivityTypeEnum",
+          "description": "See specific class documentation for controlled vocabulary applicable to the type slot, respectively"
+        }
+      },
+      "required": [
+        "has_agent",
+        "type",
+        "category"
+      ],
+      "title": "WritingActivity",
+      "type": "object"
+    },
+    "WritingActivityTypeEnum": {
+      "description": "Activity types / roles. See also: FIAF Glossary of Filmographic Terms B.4",
+      "enum": [
+        "Adaptation",
+        "AssistantEditor",
+        "BasedonCharactersCreatedby",
+        "Editor",
+        "Idea",
+        "NarrationWriter",
+        "Research",
+        "ScreenStory",
+        "SeriesCreatedby",
+        "SourceMaterial",
+        "Stagedby",
+        "Writer"
+      ],
+      "title": "WritingActivityTypeEnum",
+      "type": "string"
+    }
+  },
+  "$id": "https://www.av-efi.net/av-efi-schema/model",
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "additionalProperties": true,
+  "metamodel_version": "1.7.0",
+  "title": "AVefi data model",
+  "type": "object",
+  "version": null
+}

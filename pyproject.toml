@@ -47,6 +47,7 @@ module-root = "src"
 [dependency-groups]
 dev = [
     "coverage>=7.13.4",
+    "hypothesis>=6.161.8",
     "pytest>=8.4.1",
     "ruff>=0.15.11",
     "xsdata[cli]>=26.2",
@@ -64,7 +65,7 @@ omit = ["*/generated/*"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 60
+fail_under = 75
 exclude_also = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",

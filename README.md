@@ -56,11 +56,18 @@ $ uv sync --no-python-downloads
 $ uv run efi-conv --help
 Usage: efi-conv [OPTIONS] COMMAND [ARGS]...
 
+  Convert collection metadata to the AVefi schema and check it.
+  [...]
+
 Options:
-  --help  Show this message and exit.
+  --version      Show the version and exit.
+  -v, --verbose  Show debug output (overrides EFI_CONV_LOGLEVEL).
+  -q, --quiet    Show errors only (overrides EFI_CONV_LOGLEVEL).
+  --help         Show this message and exit.
 
 Commands:
   check  Sanity check EFI_FILES and optionally remove invalid records.
+  diff   Compare CANDIDATE against REFERENCE and report the deviations.
   from   Convert files from some schema into a JSON file with AVefi records.
 $ uv run efi-conv from --help
 Usage: efi-conv from [OPTIONS] [INPUT_FILES]...
@@ -68,9 +75,16 @@ Usage: efi-conv from [OPTIONS] [INPUT_FILES]...
   Convert files from some schema into a JSON file with AVefi records.
 
 Options:
-  -f, --format [avportal|fmdu]  Source data format.  [required]
-  -o, --output FILE             Output file (stdout if not specified).
-  --help                        Show this message and exit.
+  --list-formats                     List available converters with their
+                                     input format and exit.
+  -f, --format [avportal|fmdu|fmdu.lido]
+                                     Source data format.  [required]
+  -o, --output FILE                  Output file (stdout if not specified).
+  --report FILE                      Write a structured JSON report of
+                                     unconvertible values.
+  --continue-on-error                Skip input files that fail to convert
+                                     instead of aborting.
+  --help                             Show this message and exit.
 $ uv run efi-conv from -f avportal -o efi_records.json tests/avportal/*.xml
 INFO efi_conv.avportal.avportal: Replaced name 'Dore Kleindienst-Andrée' by 'Kleindienst-Andrée, Dore'
 INFO efi_conv.avportal.avportal: Replaced name 'E. Fischer' by 'Fischer, E.'
@@ -79,8 +93,25 @@ INFO efi_conv.core.check: Processing tests/avportal/efi_records.json
 INFO efi_conv.core.check: All 3 records passed the checks successfully
 ```
 
-Alternatively, use the provided docker-compose file in order to run
-this tool inside a container:
+Values that cannot be converted are never dropped silently. They are
+logged, and `--report` additionally collects them in a machine readable
+file whose format is documented in
+[`report_schema.json`](./src/efi_conv/core/report_schema.json):
+
+```console
+$ uv run efi-conv from -f fmdu.lido -o efi_records.json \
+    --report report.json tests/lido/sample_data.xml
+$ uv run efi-conv check efi_records.json
+```
+
+To find out what a conversion changed with respect to data already held
+in AVefi, compare the two files. The command exits non-zero when
+anything present in the reference is missing from the candidate, so it
+can be used in a pipeline:
+
+```console
+$ uv run efi-conv diff reference.json efi_records.json
+```
 
 [uv_install]: https://docs.astral.sh/uv/getting-started/installation/
 
@@ -107,9 +138,18 @@ That's all. Feel free to start hacking!
 Add new converters as modules within the [efi_conv
 package](./src/efi_conv). Then, add this module as another choice to
 the `IMPORTERS` list in [cli.py](./src/efi_conv/core/cli.py) to make it
-accessible from the command line. Take care that the module provides
-`.module_name:efi_import` function similar to what the avportal module
-does.
+accessible from the command line. Note that the value of `-f` is
+resolved as a module path below `efi_conv`, so a nested converter is
+registered under its dotted name, as `fmdu.lido` is. Take care that the
+module provides `.module_name:efi_import` function similar to what the
+avportal module does, along with `ISSUER_INFO`; `DESCRIPTION` and
+`INPUT_FORMAT` are picked up by `efi-conv from --list-formats`.
+
+If your data is LIDO, you probably do not need a new converter at all:
+[`efi_conv.lido`](./src/efi_conv/lido/README.md) maps the standard, and
+an institution is described by a `LidoProfile` carrying its issuer
+information and vocabularies. See
+[`fmdu/lido.py`](./src/efi_conv/fmdu/lido.py) for a worked example.
 
 Unless you already have a suitable python parser for your data, check
 out whether the [xsData][xsdata] or similar projects can help you

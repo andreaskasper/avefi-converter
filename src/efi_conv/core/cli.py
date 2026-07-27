@@ -6,7 +6,7 @@ import click
 
 from .. import __version__
 
-IMPORTERS = ["avportal", "fmdu"]
+IMPORTERS = ["avportal", "fmdu", "fmdu.lido"]
 log = logging.getLogger(__name__)
 
 

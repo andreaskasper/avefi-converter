@@ -30,5 +30,5 @@ logging_config = {
 }
 logging.config.dictConfig(logging_config)
 
-from .core import check, from_  # noqa: E402, F401
+from .core import check, diff, from_  # noqa: E402, F401
 from .core.cli import cli_main  # noqa: E402, F401

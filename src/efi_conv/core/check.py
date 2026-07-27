@@ -1,5 +1,6 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import UTC, datetime
+import hashlib
 import json
 import logging
 import os
@@ -117,6 +118,34 @@ def get_schema_validator(update_schema=False):
     cls.check_schema(schema)
     validator = cls(schema)
     return validator
+
+
+def schema_fingerprint() -> dict | None:
+    """Return an identification of the AVefi schema currently in use.
+
+    The schema is fetched from a branch rather than from a release, so
+    the only reliable identification is a hash of the cached document.
+    Recording it makes a conversion reproducible after the fact.
+
+    """
+    try:
+        raw = SCHEMA_FILE.read_bytes()
+    except OSError:
+        return None
+    try:
+        schema = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    return {
+        "source": SCHEMA_SOURCE,
+        "id": schema.get("$id"),
+        "version": schema.get("version"),
+        "metamodel_version": schema.get("metamodel_version"),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "cached_at": datetime.fromtimestamp(
+            SCHEMA_FILE.stat().st_mtime, tz=UTC
+        ).isoformat(timespec="seconds"),
+    }
 
 
 def write_schema_cache(schema):
