@@ -63,9 +63,11 @@ PROFILE = LidoProfile(
 )
 
 
-def efi_import(input_file) -> list[efi.MovingImageRecord]:
+def efi_import(
+    input_file, continue_on_error: bool = False
+) -> list[efi.MovingImageRecord]:
     """Convert a FMDU LIDO export into AVefi records."""
-    return lido_import(input_file, PROFILE)
+    return lido_import(input_file, PROFILE, continue_on_error)
 
 
 def main(argv=None):

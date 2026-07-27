@@ -1,5 +1,6 @@
 from collections import Counter
 import importlib
+import inspect
 import logging
 import types
 
@@ -97,7 +98,13 @@ def efi_from(
         for input_file in input_files:
             try:
                 with for_file(input_file):
-                    generated_records.extend(import_file(mod, input_file))
+                    generated_records.extend(
+                        import_file(
+                            mod,
+                            input_file,
+                            continue_on_error=continue_on_error,
+                        )
+                    )
             except Exception as e:
                 report.add(
                     "error",
@@ -130,6 +137,15 @@ def efi_from(
         raise SystemExit(1)
 
 
+def accepts_continue_on_error(importer: types.ModuleType) -> bool:
+    """Return True if the converter can skip individual records."""
+    try:
+        signature = inspect.signature(importer.efi_import)
+    except (TypeError, ValueError):  # pragma: no cover - defensive
+        return False
+    return "continue_on_error" in signature.parameters
+
+
 def log_summary(input_files, generated_records, failed_files, report=None):
     """Report what the run produced, per record category."""
     counts = Counter(record.category for record in generated_records)
@@ -152,8 +168,21 @@ def log_summary(input_files, generated_records, failed_files, report=None):
 def import_file(
     importer: types.ModuleType,
     input_file: str,
+    continue_on_error: bool = False,
 ) -> list[efi.MovingImageRecord]:
-    result = importer.efi_import(input_file)
+    """Convert one input file and complete the issuer information.
+
+    Converters that can contain an error to the individual record
+    declare a ``continue_on_error`` parameter on ``efi_import``; for
+    the others the flag stays a file level decision, as before.
+
+    """
+    if continue_on_error and accepts_continue_on_error(importer):
+        result = importer.efi_import(
+            input_file, continue_on_error=continue_on_error
+        )
+    else:
+        result = importer.efi_import(input_file)
     for record in result:
         if not (record.has_identifier):
             raise ValueError("has_identifier missing for some record(s)")

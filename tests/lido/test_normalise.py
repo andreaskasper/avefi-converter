@@ -28,10 +28,6 @@ class TestNormaliseDate:
             ("ca. 1962", "1962~"),
             ("um 1962", "1962~"),
             ("1962?", "1962?"),
-            # Decades
-            ("50er Jahre", "1950/1959"),
-            ("1950er", "1950/1959"),
-            ("1950er Jahre", "1950/1959"),
             # German day and month notation
             ("15.03.1962", "1962-03-15"),
             ("3.1962", "1962-03"),
@@ -57,8 +53,28 @@ class TestNormaliseDate:
         with pytest.raises(NormalisationError):
             normalise_date(source)
 
+    @pytest.mark.parametrize(
+        "source", ["50er Jahre", "1950er", "1950er Jahre"]
+    )
+    def test_decades_need_an_agreed_representation(self, source):
+        """The contract reserves this mapping for after agreement."""
+        with pytest.raises(NormalisationError):
+            normalise_date(source)
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            ("50er Jahre", "1950/1959"),
+            ("1950er", "1950/1959"),
+            ("1950er Jahre", "1950/1959"),
+            ("1920er", "1920/1929"),
+        ],
+    )
+    def test_decades_map_once_enabled(self, source, expected):
+        assert normalise_date(source, map_decades=True) == expected
+
     def test_result_always_complies_with_iso_date(self):
-        for source in ("1962-65", "ca. 1962", "50er Jahre", "15.03.1962"):
+        for source in ("1962-65", "ca. 1962", "15.03.1962"):
             assert ISO_DATE_PATTERN.match(normalise_date(source))
 
 

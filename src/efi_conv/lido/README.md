@@ -10,6 +10,34 @@ therefore a profile, not a new mapping.
 `efi_conv.fmdu.lido` is the profile for the Filmmuseum der
 Landeshauptstadt Düsseldorf and doubles as the worked example.
 
+## How a record is mapped
+
+```mermaid
+flowchart TD
+    IN["lido:lido record"] --> WT{"objectWorkType<br/>a film?"}
+    WT -->|no| SKIP["skipped, reported<br/>accompanying material is out of scope"]
+    WT -->|yes| T["titles<br/>articles moved both ways"]
+    T --> WK{"work key known?<br/>title · director · date"}
+    WK -->|yes| REUSE["reuse WorkVariant"]
+    WK -->|no| NEW["new WorkVariant<br/>+ production event, genre"]
+    REUSE --> MK
+    NEW --> MK{"manifestation key known?<br/>colour · format · language"}
+    MK -->|yes| MREUSE["reuse Manifestation"]
+    MK -->|no| MNEW["new Manifestation<br/>+ publication event"]
+    MREUSE --> IT["Item<br/>duration, carrier, access status"]
+    MNEW --> IT
+    IT --> OUT["work + manifestation + item"]
+    SKIP -.-> REP[("conversion report")]
+    T -.-> REP
+    IT -.-> REP
+```
+
+Grouping matters: several LIDO records commonly describe several copies
+of one film. Emitting a work per record would register identifiers for
+copies rather than for films. The work and manifestation keys are
+configured in the profile and can be switched off with
+`work_key_fields=()` for an export that is genuinely item-level.
+
 ## Structure
 
 | Module | Purpose |

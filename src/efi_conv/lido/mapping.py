@@ -10,9 +10,11 @@ the structure the CSV importer produces for the same institution.
 
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import hashlib
 import logging
 import pathlib
+import re
 
 from avefi_schema import model_pydantic_v2 as efi
 from xsdata.formats.dataclass.context import XmlContext
@@ -60,6 +62,35 @@ class MappingRule:
 #: rendered from this list, and a test asserts that code and table do
 #: not drift apart.
 MAPPING_RULES = (
+    MappingRule(
+        "film_filter",
+        "Record",
+        "lido:objectClassificationWrap/lido:objectWorkTypeWrap"
+        "/lido:objectWorkType",
+        "—",
+        "Profile vocabulary",
+        "Only holdings metadata about film is in scope. Records of"
+        " another work type are skipped and reported; a record without"
+        " a work type is skipped with a warning",
+    ),
+    MappingRule(
+        "work_grouping",
+        "Work",
+        "primary title, director, production date",
+        "has_identifier (work)",
+        "Profile work_key_fields",
+        "Several copies of one film share one WorkVariant, as in"
+        " fmdu/csv.py; set work_key_fields to () for one work per"
+        " record",
+    ),
+    MappingRule(
+        "manifestation_grouping",
+        "Manifestation",
+        "work key plus colour type, format and languages of the copy",
+        "has_identifier (manifestation)",
+        notes="Copies agreeing on the carrier characteristics share a"
+        " manifestation",
+    ),
     MappingRule(
         "record_id",
         "Item",
@@ -127,6 +158,13 @@ MAPPING_RULES = (
         notes="Reported as unmapped rather than dropped silently",
     ),
     MappingRule(
+        "publication_date",
+        "Manifestation",
+        "lido:event[publication]/lido:eventDate and lido:eventPlace",
+        "has_event (PublicationEvent, ReleaseEvent)",
+        "ISODate",
+    ),
+    MappingRule(
         "duration",
         "Item",
         "lido:objectMeasurementsWrap//lido:measurementsSet[running time]",
@@ -173,6 +211,35 @@ MAPPING_RULES = (
 MAPPING_RULES_BY_ID = {rule.id: rule for rule in MAPPING_RULES}
 
 
+#: Decisions the mapping takes that are not derivable from LIDO alone.
+#: They are listed in the generated documentation so that a reviewer
+#: sees them without reading the code.
+ASSUMPTIONS = (
+    "A record without a recognised `lido:objectWorkType` is skipped"
+    " rather than imported as a film.",
+    "Every record yields one item. Works and manifestations are shared"
+    " between records according to the profile key, so several copies"
+    " of one film do not produce several works.",
+    "`WorkVariant.type` is always `Monographic`; serial and analytic"
+    " works are not derived from LIDO.",
+    "Decade expressions such as `50er Jahre` are reported as"
+    " unconvertible. Enabling `map_decades` maps them to a closed ten"
+    " year interval and reads two digit decades as twentieth century.",
+    "`ca.` and `um` become the ISODate approximation qualifier `~`, a"
+    " trailing question mark becomes `?`.",
+    "A running time given as a bare number without a unit is read as minutes.",
+    "Clock notation with two components, such as `1:43`, is read as"
+    " minutes and seconds, not as hours and minutes.",
+    "A date such as `2003-04` is read as an ISO year and month. Note"
+    " that `fmdu/csv.py` reads the same notation as the interval"
+    " 2003 to 2004; the divergence is reported per occurrence.",
+    "Only the first `lido:descriptiveMetadata` block of a record is"
+    " mapped; further blocks are reported.",
+    "The article lists are provisional and are to be confirmed against"
+    " the reference data.",
+)
+
+
 def render_mapping_markdown(rules=MAPPING_RULES) -> str:
     """Return the mapping table as a Markdown document."""
     lines = [
@@ -191,6 +258,15 @@ def render_mapping_markdown(rules=MAPPING_RULES) -> str:
             f" `{rule.target_field}` | {rule.normalisation or '—'} |"
             f" {rule.notes or '—'} |"
         )
+    lines += [
+        "",
+        "## Assumptions",
+        "",
+        "Decisions the mapping takes that LIDO does not determine, and"
+        " that need confirming against the reference data:",
+        "",
+    ]
+    lines += [f"- {assumption}" for assumption in ASSUMPTIONS]
     return "\n".join(lines) + "\n"
 
 
@@ -207,52 +283,125 @@ def parse_lido(input_file) -> list[Lido]:
 
 
 def efi_import(
-    input_file, profile: LidoProfile
+    input_file, profile: LidoProfile, continue_on_error: bool = False
 ) -> list[efi.MovingImageRecord]:
-    """Convert a LIDO file into AVefi records using ``profile``."""
+    """Convert a LIDO file into AVefi records using ``profile``.
+
+    Parameters
+    ----------
+    input_file
+        Path of the LIDO document.
+    profile : LidoProfile
+        Institution specific configuration.
+    continue_on_error : bool
+        Report a record that cannot be converted and carry on with the
+        remaining ones, instead of aborting the whole file. A single
+        unmappable date in a large export would otherwise cost every
+        record in it.
+
+    """
     records = []
+    context = MappingContext(profile)
     with for_file(input_file):
         for lido_record in parse_lido(input_file):
-            records.extend(map_record(lido_record, profile))
+            try:
+                records.extend(map_record(lido_record, profile, context))
+            except Exception as e:
+                if not continue_on_error:
+                    raise
+                report_issue(
+                    "error",
+                    f"Record skipped: {e}",
+                    record_id=safe_record_identifier(lido_record),
+                )
     return records
 
 
+@dataclass
+class MappingContext:
+    """State shared by all records of one conversion.
+
+    Several LIDO records commonly describe several copies of the same
+    film. Minting a separate work for each of them would defeat the
+    purpose of the AVefi identifiers, so works and manifestations are
+    reused across records, mirroring what the CSV importer for the same
+    institution does.
+
+    """
+
+    profile: LidoProfile
+    works: dict = field(default_factory=dict)
+    manifestations: dict = field(default_factory=dict)
+
+
 def map_record(
-    lido_record: Lido, profile: LidoProfile
+    lido_record: Lido,
+    profile: LidoProfile,
+    context: "MappingContext | None" = None,
 ) -> list[efi.MovingImageRecord]:
-    """Return work, manifestation and item for one LIDO record."""
+    """Return the AVefi records derived from one LIDO record."""
+    if context is None:
+        context = MappingContext(profile)
     source_key = record_identifier(lido_record)
     descriptive = first(lido_record.descriptive_metadata)
     if descriptive is None:
         raise ValueError(
             f"LIDO record {source_key} has no descriptiveMetadata"
         )
+    if len(lido_record.descriptive_metadata or []) > 1:
+        report_issue(
+            "warning",
+            "Only the first descriptiveMetadata block is mapped",
+            record_id=source_key,
+            source_field="descriptiveMetadata",
+            raw_value=len(lido_record.descriptive_metadata),
+        )
+
+    if not is_film_record(descriptive, profile, source_key):
+        return []
 
     titles = collect_titles(descriptive, profile, source_key)
     if not titles:
         raise ValueError(f"LIDO record {source_key} has no usable title")
     primary, alternatives = titles[0], titles[1:]
 
-    work = build_work(descriptive, primary, alternatives, profile, source_key)
-    work_id = efi.LocalResource(id=f"{source_key}_work")
-    work.has_identifier.append(work_id)
+    production = build_production_event(descriptive, profile, source_key)
+    publication = build_publication_event(descriptive, profile, source_key)
 
-    manifestation = efi.Manifestation(
-        is_manifestation_of=[work_id],
-        has_primary_title=as_title(primary, "TitleProper"),
-    )
-    manifestation_id = efi.LocalResource(id=f"{source_key}_manifestation")
-    manifestation.has_identifier.append(manifestation_id)
+    new_records = []
+    work_key = make_work_key(profile, source_key, primary, production)
+    work = context.works.get(work_key)
+    if work is None:
+        work = build_work(descriptive, primary, alternatives, source_key)
+        if production is not None:
+            work.has_event.append(production)
+        work.has_identifier.append(
+            efi.LocalResource(id=f"{slug(work_key)}_work")
+        )
+        context.works[work_key] = work
+        new_records.append(work)
+    else:
+        merge_alternative_titles(work, alternatives)
+    work_id = work.has_identifier[0]
 
-    item = build_item(
-        lido_record,
-        descriptive,
-        primary,
-        profile,
-        source_key,
-        manifestation_id,
-    )
+    item = build_item(lido_record, descriptive, primary, profile, source_key)
+    manifestation_key = make_manifestation_key(work_key, item)
+    manifestation = context.manifestations.get(manifestation_key)
+    if manifestation is None:
+        manifestation = efi.Manifestation(
+            is_manifestation_of=[work_id],
+            has_primary_title=as_title(primary, "TitleProper"),
+        )
+        if publication is not None:
+            manifestation.has_event.append(publication)
+        manifestation.has_identifier.append(
+            efi.LocalResource(id=f"{slug(manifestation_key)}_manifestation")
+        )
+        context.manifestations[manifestation_key] = manifestation
+        new_records.append(manifestation)
+    item.is_item_of = manifestation.has_identifier[0]
     item.has_identifier.append(efi.LocalResource(id=source_key))
+    new_records.append(item)
 
     for record in (work, manifestation, item):
         described_by = described_by_issuer(record, profile.issuer_info)
@@ -260,10 +409,135 @@ def map_record(
             described_by.has_source_key = []
         if source_key not in described_by.has_source_key:
             described_by.has_source_key.append(source_key)
-    return [work, manifestation, item]
+    return new_records
 
 
-def build_work(descriptive, primary, alternatives, profile, source_key):
+def is_film_record(descriptive, profile, source_key) -> bool:
+    """Return True if the record describes film rather than an extra.
+
+    Only holdings metadata about film is in scope; accompanying
+    material such as posters, scripts or photographs occurs in the same
+    museum export and must not become a film work.
+
+    """
+    if not profile.film_work_type_terms:
+        return True
+    wrap = getattr(
+        descriptive.object_classification_wrap, "object_work_type_wrap", None
+    )
+    terms = []
+    for work_type in getattr(wrap, "object_work_type", None) or []:
+        text = term_text(work_type)
+        if text:
+            terms.append(text)
+    if not terms:
+        report_issue(
+            "warning",
+            "Record has no objectWorkType, cannot tell film from"
+            " accompanying material; record skipped",
+            record_id=source_key,
+            source_field="objectWorkType",
+            target_field="—",
+        )
+        return False
+    if any(term.lower() in profile.film_work_type_terms for term in terms):
+        return True
+    report_issue(
+        "info",
+        "Record skipped: not a film holding",
+        record_id=source_key,
+        source_field="objectWorkType",
+        target_field="—",
+        raw_value=terms,
+    )
+    return False
+
+
+def make_work_key(profile, source_key, primary, production) -> str:
+    """Return the key identifying the work a record belongs to."""
+    if not profile.work_key_fields:
+        return source_key
+    parts = []
+    for name in profile.work_key_fields:
+        if name == "primary_title":
+            parts.append(primary.ordering or primary.display)
+        elif name == "director":
+            parts.append(director_names(production))
+        elif name == "date":
+            parts.append(
+                production.has_date
+                if production is not None and production.has_date
+                else ""
+            )
+        else:
+            raise ValueError(f"Unknown work key field: {name}")
+    return "__".join(parts)
+
+
+def director_names(production) -> str:
+    """Return the directors of an event as a stable string."""
+    if production is None:
+        return ""
+    names = sorted(
+        agent.has_name
+        for activity in production.has_activity
+        for agent in activity.has_agent
+    )
+    return ", ".join(names)
+
+
+def make_manifestation_key(work_key: str, item) -> str:
+    """Return the key identifying the manifestation of an item.
+
+    Copies that agree on the characteristics carried by the Fassung
+    level belong to the same manifestation.
+
+    """
+    parts = [
+        work_key,
+        str(item.has_colour_type or ""),
+        ",".join(sorted(str(fmt.type) for fmt in item.has_format or [])),
+        ",".join(
+            sorted(
+                f"{language.code}:{','.join(sorted(language.usage or []))}"
+                for language in item.in_language or []
+            )
+        ),
+    ]
+    return "__".join(parts)
+
+
+def slug(value: str) -> str:
+    """Return a compact, stable identifier fragment for ``value``."""
+    cleaned = re.sub(r"\s+", "_", value.strip())
+    cleaned = re.sub(r"[^\w.:/-]", "", cleaned, flags=re.UNICODE)
+    cleaned = re.sub(r"_{2,}", "_", cleaned).strip("_")
+    if len(cleaned) <= 120:
+        return cleaned or "record"
+    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
+    return f"{cleaned[:100]}_{digest}"
+
+
+def merge_alternative_titles(work, alternatives):
+    """Add titles a further record contributes to a known work."""
+    known = {title.has_name for title in work.has_alternative_title}
+    for title in alternatives:
+        if title.display not in known:
+            work.has_alternative_title.append(
+                as_title(title, "AlternativeTitle")
+            )
+            known.add(title.display)
+
+
+def safe_record_identifier(lido_record) -> str | None:
+    """Return the record identifier, or None if there is none."""
+    try:
+        return record_identifier(lido_record)
+    except ValueError:
+        return None
+
+
+def build_work(descriptive, primary, alternatives, source_key):
     """Return the WorkVariant for one LIDO record."""
     work = efi.WorkVariant(
         type=efi.WorkVariantTypeEnum("Monographic"),
@@ -271,12 +545,8 @@ def build_work(descriptive, primary, alternatives, profile, source_key):
     )
     for title in alternatives:
         work.has_alternative_title.append(as_title(title, "AlternativeTitle"))
-    for term in classification_terms(descriptive, profile, kind="genre"):
+    for term in classification_terms(descriptive, source_key):
         work.has_genre.append(efi.Genre(has_name=term))
-
-    event = build_production_event(descriptive, profile, source_key)
-    if event is not None:
-        work.has_event.append(event)
     return work
 
 
@@ -289,7 +559,11 @@ def build_production_event(descriptive, profile, source_key):
 
     date_value = event_date_value(lido_event)
     try:
-        has_date = normalise_date(date_value, record_id=source_key)
+        has_date = normalise_date(
+            date_value,
+            record_id=source_key,
+            map_decades=profile.map_decades,
+        )
     except NormalisationError as e:
         report_issue(
             "error",
@@ -353,17 +627,53 @@ def build_production_event(descriptive, profile, source_key):
     return event
 
 
-def build_item(
-    lido_record,
-    descriptive,
-    primary,
-    profile,
-    source_key,
-    manifestation_id,
-):
-    """Return the Item for one LIDO record."""
+def build_publication_event(descriptive, profile, source_key):
+    """Return the PublicationEvent described by the LIDO events."""
+    lido_event = find_event(descriptive, profile.publication_event_terms)
+    if lido_event is None:
+        return None
+    event = efi.PublicationEvent(
+        type=efi.PublicationEventTypeEnum("ReleaseEvent")
+    )
+    date_value = event_date_value(lido_event)
+    try:
+        has_date = normalise_date(
+            date_value,
+            record_id=source_key,
+            source_field="event[publication]/eventDate",
+            target_field="has_event.has_date",
+            map_decades=profile.map_decades,
+        )
+    except NormalisationError as e:
+        report_issue(
+            "error",
+            str(e),
+            record_id=source_key,
+            source_field="event[publication]/eventDate",
+            target_field="has_event.has_date",
+            raw_value=date_value,
+        )
+        raise
+    if has_date:
+        event.has_date = has_date
+    for place in lido_event.event_place or []:
+        name = place_name(place)
+        if name:
+            event.located_in.append(efi.GeographicName(has_name=name))
+    if not (event.has_date or event.located_in):
+        return None
+    return event
+
+
+def build_item(lido_record, descriptive, primary, profile, source_key):
+    """Return the Item for one LIDO record.
+
+    ``is_item_of`` is filled in by the caller, once the manifestation
+    this copy belongs to is known.
+
+    """
     item = efi.Item(
-        is_item_of=manifestation_id,
+        is_item_of=efi.LocalResource(id="__pending__"),
         has_primary_title=as_title(primary, "TitleProper"),
     )
 
@@ -507,23 +817,33 @@ def collect_titles(descriptive, profile, source_key) -> list[SourceTitle]:
                 language_code(getattr(appellation, "lang", None))
                 or profile.default_language
             )
-            display, ordering = normalise_title(value, language)
-            if ordering and ordering != display:
-                report_issue(
-                    "info",
-                    "Derived ordering name from article position",
-                    record_id=source_key,
-                    source_field="titleSet/appellationValue",
-                    target_field="has_primary_title.has_ordering_name",
-                    raw_value=raw,
-                )
-            title = SourceTitle(display, ordering, supplied)
             is_preferred = (
                 str(getattr(title_set, "type_value", "") or "").lower()
                 == "preferred"
                 or str(getattr(appellation, "pref", "") or "").lower()
                 == "preferred"
             )
+            target_field = (
+                "has_primary_title.has_ordering_name"
+                if is_preferred
+                else "has_alternative_title.has_ordering_name"
+            )
+            display, ordering = normalise_title(
+                value,
+                language,
+                record_id=source_key,
+                target_field=target_field,
+            )
+            if ordering and ordering != display:
+                report_issue(
+                    "info",
+                    "Derived ordering name from article position",
+                    record_id=source_key,
+                    source_field="titleSet/appellationValue",
+                    target_field=target_field,
+                    raw_value=raw,
+                )
+            title = SourceTitle(display, ordering, supplied)
             (preferred if is_preferred else others).append(title)
     return preferred + others
 

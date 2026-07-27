@@ -183,4 +183,76 @@
       </lido:recordWrap>
     </lido:administrativeMetadata>
   </lido:lido>
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">FMDU-0003</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType><lido:term xml:lang="de">Film</lido:term></lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification lido:type="colour">
+            <lido:term xml:lang="de">Schwarz-Weiß</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="format">
+            <lido:term xml:lang="de">16mm</lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="preferred">
+            <lido:appellationValue xml:lang="de" lido:pref="preferred">Brücke, Die</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType><lido:term xml:lang="de">Produktion</lido:term></lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Wicki, Bernhard</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor><lido:term xml:lang="de">Regie</lido:term></lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate><lido:displayDate>1959</lido:displayDate></lido:eventDate>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">FMDU-0003</lido:recordID>
+        <lido:recordType><lido:term xml:lang="de">Einzelobjekt</lido:term></lido:recordType>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">FMDU-0004</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType><lido:term xml:lang="de">Plakat</lido:term></lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="preferred">
+            <lido:appellationValue xml:lang="de">Plakat zu Die Brücke</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+      </lido:objectIdentificationWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">FMDU-0004</lido:recordID>
+        <lido:recordType><lido:term xml:lang="de">Einzelobjekt</lido:term></lido:recordType>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
 </lido:lidoWrap>

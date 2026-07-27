@@ -13,6 +13,62 @@ get in touch and let us jointly work on your mapping.
 [AVefi project]: https://projects.tib.eu/av-efi/
 [AVefi schema]: https://av-efi.github.io/av-efi-schema/
 
+## What this tool does
+
+A converter reads the export format of one institution and produces
+records complying with the AVefi schema, ready to have persistent
+identifiers registered for them. Values that cannot be converted are
+never dropped in silence: they are logged, and `--report` collects them
+in a machine readable protocol.
+
+```mermaid
+flowchart LR
+    A[Institutional export<br/>CSV · NTM XML · LIDO XML] --> B[efi-conv from]
+    B --> C[AVefi records<br/>JSON]
+    B -.-> R[Conversion report<br/>--report]
+    C --> D[efi-conv check]
+    D --> E{valid?}
+    E -->|yes| F[Register PIDs]
+    E -->|no| G[Fix mapping]
+    G --> B
+    C --> H[efi-conv diff]
+    I[Records already in AVefi] --> H
+    H --> J[Documented deviations]
+```
+
+The AVefi schema describes holdings on three levels, and a converter is
+expected to produce all three. A work is the film, a manifestation is
+one of its versions, an item is a physical or digital copy an
+institution actually holds:
+
+```mermaid
+erDiagram
+    WORKVARIANT ||--o{ MANIFESTATION : is_manifestation_of
+    MANIFESTATION ||--o{ ITEM : is_item_of
+    WORKVARIANT {
+        string has_primary_title
+        string has_ordering_name
+        event  production
+        string has_genre
+    }
+    MANIFESTATION {
+        string has_primary_title
+        event  publication
+    }
+    ITEM {
+        string has_format
+        string has_colour_type
+        string has_duration
+        string has_access_status
+    }
+```
+
+Note that several source records commonly describe several copies of
+the same film. A converter should recognise that and emit one work with
+several items, rather than one work per copy — otherwise the
+identifiers it registers describe copies rather than films, which is
+the opposite of what the AVefi project is for.
+
 ## Usage example
 
 The check module included in this package allows you to validate
@@ -155,7 +211,26 @@ Unless you already have a suitable python parser for your data, check
 out whether the [xsData][xsdata] or similar projects can help you
 there. In fact, the [avportal module relies on xsData for
 parsing](./src/efi_conv/avportal/README.md) as has been briefly
-documented.
+documented, as does the [lido module](./src/efi_conv/lido/README.md).
+
+A converter is wired into the package like this:
+
+```mermaid
+flowchart TD
+    CLI["efi-conv from -f NAME"] --> CHOICE["IMPORTERS in core/cli.py"]
+    CHOICE --> RESOLVE["importlib: efi_conv.NAME"]
+    RESOLVE --> MOD["your module"]
+    MOD --> IMP["efi_import(input_file)"]
+    MOD --> ISSUER["ISSUER_INFO"]
+    MOD -.optional.-> DESC["DESCRIPTION, INPUT_FORMAT<br/>shown by --list-formats"]
+    IMP --> REC["list of AVefi records"]
+    REC --> DUMP["core/avefi.py"]
+```
+
+Because the value of `-f` is resolved as a module path below
+`efi_conv`, a converter nested inside an institution package is
+registered under its dotted name — `fmdu.lido` resolves to
+`efi_conv.fmdu.lido`.
 
 The actual mapping is the tedious part. See
 [avportal.py](./src/efi_conv/avportal/avportal.py) for the kind of

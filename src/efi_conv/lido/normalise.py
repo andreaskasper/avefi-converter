@@ -101,12 +101,36 @@ def language_code(tag: str | None) -> str | None:
     return LANGUAGE_TAGS.get(tag.strip().lower().split("-")[0])
 
 
+#: Expressions naming a decade, e.g. "50er Jahre" or "1950er".
+DECADE_PATTERN = re.compile(r"^(\d{2}|\d{4})\s*er(\s+Jahre)?$", re.I)
+
+
+def decade_to_period(text: str) -> str | None:
+    """Return the closed interval a decade expression denotes.
+
+    Not applied by default. The contract requires decade expressions to
+    be reported as unconvertible first and to be mapped only once the
+    client has agreed on a representation, so this is opt in through
+    ``LidoProfile.map_decades``.
+
+    """
+    match = DECADE_PATTERN.match(text.strip())
+    if not match:
+        return None
+    digits = match.group(1)
+    # Two digit decades are read as twentieth century, which is an
+    # assumption that needs confirming against the reference data.
+    start = int(digits) if len(digits) == 4 else 1900 + int(digits)
+    return f"{start:04d}/{start + 9:04d}"
+
+
 def normalise_date(
     value: str | None,
     *,
     record_id: str | None = None,
     source_field: str = "eventDate",
     target_field: str = "has_event.has_date",
+    map_decades: bool = False,
 ) -> str | None:
     """Return ``value`` as an AVefi ISODate, or None if there is none.
 
@@ -165,7 +189,30 @@ def normalise_date(
     else:
         suffix = "~" if approximate else ""
 
-    result = _map_date_expression(text)
+    result = _map_date_expression(text, record_id=record_id)
+    if result is None and DECADE_PATTERN.match(text):
+        if not map_decades:
+            report_issue(
+                "error",
+                "Decade expression is not convertible without an agreed"
+                " representation",
+                record_id=record_id,
+                source_field=source_field,
+                target_field=target_field,
+                raw_value=value,
+            )
+            raise NormalisationError(
+                f"Decade expression needs an agreed representation: {value!r}"
+            )
+        result = decade_to_period(text)
+        report_issue(
+            "info",
+            "Decade expression mapped to a closed interval as agreed",
+            record_id=record_id,
+            source_field=source_field,
+            target_field=target_field,
+            raw_value=value,
+        )
     if result is None:
         raise NormalisationError(
             f"Unable to map date expression to ISODate: {value!r}"
@@ -185,7 +232,9 @@ def normalise_date(
 AMBIGUOUS_PATTERN = re.compile(r"^(\d{2})\d{2}-(0[1-9]|1[0-2])$")
 
 
-def _map_date_expression(text: str) -> str | None:
+def _map_date_expression(
+    text: str, record_id: str | None = None
+) -> str | None:
     """Return the ISODate body for ``text`` without any qualifier."""
     # Already an ISO date or period
     if ISO_DATE_PATTERN.match(text):
@@ -193,19 +242,14 @@ def _map_date_expression(text: str) -> str | None:
             report_issue(
                 "info",
                 "Ambiguous date read as ISO year and month, not as an"
-                " abbreviated interval",
+                " abbreviated interval; note that fmdu/csv.py reads the"
+                " same notation as an interval",
+                record_id=record_id,
                 source_field="eventDate",
                 target_field="has_event.has_date",
                 raw_value=text,
             )
         return text
-
-    # Decades: "50er Jahre", "1950er", "1950er Jahre"
-    match = re.match(r"^(\d{2}|\d{4})\s*er(\s+Jahre)?$", text, re.IGNORECASE)
-    if match:
-        digits = match.group(1)
-        start = int(digits) if len(digits) == 4 else 1900 + int(digits)
-        return f"{start:04d}/{start + 9:04d}"
 
     # Abbreviated interval: "1962-65", "1962/65"
     match = re.match(r"^(\d{2})(\d{2})\s*[-/]\s*(\d{2})$", text)
@@ -361,6 +405,8 @@ def normalise_title(
     language: str | None = None,
     *,
     articles: dict[str, tuple[str, ...]] | None = None,
+    record_id: str | None = None,
+    target_field: str = "has_ordering_name",
 ) -> tuple[str, str | None]:
     """Return display name and ordering name for a title.
 
@@ -402,8 +448,9 @@ def normalise_title(
                 "info",
                 "No article list configured for this language, ordering"
                 " name left unset",
+                record_id=record_id,
                 source_field="appellationValue/@xml:lang",
-                target_field="has_ordering_name",
+                target_field=target_field,
                 raw_value=language,
             )
             return display, None

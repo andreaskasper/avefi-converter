@@ -6,7 +6,8 @@
         "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
         "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
         "has_source_key": [
-          "FMDU-0001"
+          "FMDU-0001",
+          "FMDU-0003"
         ]
       }
     ],
@@ -45,7 +46,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "FMDU-0001_work"
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
       }
     ],
     "has_primary_title": {
@@ -72,7 +73,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "FMDU-0001_manifestation"
+        "id": "Brücke_Die_Wicki_Bernhard_1959_manifestation"
       }
     ],
     "has_primary_title": {
@@ -83,7 +84,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "FMDU-0001_work"
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
       }
     ]
   },
@@ -112,7 +113,7 @@
     },
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "FMDU-0001_manifestation"
+      "id": "Brücke_Die_Wicki_Bernhard_1959_manifestation"
     }
   },
   {
@@ -135,7 +136,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "FMDU-0002_work"
+        "id": "Ohne_Titel_Werbefilm_1962/1965_work"
       }
     ],
     "has_primary_title": {
@@ -161,7 +162,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "FMDU-0002_manifestation"
+        "id": "Ohne_Titel_Werbefilm_1962/1965_BlackAndWhite_35mmFilm_manifestation"
       }
     ],
     "has_primary_title": {
@@ -171,7 +172,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "FMDU-0002_work"
+        "id": "Ohne_Titel_Werbefilm_1962/1965_work"
       }
     ]
   },
@@ -207,7 +208,66 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "FMDU-0002_manifestation"
+      "id": "Ohne_Titel_Werbefilm_1962/1965_BlackAndWhite_35mmFilm_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+      "has_source_key": [
+        "FMDU-0003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_16mmFilm_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+      "has_source_key": [
+        "FMDU-0003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0003"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_colour_type": "BlackAndWhite",
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "16mmFilm"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_16mmFilm_manifestation"
     }
   }
 ]

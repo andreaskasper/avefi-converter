@@ -21,6 +21,21 @@ class LidoProfile:
         Short description shown by ``efi-conv from --list-formats``.
     default_language : str or None
         ISO 639-2/B code assumed when a title carries no xml:lang.
+    film_work_type_terms : frozenset
+        Lower case objectWorkType terms denoting film. Records whose
+        work type is not among them are skipped, because only holdings
+        metadata about film is in scope, not accompanying material.
+        An empty set disables the filter.
+    map_decades : bool
+        Map decade expressions such as "50er Jahre" to a closed
+        interval. Off by default: the representation has to be agreed
+        with the data provider first, so decades are reported as
+        unconvertible until it is.
+    work_key_fields : tuple
+        Fields whose combination identifies a work, so that several
+        copies of the same film share one WorkVariant instead of
+        producing a duplicate work each. Set to an empty tuple to mint
+        one work per record.
     production_event_terms : frozenset
         Lower case eventType terms denoting a production event.
     publication_event_terms : frozenset
@@ -43,6 +58,20 @@ class LidoProfile:
     issuer_info: dict
     description: str = "LIDO export"
     default_language: str | None = None
+    film_work_type_terms: frozenset = frozenset(
+        {
+            "film",
+            "filmwerk",
+            "moving image",
+            "bewegtbild",
+            "video",
+            "kinofilm",
+            "dokumentarfilm",
+            "spielfilm",
+        }
+    )
+    map_decades: bool = False
+    work_key_fields: tuple = ("primary_title", "director", "date")
     production_event_terms: frozenset = frozenset(
         {"production", "produktion", "herstellung"}
     )
