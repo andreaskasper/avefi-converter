@@ -1,0 +1,533 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "(DE-101)0000012345",
+          "(DE-101)0000012346",
+          "(DE-101)0000012347"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "The bridge",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Wicki, Bernhard",
+                "type": "Person"
+              }
+            ],
+            "type": "Director"
+          }
+        ],
+        "has_date": "1959",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Deutschland"
+          }
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "PreferredTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Spielfilm"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "(DE-101)0000012345"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_activity": [
+          {
+            "category": "avefi:ManifestationActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Fono-Film",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "Publisher"
+          }
+        ],
+        "has_date": "1959",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "München"
+          }
+        ],
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_Sound_35mmFilm_ger:SpokenLanguage_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "(DE-101)0000012345"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "(DE-101)0000012345"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "(DE-Mb112)F 1959/12"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Physical description: 1 film reel (103 min.) : sd., b&w ; 35 mm.",
+      "Restaurierte Fassung von 1985.",
+      "Production credits: Kamera, Gerd von Bonin.",
+      "Cast: Folker Bohnet, Fritz Wepper, Michael Hinz.",
+      "Language: Deutsch.",
+      "Holdings: DE-Mb112 Filmarchiv F 1959/12"
+    ],
+    "has_access_status": "Viewing",
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H43M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "35mmFilm"
+      }
+    ],
+    "has_sound_type": "Sound",
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_Sound_35mmFilm_ger:SpokenLanguage_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "(DE-101)0000012346"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_Sound_16mmFilm_ger:SpokenLanguage_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "(DE-101)0000012346"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "(DE-101)0000012346"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "(DE-Mb112)F 1959/13"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Physical description: 1 film reel (103 min., 1130 m) : sd., b&w ; 16 mm.",
+      "Holdings: DE-Mb112 Filmarchiv F 1959/13"
+    ],
+    "has_access_status": "Master",
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H43M00S"
+    },
+    "has_extent": {
+      "has_unit": "Metre",
+      "has_value": "1130"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "16mmFilm"
+      }
+    ],
+    "has_sound_type": "Sound",
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_Sound_16mmFilm_ger:SpokenLanguage_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "(DE-101)0000012347"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_activity": [
+          {
+            "category": "avefi:ManifestationActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Studio Hamburg Home Video",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "Publisher"
+          }
+        ],
+        "has_date": "1998",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Hamburg"
+          }
+        ],
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_Sound_VHS_eng:Subtitlesger:SpokenLanguage_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "(DE-101)0000012347"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "(DE-101)0000012347"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "(DE-Mb112)V 1998/44"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Physical description: 1 Videokassette (103 min.) : s/w ; 1/2 Zoll.",
+      "Holdings: DE-Mb112 Videothek V 1998/44"
+    ],
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H43M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Video",
+        "type": "VHS"
+      }
+    ],
+    "has_sound_type": "Sound",
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      },
+      {
+        "code": "eng",
+        "usage": [
+          "Subtitles"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_Sound_VHS_eng:Subtitlesger:SpokenLanguage_manifestation"
+    }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "(DE-Mb112)AK-0007"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "Persil-Werbefilm",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:CinematographyActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Schmidt, Otto",
+                "type": "Person"
+              }
+            ],
+            "type": "Cinematographer"
+          },
+          {
+            "category": "avefi:ProducingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Henkel KGaA",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "ProductionCompany"
+          }
+        ],
+        "has_date": "1962?/1965?"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Werbefilm_für_Persil_:_Kurzfassung_1962/1965_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Werbefilm für Persil : Kurzfassung",
+      "type": "PreferredTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Werbefilm"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "(DE-Mb112)AK-0007"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_activity": [
+          {
+            "category": "avefi:ManifestationActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Henkel",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "Publisher"
+          }
+        ],
+        "has_date": "1965",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Düsseldorf"
+          }
+        ],
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Werbefilm_für_Persil_:_Kurzfassung_1962/1965_Colour_Sound_ger:SpokenLanguage_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Werbefilm für Persil : Kurzfassung",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Edition: 2. Fassung."
+    ],
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Werbefilm_für_Persil_:_Kurzfassung_1962/1965_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "(DE-Mb112)AK-0007"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "(DE-Mb112)AK-0007"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "(DE-Mb112)W 1965/03"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Werbefilm für Persil : Kurzfassung",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Physical description: 1 Filmrolle (21 min.) : Ton, farbig ; 28 mm.",
+      "Holdings: DE-Mb112 Werbefilmsammlung W 1965/03"
+    ],
+    "has_colour_type": "Colour",
+    "has_duration": {
+      "has_value": "PT00H21M30S"
+    },
+    "has_sound_type": "Sound",
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Werbefilm_für_Persil_:_Kurzfassung_1962/1965_Colour_Sound_ger:SpokenLanguage_manifestation"
+    }
+  }
+]

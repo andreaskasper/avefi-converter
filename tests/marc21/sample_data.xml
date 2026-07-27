@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="001">0000012345</controlfield>
+    <controlfield tag="003">DE-101</controlfield>
+    <controlfield tag="007">mr baaafa arc||||||||||</controlfield>
+    <controlfield tag="008">590101s1959    gw 103            mbger d</controlfield>
+    <datafield tag="245" ind1="1" ind2="4">
+      <subfield code="a">Die Brücke /</subfield>
+      <subfield code="c">ein Film von Bernhard Wicki.</subfield>
+    </datafield>
+    <datafield tag="246" ind1="3" ind2=" ">
+      <subfield code="a">The bridge</subfield>
+    </datafield>
+    <datafield tag="257" ind1=" " ind2=" ">
+      <subfield code="a">Deutschland</subfield>
+    </datafield>
+    <datafield tag="260" ind1=" " ind2=" ">
+      <subfield code="a">München :</subfield>
+      <subfield code="b">Fono-Film,</subfield>
+      <subfield code="c">1959.</subfield>
+    </datafield>
+    <datafield tag="300" ind1=" " ind2=" ">
+      <subfield code="a">1 film reel (103 min.) :</subfield>
+      <subfield code="b">sd., b&amp;w ;</subfield>
+      <subfield code="c">35 mm.</subfield>
+    </datafield>
+    <datafield tag="500" ind1=" " ind2=" ">
+      <subfield code="a">Restaurierte Fassung von 1985.</subfield>
+    </datafield>
+    <datafield tag="508" ind1=" " ind2=" ">
+      <subfield code="a">Kamera, Gerd von Bonin.</subfield>
+    </datafield>
+    <datafield tag="511" ind1="1" ind2=" ">
+      <subfield code="a">Folker Bohnet, Fritz Wepper, Michael Hinz.</subfield>
+    </datafield>
+    <datafield tag="546" ind1=" " ind2=" ">
+      <subfield code="a">Deutsch.</subfield>
+    </datafield>
+    <datafield tag="655" ind1=" " ind2="7">
+      <subfield code="a">Spielfilm.</subfield>
+      <subfield code="2">gnd</subfield>
+    </datafield>
+    <datafield tag="700" ind1="1" ind2=" ">
+      <subfield code="a">Wicki, Bernhard,</subfield>
+      <subfield code="d">1919-2000,</subfield>
+      <subfield code="4">drt</subfield>
+    </datafield>
+    <datafield tag="700" ind1="1" ind2=" ">
+      <subfield code="a">Kühn, Marta,</subfield>
+      <subfield code="e">Sammlerin</subfield>
+    </datafield>
+    <datafield tag="852" ind1=" " ind2=" ">
+      <subfield code="a">DE-Mb112</subfield>
+      <subfield code="b">Filmarchiv</subfield>
+      <subfield code="j">F 1959/12</subfield>
+    </datafield>
+  </record>
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="001">0000012346</controlfield>
+    <controlfield tag="003">DE-101</controlfield>
+    <controlfield tag="007">mr baabda aec||||||||||</controlfield>
+    <controlfield tag="008">590101s1959    gw 103            mbger d</controlfield>
+    <datafield tag="245" ind1="1" ind2="4">
+      <subfield code="a">Die Brücke.</subfield>
+    </datafield>
+    <datafield tag="300" ind1=" " ind2=" ">
+      <subfield code="a">1 film reel (103 min., 1130 m) :</subfield>
+      <subfield code="b">sd., b&amp;w ;</subfield>
+      <subfield code="c">16 mm.</subfield>
+    </datafield>
+    <datafield tag="655" ind1=" " ind2="7">
+      <subfield code="a">Spielfilm.</subfield>
+      <subfield code="2">gnd</subfield>
+    </datafield>
+    <datafield tag="700" ind1="1" ind2=" ">
+      <subfield code="a">Wicki, Bernhard,</subfield>
+      <subfield code="4">drt</subfield>
+    </datafield>
+    <datafield tag="852" ind1=" " ind2=" ">
+      <subfield code="a">DE-Mb112</subfield>
+      <subfield code="b">Filmarchiv</subfield>
+      <subfield code="j">F 1959/13</subfield>
+    </datafield>
+  </record>
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="001">0000012347</controlfield>
+    <controlfield tag="003">DE-101</controlfield>
+    <controlfield tag="007">vf bbaaou</controlfield>
+    <controlfield tag="008">590101p19981959gw 103            vbger d</controlfield>
+    <datafield tag="041" ind1="0" ind2=" ">
+      <subfield code="a">ger</subfield>
+      <subfield code="j">eng</subfield>
+      <subfield code="h">ger</subfield>
+    </datafield>
+    <datafield tag="245" ind1="1" ind2="4">
+      <subfield code="a">Die Brücke</subfield>
+      <subfield code="h">[Videoaufzeichnung].</subfield>
+    </datafield>
+    <datafield tag="246" ind1="3" ind2="0">
+      <subfield code="a">The bridge</subfield>
+    </datafield>
+    <datafield tag="264" ind1=" " ind2="1">
+      <subfield code="a">Hamburg :</subfield>
+      <subfield code="b">Studio Hamburg Home Video,</subfield>
+      <subfield code="c">1998.</subfield>
+    </datafield>
+    <datafield tag="300" ind1=" " ind2=" ">
+      <subfield code="a">1 Videokassette (103 min.) :</subfield>
+      <subfield code="b">s/w ;</subfield>
+      <subfield code="c">1/2 Zoll.</subfield>
+    </datafield>
+    <datafield tag="655" ind1=" " ind2="7">
+      <subfield code="a">Spielfilm.</subfield>
+      <subfield code="2">gnd</subfield>
+    </datafield>
+    <datafield tag="700" ind1="1" ind2=" ">
+      <subfield code="a">Wicki, Bernhard,</subfield>
+      <subfield code="4">drt</subfield>
+    </datafield>
+    <datafield tag="852" ind1=" " ind2=" ">
+      <subfield code="a">DE-Mb112</subfield>
+      <subfield code="b">Videothek</subfield>
+      <subfield code="j">V 1998/44</subfield>
+    </datafield>
+  </record>
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="001">0000012348</controlfield>
+    <controlfield tag="003">DE-101</controlfield>
+    <controlfield tag="007">gs c||||</controlfield>
+    <controlfield tag="008">590101s1965    gw                s|ger d</controlfield>
+    <datafield tag="245" ind1="1" ind2="0">
+      <subfield code="a">Bildreihe zur Brücke.</subfield>
+    </datafield>
+    <datafield tag="852" ind1=" " ind2=" ">
+      <subfield code="a">DE-Mb112</subfield>
+      <subfield code="j">D 1965/07</subfield>
+    </datafield>
+  </record>
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="007">mr caaaea a|c||||||||||</controlfield>
+    <controlfield tag="008">590101q19621965gw 021            mbger d</controlfield>
+    <datafield tag="035" ind1=" " ind2=" ">
+      <subfield code="a">(DE-Mb112)AK-0007</subfield>
+    </datafield>
+    <datafield tag="245" ind1="1" ind2="0">
+      <subfield code="a">Werbefilm für Persil :</subfield>
+      <subfield code="b">Kurzfassung.</subfield>
+    </datafield>
+    <datafield tag="247" ind1="1" ind2="0">
+      <subfield code="a">Persil-Werbefilm</subfield>
+    </datafield>
+    <datafield tag="250" ind1=" " ind2=" ">
+      <subfield code="a">2. Fassung.</subfield>
+    </datafield>
+    <datafield tag="264" ind1=" " ind2="1">
+      <subfield code="a">Düsseldorf :</subfield>
+      <subfield code="b">Henkel,</subfield>
+      <subfield code="c">[1965]</subfield>
+    </datafield>
+    <datafield tag="264" ind1=" " ind2="4">
+      <subfield code="c">©1965</subfield>
+    </datafield>
+    <datafield tag="300" ind1=" " ind2=" ">
+      <subfield code="a">1 Filmrolle (21 min.) :</subfield>
+      <subfield code="b">Ton, farbig ;</subfield>
+      <subfield code="c">28 mm.</subfield>
+    </datafield>
+    <datafield tag="306" ind1=" " ind2=" ">
+      <subfield code="a">002130</subfield>
+    </datafield>
+    <datafield tag="655" ind1=" " ind2="7">
+      <subfield code="a">Werbefilm.</subfield>
+      <subfield code="x">Deutschland</subfield>
+      <subfield code="2">gnd</subfield>
+    </datafield>
+    <datafield tag="700" ind1="1" ind2=" ">
+      <subfield code="a">Schmidt, Otto,</subfield>
+      <subfield code="4">cng</subfield>
+    </datafield>
+    <datafield tag="710" ind1="2" ind2=" ">
+      <subfield code="a">Henkel KGaA,</subfield>
+      <subfield code="4">prn</subfield>
+    </datafield>
+    <datafield tag="852" ind1=" " ind2=" ">
+      <subfield code="a">DE-Mb112</subfield>
+      <subfield code="b">Werbefilmsammlung</subfield>
+      <subfield code="j">W 1965/03</subfield>
+    </datafield>
+  </record>
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="007">mr b|a|f| |||||||||||||</controlfield>
+    <controlfield tag="008">590101s1970    gw 010            mbger d</controlfield>
+    <datafield tag="245" ind1="1" ind2="0">
+      <subfield code="a">Film ohne Signatur.</subfield>
+    </datafield>
+  </record>
+</collection>
