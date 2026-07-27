@@ -60,7 +60,7 @@ def test_the_provider_was_added_without_touching_the_generic_mapping():
         for name, obj in vars(ddb_lido).items()
         if inspect.isfunction(obj) and obj.__module__ == ddb_lido.__name__
     }
-    assert own_functions == {"efi_import", "main"}, (
+    assert own_functions == {"convert", "efi_import", "main"}, (
         "A profile module must not grow mapping code"
     )
     assert inspect.unwrap(ddb_lido.efi_import).__code__.co_names == (

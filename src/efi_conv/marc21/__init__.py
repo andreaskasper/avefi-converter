@@ -49,6 +49,9 @@ ISSUER_INFO = {
     "has_issuer_name": "Unspecified data provider",
 }
 
+#: Profile class a profile file is read into.
+PROFILE_CLASS = Marc21Profile
+
 PROFILE = Marc21Profile(
     issuer_info=ISSUER_INFO,
     description=DESCRIPTION,
@@ -77,6 +80,18 @@ def efi_import(
 ) -> list[efi.MovingImageRecord]:
     """Convert a MARCXML export into AVefi records."""
     return marc21_import(input_file, PROFILE, continue_on_error)
+
+
+def convert(
+    input_file, profile: Marc21Profile, continue_on_error: bool = False
+) -> list[efi.MovingImageRecord]:
+    """Convert a MARCXML export using ``profile`` instead of the default.
+
+    Used by ``efi-conv from --profile``, which binds a converter to a
+    profile loaded from a file.
+
+    """
+    return marc21_import(input_file, profile, continue_on_error)
 
 
 def main(argv=None):

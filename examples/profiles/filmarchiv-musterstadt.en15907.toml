@@ -1,0 +1,18 @@
+# Profile for an EN 15907 delivery. The EN 15907 converter reads a
+# format rather than one institution's export, so it ships with a
+# placeholder issuer and needs a profile like this one:
+#
+#     efi-conv from -f en15907 \
+#         --profile examples/profiles/filmarchiv-musterstadt.en15907.toml \
+#         -o records.json export.xml
+
+profile_format_version = "1.0"
+format = "en15907"
+description = "Filmarchiv Musterstadt, EFG delivery of 2026-07"
+
+[issuer]
+has_issuer_id = "https://w3id.org/isil/DE-MUS-000000"
+has_issuer_name = "Filmarchiv Musterstadt"
+
+[settings]
+work_key_fields = ["identifier"]

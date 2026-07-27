@@ -46,6 +46,9 @@ INPUT_FORMAT = "XML (EFG 3.2.07)"
 #: provider before the records are used.
 ISSUER_INFO = dict(PLACEHOLDER_ISSUER_INFO)
 
+#: Profile class a profile file is read into.
+PROFILE_CLASS = EfgProfile
+
 PROFILE = EfgProfile(issuer_info=ISSUER_INFO, description=DESCRIPTION)
 
 
@@ -54,6 +57,18 @@ def efi_import(
 ) -> list[efi.MovingImageRecord]:
     """Convert an EFG export into AVefi records."""
     return efg_import(input_file, PROFILE, continue_on_error)
+
+
+def convert(
+    input_file, profile: EfgProfile, continue_on_error: bool = False
+) -> list[efi.MovingImageRecord]:
+    """Convert an EFG export using ``profile`` instead of the default.
+
+    Used by ``efi-conv from --profile``, which binds a converter to a
+    profile loaded from a file.
+
+    """
+    return efg_import(input_file, profile, continue_on_error)
 
 
 def main(argv=None):

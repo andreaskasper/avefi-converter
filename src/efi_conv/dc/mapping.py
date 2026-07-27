@@ -124,6 +124,9 @@ FORMAT_MAP = {
 #: Profile used when the converter is called through the common
 #: command line interface. A provider copies this module's constants
 #: into a profile of its own rather than editing them here.
+#: Profile class a profile file is read into.
+PROFILE_CLASS = DcProfile
+
 PROFILE = DcProfile(
     issuer_info=ISSUER_INFO,
     description=DESCRIPTION,

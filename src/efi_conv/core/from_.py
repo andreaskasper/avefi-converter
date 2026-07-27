@@ -10,6 +10,7 @@ import click
 from . import avefi
 from .check import schema_fingerprint
 from .cli import IMPORTERS, cli_main
+from .profiles import configure, needs_a_profile
 from .report import ConversionReport, collecting, for_file
 from .utils import described_by_issuer
 
@@ -44,6 +45,17 @@ def print_formats(ctx, param, value):
                 f"    Issuer: {issuer.get('has_issuer_name', '')}"
                 f" <{issuer.get('has_issuer_id', '')}>"
             )
+        if needs_a_profile(mod):
+            click.echo(
+                "    Profile: required, this converter reads a format"
+                " rather than one institution's export, so the issuer"
+                " has to be supplied with --profile"
+            )
+        elif hasattr(mod, "PROFILE_CLASS"):
+            click.echo(
+                "    Profile: optional, --profile replaces the"
+                " vocabularies this converter ships"
+            )
     ctx.exit()
 
 
@@ -76,6 +88,14 @@ def print_formats(ctx, param, value):
     help="Write a structured JSON report of unconvertible values.",
 )
 @click.option(
+    "--profile",
+    "profile_file",
+    type=click.Path(exists=True, dir_okay=False),
+    help="Bind the converter to a mapping profile (JSON or TOML)."
+    " Required for the generic format converters, which ship with a"
+    " placeholder issuer rather than inventing one.",
+)
+@click.option(
     "--continue-on-error",
     is_flag=True,
     default=False,
@@ -86,11 +106,13 @@ def efi_from(
     input_files,
     output=None,
     report_file=None,
+    profile_file=None,
     continue_on_error=False,
     **kwargs,
 ):
     """Convert files from some schema into a JSON file with AVefi records."""
     mod = import_module_for(kwargs["format"])
+    importer = configure(mod, profile_file) if profile_file else mod
     generated_records = []
     failed_files = []
     report = ConversionReport(avefi_schema_version=schema_fingerprint())
@@ -100,7 +122,7 @@ def efi_from(
                 with for_file(input_file):
                     generated_records.extend(
                         import_file(
-                            mod,
+                            importer,
                             input_file,
                             continue_on_error=continue_on_error,
                         )

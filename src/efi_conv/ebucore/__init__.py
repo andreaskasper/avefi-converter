@@ -47,6 +47,9 @@ ISSUER_INFO = {
 
 #: Default profile: the standard EBU vocabularies plus the placeholder
 #: issuer. A data provider supplies its own profile instead.
+#: Profile class a profile file is read into.
+PROFILE_CLASS = EbucoreProfile
+
 PROFILE = EbucoreProfile(issuer_info=ISSUER_INFO, description=DESCRIPTION)
 
 
@@ -55,6 +58,18 @@ def efi_import(
 ) -> list[efi.MovingImageRecord]:
     """Convert an EBUCore export into AVefi records."""
     return ebucore_import(input_file, PROFILE, continue_on_error)
+
+
+def convert(
+    input_file, profile: EbucoreProfile, continue_on_error: bool = False
+) -> list[efi.MovingImageRecord]:
+    """Convert an EBUCore export using ``profile`` instead of the default.
+
+    Used by ``efi-conv from --profile``, which binds a converter to a
+    profile loaded from a file.
+
+    """
+    return ebucore_import(input_file, profile, continue_on_error)
 
 
 def main(argv=None):

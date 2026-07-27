@@ -53,6 +53,9 @@ FORMAT_MAP = {
     "super 8": "Super8mmFilm",
 }
 
+#: Profile class a profile file is read into.
+PROFILE_CLASS = LidoProfile
+
 PROFILE = LidoProfile(
     issuer_info=ISSUER_INFO,
     description=DESCRIPTION,
@@ -68,6 +71,18 @@ def efi_import(
 ) -> list[efi.MovingImageRecord]:
     """Convert a FMDU LIDO export into AVefi records."""
     return lido_import(input_file, PROFILE, continue_on_error)
+
+
+def convert(
+    input_file, profile: LidoProfile, continue_on_error: bool = False
+) -> list[efi.MovingImageRecord]:
+    """Convert a FMDU LIDO export using ``profile`` instead of the default.
+
+    Used by ``efi-conv from --profile``, which binds a converter to a
+    profile loaded from a file.
+
+    """
+    return lido_import(input_file, profile, continue_on_error)
 
 
 def main(argv=None):

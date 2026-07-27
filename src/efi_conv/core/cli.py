@@ -6,7 +6,22 @@ import click
 
 from .. import __version__
 
-IMPORTERS = ["avportal", "fmdu", "fmdu.lido"]
+#: Converters available in this installation, in the order
+#: `efi-conv from --list-formats` prints them. The name is the module
+#: path below efi_conv, so that a converter is registered by adding it
+#: here and nowhere else.
+IMPORTERS = [
+    "avportal",
+    "dc",
+    "ddb.lido",
+    "ebucore",
+    "en15907",
+    "fmdu",
+    "fmdu.lido",
+    "marc21",
+    "mdigital.lido",
+    "pbcore",
+]
 log = logging.getLogger(__name__)
 
 

@@ -112,6 +112,9 @@ FORMAT_MAP = {
 #: from the absence of a statement.
 ACCESS_STATUS_MAP = {}
 
+#: Profile class a profile file is read into.
+PROFILE_CLASS = LidoProfile
+
 PROFILE = LidoProfile(
     issuer_info=ISSUER_INFO,
     description=DESCRIPTION,
@@ -132,6 +135,20 @@ def efi_import(
 ) -> list[efi.MovingImageRecord]:
     """Convert a museum-digital LIDO export into AVefi records."""
     return lido_import(input_file, PROFILE, continue_on_error)
+
+
+def convert(
+    input_file, profile: LidoProfile, continue_on_error: bool = False
+) -> list[efi.MovingImageRecord]:
+    """Convert a museum-digital export using ``profile``.
+
+    Takes the place of the profile this module ships.
+
+    Used by ``efi-conv from --profile``, which binds a converter to a
+    profile loaded from a file.
+
+    """
+    return lido_import(input_file, profile, continue_on_error)
 
 
 def main(argv=None):

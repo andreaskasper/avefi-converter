@@ -1,0 +1,33 @@
+{
+  "profile_format_version": "1.0",
+  "format": "fmdu.lido",
+  "description": "Filmarchiv Musterstadt, LIDO delivery of 2026-07",
+  "issuer": {
+    "has_issuer_id": "https://w3id.org/isil/DE-MUS-000000",
+    "has_issuer_name": "Filmarchiv Musterstadt"
+  },
+  "settings": {
+    "default_language": "ger",
+    "film_work_type_terms": ["film", "filmwerk", "schmalfilm"],
+    "work_key_fields": ["primary_title", "director", "date"],
+    "classification_types": {
+      "colour": ["Farbigkeit"],
+      "format": ["Traegerformat"],
+      "access": ["Benutzung"]
+    },
+    "colour_type_map": {
+      "s/w": "BlackAndWhite",
+      "farbe": "Colour",
+      "viragiert": "Tinted"
+    },
+    "format_map": {
+      "16 mm": "16mmFilm",
+      "35 mm": "35mmFilm",
+      "super 8": "Super8mmFilm"
+    },
+    "access_status_map": {
+      "benutzungskopie": "Viewing",
+      "archivkopie": "Archive"
+    }
+  }
+}

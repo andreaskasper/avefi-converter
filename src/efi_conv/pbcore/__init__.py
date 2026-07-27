@@ -50,6 +50,9 @@ ISSUER_INFO = {
 
 #: Profile used by :func:`efi_import`. A data provider with its own
 #: vocabularies replaces it with one of their own.
+#: Profile class a profile file is read into.
+PROFILE_CLASS = PbcoreProfile
+
 PROFILE = PbcoreProfile(issuer_info=ISSUER_INFO, description=DESCRIPTION)
 
 __all__ = (
@@ -73,6 +76,18 @@ def efi_import(
 ) -> list[efi.MovingImageRecord]:
     """Convert a PBCore 2.1 document into AVefi records."""
     return pbcore_import(input_file, PROFILE, continue_on_error)
+
+
+def convert(
+    input_file, profile: PbcoreProfile, continue_on_error: bool = False
+) -> list[efi.MovingImageRecord]:
+    """Convert a PBCore 2.1 document using ``profile`` instead of the default.
+
+    Used by ``efi-conv from --profile``, which binds a converter to a
+    profile loaded from a file.
+
+    """
+    return pbcore_import(input_file, profile, continue_on_error)
 
 
 def main(argv=None):
