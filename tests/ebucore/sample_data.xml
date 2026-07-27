@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand written EBUCore 1.10 fixture. The wrapper element is arbitrary:
+  records are located by element name, so any envelope works. Each
+  ebuCoreMain element on its own validates against ebucore.xsd.
+-->
+<ebuCoreRecords>
+  <ebuCoreMain xmlns="urn:ebu:metadata-schema:ebucore"
+               xmlns:dc="http://purl.org/dc/elements/1.1/"
+               version="1.10" xml:lang="de" documentId="EBU-DOC-0001">
+    <coreMetadata>
+      <title typeLabel="Main title">
+        <dc:title xml:lang="de">Brücke, Die</dc:title>
+      </title>
+      <alternativeTitle typeLabel="Translated title">
+        <dc:title xml:lang="en">The Bridge</dc:title>
+      </alternativeTitle>
+      <creator>
+        <contactDetails>
+          <name>Wicki, Bernhard</name>
+        </contactDetails>
+        <role typeLabel="Director"/>
+      </creator>
+      <contributor>
+        <contactDetails>
+          <givenName>Gerd</givenName>
+          <familyName>von Bonin</familyName>
+        </contactDetails>
+        <role typeLabel="Camera Operator"/>
+      </contributor>
+      <subject>
+        <dc:subject xml:lang="de">Nachkriegszeit</dc:subject>
+      </subject>
+      <description typeLabel="Synopsis">
+        <dc:description xml:lang="de">Sieben Schüler verteidigen eine Brücke.</dc:description>
+      </description>
+      <date>
+        <produced year="1959"/>
+      </date>
+      <date>
+        <released date="1959-10-22"/>
+      </date>
+      <type>
+        <genre typeLabel="Feature"/>
+        <genre typeLabel="Kriegsfilm"/>
+      </type>
+      <format>
+        <medium typeLabel="35mm film"/>
+        <duration>
+          <normalPlayTime>PT1H43M0S</normalPlayTime>
+        </duration>
+        <technicalAttributeString typeLabel="Colour system">Black and White</technicalAttributeString>
+        <technicalAttributeString typeLabel="Sound system">Sound</technicalAttributeString>
+      </format>
+      <identifier typeLabel="Main">
+        <dc:identifier>EBU-0001</dc:identifier>
+      </identifier>
+      <identifier typeLabel="ISAN" formatLabel="ISAN">
+        <dc:identifier>ISAN 0000-0000-3A8D-0000-Z-0000-0000-6</dc:identifier>
+      </identifier>
+      <language typeLabel="Original language">
+        <dc:language>de</dc:language>
+      </language>
+      <coverage>
+        <spatial>
+          <location>
+            <name typeLabel="Country">Deutschland</name>
+          </location>
+        </spatial>
+      </coverage>
+      <publicationHistory>
+        <publicationEvent>
+          <publicationDate>1959-11-05</publicationDate>
+          <publicationTime>20:15:00</publicationTime>
+          <publicationService>
+            <publicationServiceName>ARD</publicationServiceName>
+          </publicationService>
+          <publicationMedium>Television</publicationMedium>
+          <publicationRegion>
+            <country typeLabel="Deutschland"/>
+          </publicationRegion>
+        </publicationEvent>
+      </publicationHistory>
+    </coreMetadata>
+    <metadataProvider>
+      <organisationDetails>
+        <organisationName>Beispielarchiv</organisationName>
+      </organisationDetails>
+    </metadataProvider>
+  </ebuCoreMain>
+
+  <ebuCoreMain xmlns="urn:ebu:metadata-schema:ebucore"
+               xmlns:dc="http://purl.org/dc/elements/1.1/"
+               version="1.10" xml:lang="de" documentId="EBU-DOC-0002">
+    <coreMetadata>
+      <title typeLabel="Main title">
+        <dc:title xml:lang="de">Brücke, Die</dc:title>
+      </title>
+      <alternativeTitle typeLabel="Sendetitel">
+        <dc:title xml:lang="de">Die Bruecke (Fernsehfassung)</dc:title>
+      </alternativeTitle>
+      <creator>
+        <contactDetails>
+          <name>Wicki, Bernhard</name>
+        </contactDetails>
+        <role typeLabel="Director"/>
+      </creator>
+      <date typeLabel="Produktion">
+        <dc:date>1959</dc:date>
+      </date>
+      <type>
+        <genre typeLabel="Feature"/>
+      </type>
+      <format>
+        <medium typeLabel="Digital Betacam"/>
+        <videoFormat videoFormatName="SD 576i">
+          <width unit="pixel">720</width>
+          <height unit="pixel">576</height>
+          <frameRate>25</frameRate>
+          <technicalAttributeString typeLabel="Colour system">Black and White</technicalAttributeString>
+        </videoFormat>
+        <audioFormat audioFormatName="PCM"/>
+        <duration>
+          <timecode editRate="25">01:43:12:10</timecode>
+        </duration>
+      </format>
+      <identifier typeLabel="Main">
+        <dc:identifier>EBU-0002</dc:identifier>
+      </identifier>
+      <language typeLabel="Original language">
+        <dc:language>de</dc:language>
+      </language>
+      <language typeLabel="Subtitles">
+        <dc:language>en</dc:language>
+      </language>
+    </coreMetadata>
+  </ebuCoreMain>
+
+  <ebuCoreMain xmlns="urn:ebu:metadata-schema:ebucore"
+               xmlns:dc="http://purl.org/dc/elements/1.1/"
+               version="1.10" xml:lang="de" documentId="EBU-DOC-0003">
+    <coreMetadata>
+      <title typeLabel="Main title">
+        <dc:title xml:lang="de">[Ohne Titel, Werbefilm]</dc:title>
+      </title>
+      <creator>
+        <contactDetails>
+          <name>unbekannt</name>
+        </contactDetails>
+        <role typeLabel="Director"/>
+      </creator>
+      <description typeLabel="Note">
+        <dc:description xml:lang="de">Digitalisat einer Werbefilmrolle ohne Vorspann.</dc:description>
+      </description>
+      <date>
+        <produced startYear="1962" endYear="1965"/>
+      </date>
+      <type>
+        <genre typeLabel="Werbefilm"/>
+      </type>
+      <format>
+        <medium typeLabel="Hard disk"/>
+        <containerFormat containerFormatName="MXF"/>
+        <fileName>EBU-0003.mxf</fileName>
+        <fileSize unit="byte">4500000000</fileSize>
+        <duration>
+          <editUnitNumber editRate="25">18000</editUnitNumber>
+        </duration>
+        <technicalAttributeString typeLabel="Colour system">Kolorierung</technicalAttributeString>
+      </format>
+      <identifier typeLabel="Main">
+        <dc:identifier>EBU-0003</dc:identifier>
+      </identifier>
+      <language typeLabel="Original language">
+        <dc:language>qaa</dc:language>
+      </language>
+      <isPartOf>
+        <dc:relation>EBU-COLLECTION-7</dc:relation>
+      </isPartOf>
+      <rights typeLabel="Copyright">
+        <dc:rights xml:lang="de">Rechte ungeklärt.</dc:rights>
+      </rights>
+      <part partId="EBU-0003-P1">
+        <title typeLabel="Main title">
+          <dc:title xml:lang="de">Erster Werbespot</dc:title>
+        </title>
+      </part>
+    </coreMetadata>
+  </ebuCoreMain>
+</ebuCoreRecords>

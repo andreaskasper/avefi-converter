@@ -1,0 +1,355 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "EBU-0001",
+          "EBU-0002"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "The Bridge",
+        "has_ordering_name": "Bridge, The",
+        "type": "AlternativeTitle"
+      },
+      {
+        "has_name": "Die Bruecke (Fernsehfassung)",
+        "has_ordering_name": "Bruecke (Fernsehfassung), Die",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Wicki, Bernhard",
+                "type": "Person"
+              }
+            ],
+            "type": "Director"
+          }
+        ],
+        "has_date": "1959",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Deutschland"
+          }
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "PreferredTitle"
+    },
+    "has_form": [
+      "Feature"
+    ],
+    "has_genre": [
+      {
+        "has_name": "Kriegsfilm"
+      }
+    ],
+    "has_subject": [
+      {
+        "category": "avefi:Subject",
+        "has_name": "Nachkriegszeit"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "EBU-0001"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_activity": [
+          {
+            "category": "avefi:ManifestationActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "ARD",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "Broadcaster"
+          }
+        ],
+        "has_date": "1959-11-05",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Deutschland"
+          }
+        ],
+        "type": "BroadcastEvent"
+      },
+      {
+        "category": "avefi:PublicationEvent",
+        "has_date": "1959-10-22",
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_35mmFilm_ger:SpokenLanguage_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "EBU-0001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "EBU-0001"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Sieben Schüler verteidigen eine Brücke."
+    ],
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H43M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "35mmFilm"
+      }
+    ],
+    "has_sound_type": "Sound",
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_35mmFilm_ger:SpokenLanguage_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "EBU-0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_DigitalBetacam_eng:Subtitlesger:SpokenLanguage_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "EBU-0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "EBU-0002"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Brücke",
+      "has_ordering_name": "Brücke, Die",
+      "type": "TitleProper"
+    },
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H43M12S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Video",
+        "type": "DigitalBetacam"
+      }
+    ],
+    "has_frame_rate": "25fps",
+    "has_sound_type": "Sound",
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      },
+      {
+        "code": "eng",
+        "usage": [
+          "Subtitles"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_DigitalBetacam_eng:Subtitlesger:SpokenLanguage_manifestation"
+    }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "EBU-0003"
+        ]
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_date": "1962/1965"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Ohne_Titel_Werbefilm_1962/1965_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Ohne Titel, Werbefilm",
+      "type": "SuppliedDevisedTitle"
+    },
+    "has_form": [
+      "Commercial"
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "EBU-0003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Ohne_Titel_Werbefilm_1962/1965_MXF_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Ohne Titel, Werbefilm",
+      "type": "SuppliedDevisedTitle"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Ohne_Titel_Werbefilm_1962/1965_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "EBU-0003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "EBU-0003"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Ohne Titel, Werbefilm",
+      "type": "SuppliedDevisedTitle"
+    },
+    "has_note": [
+      "Digitalisat einer Werbefilmrolle ohne Vorspann."
+    ],
+    "has_duration": {
+      "has_value": "PT00H12M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:DigitalFile",
+        "type": "MXF"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Ohne_Titel_Werbefilm_1962/1965_MXF_manifestation"
+    }
+  }
+]
