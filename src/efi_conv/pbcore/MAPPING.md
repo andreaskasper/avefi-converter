@@ -1,0 +1,57 @@
+# PBCore 2.1 to AVefi mapping
+
+Generated from `MAPPING_RULES` in `efi_conv.pbcore.mapping`;
+do not edit by hand.
+
+| Rule | Level | PBCore source | AVefi target | Normalisation | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `level_bridge` | Work, Manifestation, Item | `pbcoreDescriptionDocument and pbcoreInstantiation` | `WorkVariant, Manifestation, Item` | — | PBCore has two levels where AVefi has three. The asset becomes the work, every instantiation becomes an item, and instantiations agreeing on colour, format and language share a manifestation |
+| `media_type_filter` | Record | `pbcoreInstantiation/instantiationMediaType` | `—` | Profile vocabulary | PBCore describes audio and text as well. An instantiation of another media type is skipped and reported; a record left without any instantiation by the filter is skipped as a whole |
+| `work_grouping` | Work | `primary title, director, production date` | `has_identifier (work)` | Profile work_key_fields | Two assets describing the same film share one WorkVariant; set work_key_fields to () for one work per record |
+| `manifestation_grouping` | Manifestation | `work key plus colour type, format and languages of the copy` | `has_identifier (manifestation)` | — | The only reconstruction of the level PBCore lacks that the data supports |
+| `record_id` | Item | `pbcoreIdentifier[@source in profile]` | `has_identifier, described_by.has_source_key` | Profile authoritative_identifier_sources | The first identifier whose source the profile names as authoritative, else the first identifier of the record |
+| `other_identifier` | Item | `pbcoreIdentifier (remaining), instantiationIdentifier` | `has_identifier (LocalResource), has_webresource` | — | An identifier that is a URL becomes a web resource; AVefi has no place for the @source qualifier, which is reported per identifier |
+| `primary_title` | Work, Manifestation, Item | `pbcoreTitle[@titleType in profile primary_title_types]` | `has_primary_title.has_name, has_primary_title.has_ordering_name` | Article handling in both directions | The first title of the record is used when no titleType is eligible; bracketed titles become SuppliedDevisedTitle. On a work AVefi only allows a PreferredTitle, so a deviating titleType is reported |
+| `alternative_title` | Work | `pbcoreTitle (remaining), @titleType` | `has_alternative_title, has_alternative_title.type` | Profile title_type_map | An unknown titleType is reported and the title kept as an AlternativeTitle rather than dropped |
+| `asset_type` | Work | `pbcoreAssetType` | `type (WorkVariantTypeEnum)` | Profile asset_type_map | Collection and Series become Collection and Serial, Episode and Segment become Analytic |
+| `production_date` | Work | `pbcoreAssetDate[@dateType in profile production_date_types]` | `has_event.has_date (ProductionEvent)` | ISODate | A date of another type is reported rather than forced into an event it does not describe |
+| `production_place` | Work | `pbcoreCoverage[coverageType='Spatial']/coverage` | `has_event.located_in.has_name` | — | Temporal coverage describes the content, not the production, and is reported as unmapped |
+| `genre` | Work | `pbcoreGenre, pbcoreSubject[@subjectType in profile genre_subject_types]` | `has_genre.has_name, has_form` | Profile work_form_map | The term is kept verbatim as a genre; a term the profile knows additionally yields a WorkFormEnum value |
+| `subject` | Work | `pbcoreSubject (remaining)` | `has_subject.has_name (Subject)` | — | AVefi separates topical subject from genre, so a PBCore subject only becomes a genre when its subjectType says it is one |
+| `director` | Work | `pbcoreCreator/creatorRole, pbcoreContributor/contributorRole [role in profile directing_role_map]` | `has_event.has_activity (DirectingActivity)` | Profile directing_role_map | A creator without a role becomes the profile's default_creator_activity with the agent type left unset; placeholder names are skipped and reported |
+| `other_agent` | Work | `pbcoreCreator, pbcoreContributor (remaining roles)` | `—` | — | Reported as unmapped rather than dropped silently; AVefi has activity classes for them, but PBCore role terms are free text and must not be guessed at |
+| `relation` | Work | `pbcoreRelation[pbcoreRelationType in profile part_of_relation_types]` | `is_part_of (LocalResource)` | — | Other relation types are reported |
+| `publication` | Manifestation | `pbcoreAssetDate[@dateType in profile publication_date_types], pbcorePublisher/publisherRole` | `has_event (PublicationEvent, ManifestationActivity)` | ISODate, profile publisher_role_map | — |
+| `asset_rights` | Manifestation | `pbcoreRightsSummary, pbcoreAnnotation` | `has_note, has_webresource` | — | rightsEmbedded has no AVefi equivalent and is reported |
+| `instantiation_date` | Item | `instantiationDate[@dateType in profile manufacture_date_types]` | `has_event.has_date (ManufactureEvent)` | ISODate | The date the copy was made, not the date of the film |
+| `duration` | Item | `instantiationDuration, else essenceTrackDuration` | `has_duration.has_value` | ISODurationInHours | — |
+| `format` | Item | `instantiationPhysical, instantiationDigital` | `has_format (Film, Video, Optical, Audio, DigitalFile)` | Profile physical_format_map, digital_format_map | — |
+| `colour_type` | Item | `instantiationColors` | `has_colour_type` | Profile colour_type_map | — |
+| `language` | Item | `instantiationLanguage, essenceTrackLanguage` | `in_language.code, in_language.usage` | ISO 639-2/B; profile track_language_usage_map | PBCore does not say how a language is used, so instantiationLanguage takes the profile default |
+| `generations` | Item | `instantiationGenerations` | `element_type, has_access_status` | Profile element_type_map, access_status_map | — |
+| `instantiation_rights` | Item | `instantiationRights/rightsSummary, rightsLink` | `has_access_status, has_note, has_webresource` | Profile access_status_map | A rights statement the profile does not know becomes a note |
+| `location` | Item | `instantiationLocation` | `has_note` | — | AVefi names the holding institution through described_by, which the profile supplies, so the value is kept as a note and reported |
+| `extent` | Item | `instantiationDimensions, else instantiationFileSize` | `has_extent.has_value, has_extent.has_unit` | Profile extent_unit_map | has_extent holds one value, so the second measurement is reported |
+| `essence_track` | Item | `instantiationEssenceTrack/essenceTrackType, essenceTrackFrameRate, essenceTrackLanguage` | `has_sound_type, has_frame_rate, in_language` | Profile audio_track_types, frame_rate_map | The remaining track elements are technical detail AVefi does not carry and are reported per track |
+| `annotation` | Item | `instantiationAnnotation, essenceTrackAnnotation` | `has_note` | — | The @annotationType is kept as a prefix of the note |
+| `issuer` | Work, Manifestation, Item | `profile issuer_info` | `described_by.has_issuer_id, described_by.has_issuer_name` | — | PBCore names no issuer that could be turned into an ISIL, so the profile supplies one; the shipped default is a placeholder and is reported once per run |
+
+## Assumptions
+
+Decisions the mapping takes that PBCore does not determine, and that need confirming against the reference data:
+
+- PBCore describes an asset and its instantiations, which is two levels where AVefi has three. The asset becomes the WorkVariant, and every instantiation becomes both a Manifestation and an Item. Nothing in PBCore states which copies are copies of the same version, so instantiations are grouped into a manifestation by the characteristics AVefi puts at that level: colour type, format and languages. Where a provider records two prints of one version with different colour statements, they will come out as two manifestations.
+- An asset with several instantiations therefore yields several items. Only the first of them can carry the record identifier unchanged; the further ones are identified by the record identifier plus their instantiationIdentifier, or plus their position when the instantiation has none. This is reported once per affected record.
+- An asset without any instantiation still yields a manifestation and an item, because the AVefi identifier of a holding hangs off the item. Such an item carries no carrier information, and the record is reported.
+- An asset whose instantiations are all of another media type is skipped, in the same way that the LIDO mapping skips holdings that are not film. PBCore is widely used for radio, and audio only material is out of scope for AVefi.
+- PBCore has no language attribute on pbcoreTitle, so the language for the article handling of every title of a record comes from the profile. Where a provider mixes languages in one record, the ordering names of the foreign titles will be wrong and the profile should leave default_language unset.
+- instantiationLanguage does not say how the language is used. It is recorded with the profile's default_language_usage, which is SpokenLanguage. Languages taken from an essence track use the usage the profile associates with the track type.
+- A pbcoreRelation identifier is transferred unchanged. It names the related record in the source system and does not resolve to the AVefi local identifier the converter mints for that record.
+- Whether an agent is a person or an organisation only follows from the role, so the agent type stays unset for a creator without a creatorRole rather than defaulting to Person.
+- An audio essence track makes an item a sound copy. The absence of one does not make it silent, so has_sound_type stays unset.
+- instantiationLocation names the holding institution, which AVefi expresses through described_by rather than on the item. The value is kept as a note and reported, and the issuer still has to be configured in the profile.
+- pbcoreDescription is mandatory in PBCore and is a synopsis. AVefi has no field for it at any level, so it is reported with its value rather than pressed into a note.
+- A title contributed to an already known work by a further record is added as an AlternativeTitle. The more specific titleType is only kept for the record that creates the work.
+- Decade expressions are reported as unconvertible. Enabling map_decades maps them to a closed ten year interval.
+- A running time given as a bare number without a unit is read as minutes, and clock notation with two components as minutes and seconds, following the shared normalisation rules.
+- The shipped profile carries a placeholder issuer. PBCore does not identify the data provider in a form that could become an ISIL, and the records are not usable until the holding institution is configured.

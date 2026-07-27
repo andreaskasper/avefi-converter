@@ -1,0 +1,575 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "PBCORE-0001",
+          "PBCORE-0002"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "Die Brücke",
+        "has_ordering_name": "Brücke, Die",
+        "type": "AlternativeTitle"
+      },
+      {
+        "has_name": "Classic Cinema",
+        "type": "SeriesTitle"
+      },
+      {
+        "has_name": "Le pont",
+        "has_ordering_name": "pont, Le",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Wicki, Bernhard",
+                "type": "Person"
+              }
+            ],
+            "type": "Director"
+          }
+        ],
+        "has_date": "1959",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Germany"
+          }
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Bridge_The_Wicki_Bernhard_1959_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "The Bridge",
+      "has_ordering_name": "Bridge, The",
+      "type": "PreferredTitle"
+    },
+    "has_form": [
+      "Feature"
+    ],
+    "has_genre": [
+      {
+        "has_name": "Feature"
+      },
+      {
+        "has_name": "War film"
+      }
+    ],
+    "has_subject": [
+      {
+        "category": "avefi:Subject",
+        "has_name": "Second World War"
+      }
+    ],
+    "is_part_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "SERIES-42"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "PBCORE-0001"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_activity": [
+          {
+            "category": "avefi:ManifestationActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Fono Film",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "Publisher"
+          }
+        ],
+        "has_date": "1960-03-12",
+        "type": "BroadcastEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_35mmFilm_ger:SpokenLanguage_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "The Bridge",
+      "has_ordering_name": "Bridge, The",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Rights: In copyright, no commercial use without permission.",
+      "Provenance: Transferred from the broadcaster in 1998."
+    ],
+    "has_webresource": [
+      "https://rightsstatements.org/vocab/InC/1.0/"
+    ],
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Bridge_The_Wicki_Bernhard_1959_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "PBCORE-0001"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:ManufactureEvent",
+        "has_date": "1985"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "PBCORE-0001_PBCORE-0001-1"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "The Bridge",
+      "has_ordering_name": "Bridge, The",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Holding institution: Example Film Archive",
+      "Condition: Slight vinegar syndrome on reel three."
+    ],
+    "has_webresource": [
+      "https://hdl.handle.net/21.11155/example-0001"
+    ],
+    "has_access_status": "Archive",
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H43M00S"
+    },
+    "has_extent": {
+      "has_unit": "Feet",
+      "has_value": "9400"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "35mmFilm"
+      }
+    ],
+    "has_frame_rate": "24fps",
+    "has_sound_type": "Sound",
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_35mmFilm_ger:SpokenLanguage_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "PBCORE-0001"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_activity": [
+          {
+            "category": "avefi:ManifestationActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Fono Film",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "Publisher"
+          }
+        ],
+        "has_date": "1960-03-12",
+        "type": "BroadcastEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_MP4_ger:SpokenLanguage_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "The Bridge",
+      "has_ordering_name": "Bridge, The",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Rights: In copyright, no commercial use without permission.",
+      "Provenance: Transferred from the broadcaster in 1998."
+    ],
+    "has_webresource": [
+      "https://rightsstatements.org/vocab/InC/1.0/"
+    ],
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Bridge_The_Wicki_Bernhard_1959_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "PBCORE-0001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "PBCORE-0001_PBCORE-0001-2"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "The Bridge",
+      "has_ordering_name": "Bridge, The",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Rights: Viewing copy",
+      "Holding institution: Example Film Archive"
+    ],
+    "has_webresource": [
+      "https://hdl.handle.net/21.11155/example-0001"
+    ],
+    "has_access_status": "Viewing",
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H43M00S"
+    },
+    "has_extent": {
+      "has_unit": "GigaByte",
+      "has_value": "4"
+    },
+    "has_format": [
+      {
+        "category": "avefi:DigitalFile",
+        "type": "MP4"
+      }
+    ],
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_MP4_ger:SpokenLanguage_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "PBCORE-0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_16mmFilm_ger:SpokenLanguage_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "The Bridge",
+      "has_ordering_name": "Bridge, The",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Bridge_The_Wicki_Bernhard_1959_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "PBCORE-0002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "PBCORE-0002"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "The Bridge",
+      "has_ordering_name": "Bridge, The",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Holding institution: Example Film Archive"
+    ],
+    "has_access_status": "Viewing",
+    "has_colour_type": "BlackAndWhite",
+    "has_duration": {
+      "has_value": "PT01H41M30S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "16mmFilm"
+      }
+    ],
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_16mmFilm_ger:SpokenLanguage_manifestation"
+    }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "PBCORE-0003"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "Soap reel",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Werbefilm Hamburg GmbH"
+              }
+            ],
+            "type": "Creator"
+          }
+        ],
+        "has_date": "1962/1965"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Untitled_advertising_film_Werbefilm_Hamburg_GmbH_1962/1965_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Untitled advertising film",
+      "type": "SuppliedDevisedTitle"
+    },
+    "has_form": [
+      "Commercial"
+    ],
+    "has_genre": [
+      {
+        "has_name": "Advertisement"
+      }
+    ],
+    "type": "Analytic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "PBCORE-0003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Untitled_advertising_film_Werbefilm_Hamburg_GmbH_1962/1965_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Untitled advertising film",
+      "type": "SuppliedDevisedTitle"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Untitled_advertising_film_Werbefilm_Hamburg_GmbH_1962/1965_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "PBCORE-0003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "PBCORE-0003"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Untitled advertising film",
+      "type": "SuppliedDevisedTitle"
+    },
+    "has_note": [
+      "Holding institution: Example Film Archive"
+    ],
+    "has_duration": {
+      "has_value": "PT00H12M00S"
+    },
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Untitled_advertising_film_Werbefilm_Hamburg_GmbH_1962/1965_manifestation"
+    }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+        "has_issuer_name": "Unspecified data provider",
+        "has_source_key": [
+          "SERIES-42"
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Classic_Cinema_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Classic Cinema",
+      "type": "PreferredTitle"
+    },
+    "type": "Serial"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "SERIES-42"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Classic_Cinema_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Classic Cinema",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Classic_Cinema_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
+      "has_issuer_name": "Unspecified data provider",
+      "has_source_key": [
+        "SERIES-42"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "SERIES-42"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Classic Cinema",
+      "type": "TitleProper"
+    },
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Classic_Cinema_manifestation"
+    }
+  }
+]

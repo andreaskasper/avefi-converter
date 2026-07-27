@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pbcoreCollection xmlns="http://www.pbcore.org/PBCore/PBCoreNamespace.html"
+                  collectionTitle="Sample holdings"
+                  collectionSource="Example Film Archive">
+  <pbcoreDescriptionDocument>
+    <pbcoreAssetType>Program</pbcoreAssetType>
+    <pbcoreAssetDate dateType="created">1959</pbcoreAssetDate>
+    <pbcoreAssetDate dateType="broadcast">1960-03-12</pbcoreAssetDate>
+    <pbcoreAssetDate dateType="accessioned">1998</pbcoreAssetDate>
+    <pbcoreIdentifier source="Example Film Archive">PBCORE-0001</pbcoreIdentifier>
+    <pbcoreIdentifier source="Handle">https://hdl.handle.net/21.11155/example-0001</pbcoreIdentifier>
+    <pbcoreTitle titleType="Main">Bridge, The</pbcoreTitle>
+    <pbcoreTitle titleType="Alternative">Die Brücke</pbcoreTitle>
+    <pbcoreTitle titleType="Series">Classic Cinema</pbcoreTitle>
+    <pbcoreSubject subjectType="Topic">Second World War</pbcoreSubject>
+    <pbcoreSubject subjectType="Genre">War film</pbcoreSubject>
+    <pbcoreDescription descriptionType="Summary">Seven schoolboys are drafted in the last days of the war and ordered to defend a bridge.</pbcoreDescription>
+    <pbcoreGenre>Feature</pbcoreGenre>
+    <pbcoreRelation>
+      <pbcoreRelationType>Is Part Of</pbcoreRelationType>
+      <pbcoreRelationIdentifier>SERIES-42</pbcoreRelationIdentifier>
+    </pbcoreRelation>
+    <pbcoreCoverage>
+      <coverage>Germany</coverage>
+      <coverageType>Spatial</coverageType>
+    </pbcoreCoverage>
+    <pbcoreCoverage>
+      <coverage>1945</coverage>
+      <coverageType>Temporal</coverageType>
+    </pbcoreCoverage>
+    <pbcoreCreator>
+      <creator>Wicki, Bernhard</creator>
+      <creatorRole>Director</creatorRole>
+    </pbcoreCreator>
+    <pbcoreContributor>
+      <contributor>Meyer, Hans</contributor>
+      <contributorRole>Cinematographer</contributorRole>
+    </pbcoreContributor>
+    <pbcorePublisher>
+      <publisher>Fono Film</publisher>
+      <publisherRole>Publisher</publisherRole>
+    </pbcorePublisher>
+    <pbcoreRightsSummary>
+      <rightsSummary>In copyright, no commercial use without permission.</rightsSummary>
+      <rightsLink>https://rightsstatements.org/vocab/InC/1.0/</rightsLink>
+    </pbcoreRightsSummary>
+    <pbcoreInstantiation>
+      <instantiationIdentifier source="Example Film Archive">PBCORE-0001-1</instantiationIdentifier>
+      <instantiationDate dateType="created">1985</instantiationDate>
+      <instantiationDimensions unitsOfMeasure="ft">9400</instantiationDimensions>
+      <instantiationPhysical>35mm film</instantiationPhysical>
+      <instantiationStandard>Academy</instantiationStandard>
+      <instantiationLocation>Example Film Archive</instantiationLocation>
+      <instantiationMediaType>Moving Image</instantiationMediaType>
+      <instantiationGenerations>Moving image/Copy: preservation</instantiationGenerations>
+      <instantiationDuration>01:43:00</instantiationDuration>
+      <instantiationColors>Black and White</instantiationColors>
+      <instantiationLanguage>ger</instantiationLanguage>
+      <instantiationEssenceTrack>
+        <essenceTrackType>Video</essenceTrackType>
+        <essenceTrackEncoding>Kodak 5302</essenceTrackEncoding>
+        <essenceTrackFrameRate>24</essenceTrackFrameRate>
+        <essenceTrackAspectRatio>1.66:1</essenceTrackAspectRatio>
+      </instantiationEssenceTrack>
+      <instantiationEssenceTrack>
+        <essenceTrackType>Audio</essenceTrackType>
+        <essenceTrackLanguage>ger</essenceTrackLanguage>
+      </instantiationEssenceTrack>
+      <instantiationAnnotation annotationType="Condition">Slight vinegar syndrome on reel three.</instantiationAnnotation>
+    </pbcoreInstantiation>
+    <pbcoreInstantiation>
+      <instantiationIdentifier source="Example Film Archive">PBCORE-0001-2</instantiationIdentifier>
+      <instantiationDigital>video/mp4</instantiationDigital>
+      <instantiationLocation>Example Film Archive</instantiationLocation>
+      <instantiationMediaType>Moving Image</instantiationMediaType>
+      <instantiationGenerations>Moving image/Copy: access</instantiationGenerations>
+      <instantiationFileSize unitsOfMeasure="GB">4</instantiationFileSize>
+      <instantiationDuration>01:43:00</instantiationDuration>
+      <instantiationColors>Black and White</instantiationColors>
+      <instantiationLanguage>ger</instantiationLanguage>
+      <instantiationRights>
+        <rightsSummary>Viewing copy</rightsSummary>
+      </instantiationRights>
+    </pbcoreInstantiation>
+    <pbcoreInstantiation>
+      <instantiationIdentifier source="Example Film Archive">PBCORE-0001-3</instantiationIdentifier>
+      <instantiationPhysical>Quarter inch audio reel</instantiationPhysical>
+      <instantiationLocation>Example Film Archive</instantiationLocation>
+      <instantiationMediaType>Sound</instantiationMediaType>
+      <instantiationDuration>00:47:00</instantiationDuration>
+    </pbcoreInstantiation>
+    <pbcoreAnnotation annotationType="Provenance">Transferred from the broadcaster in 1998.</pbcoreAnnotation>
+  </pbcoreDescriptionDocument>
+
+  <pbcoreDescriptionDocument>
+    <pbcoreAssetType>Program</pbcoreAssetType>
+    <pbcoreAssetDate dateType="created">1959</pbcoreAssetDate>
+    <pbcoreIdentifier source="Example Film Archive">PBCORE-0002</pbcoreIdentifier>
+    <pbcoreTitle titleType="Main">Bridge, The</pbcoreTitle>
+    <pbcoreTitle titleType="Translated">Le pont</pbcoreTitle>
+    <pbcoreDescription>Reduction print of the same film, held for viewing.</pbcoreDescription>
+    <pbcoreGenre>Feature</pbcoreGenre>
+    <pbcoreCreator>
+      <creator>Wicki, Bernhard</creator>
+      <creatorRole>Director</creatorRole>
+    </pbcoreCreator>
+    <pbcoreInstantiation>
+      <instantiationIdentifier source="Example Film Archive">PBCORE-0002-1</instantiationIdentifier>
+      <instantiationPhysical>16mm film</instantiationPhysical>
+      <instantiationLocation>Example Film Archive</instantiationLocation>
+      <instantiationMediaType>Moving Image</instantiationMediaType>
+      <instantiationGenerations>Moving image/Copy: access</instantiationGenerations>
+      <instantiationDuration>01:41:30</instantiationDuration>
+      <instantiationColors>Black and White</instantiationColors>
+      <instantiationLanguage>ger</instantiationLanguage>
+    </pbcoreInstantiation>
+  </pbcoreDescriptionDocument>
+
+  <pbcoreDescriptionDocument>
+    <pbcoreAssetType>Segment</pbcoreAssetType>
+    <pbcoreAssetDate dateType="created">1962-65</pbcoreAssetDate>
+    <pbcoreIdentifier source="Example Film Archive">PBCORE-0003</pbcoreIdentifier>
+    <pbcoreTitle>[Untitled advertising film]</pbcoreTitle>
+    <pbcoreTitle titleType="Nickname">Soap reel</pbcoreTitle>
+    <pbcoreDescription>Unidentified advertising reel for a soap manufacturer.</pbcoreDescription>
+    <pbcoreGenre>Advertisement</pbcoreGenre>
+    <pbcoreCreator>
+      <creator>Werbefilm Hamburg GmbH</creator>
+    </pbcoreCreator>
+    <pbcoreInstantiation>
+      <instantiationIdentifier source="Example Film Archive">PBCORE-0003-1</instantiationIdentifier>
+      <instantiationPhysical>Nitrate print</instantiationPhysical>
+      <instantiationLocation>Example Film Archive</instantiationLocation>
+      <instantiationMediaType>Moving Image</instantiationMediaType>
+      <instantiationGenerations>Moving image/Dub</instantiationGenerations>
+      <instantiationDuration>12 min</instantiationDuration>
+      <instantiationColors>Hand coloured</instantiationColors>
+      <instantiationLanguage>zzz</instantiationLanguage>
+      <instantiationEssenceTrack>
+        <essenceTrackType>Video</essenceTrackType>
+        <essenceTrackFrameRate>18</essenceTrackFrameRate>
+      </instantiationEssenceTrack>
+    </pbcoreInstantiation>
+  </pbcoreDescriptionDocument>
+
+  <pbcoreDescriptionDocument>
+    <pbcoreAssetType>Program</pbcoreAssetType>
+    <pbcoreAssetDate dateType="broadcast">1971-11-04</pbcoreAssetDate>
+    <pbcoreIdentifier source="Example Film Archive">PBCORE-0004</pbcoreIdentifier>
+    <pbcoreTitle titleType="Main">Radio feature on bridge building</pbcoreTitle>
+    <pbcoreDescription>Radio feature, held on tape only.</pbcoreDescription>
+    <pbcoreInstantiation>
+      <instantiationIdentifier source="Example Film Archive">PBCORE-0004-1</instantiationIdentifier>
+      <instantiationPhysical>Quarter inch audio reel</instantiationPhysical>
+      <instantiationLocation>Example Film Archive</instantiationLocation>
+      <instantiationMediaType>Sound</instantiationMediaType>
+      <instantiationDuration>00:28:00</instantiationDuration>
+    </pbcoreInstantiation>
+  </pbcoreDescriptionDocument>
+
+  <pbcoreDescriptionDocument>
+    <pbcoreAssetType>Series</pbcoreAssetType>
+    <pbcoreIdentifier source="Example Film Archive">SERIES-42</pbcoreIdentifier>
+    <pbcoreTitle titleType="Series">Classic Cinema</pbcoreTitle>
+    <pbcoreDescription>Screening series of restored feature films.</pbcoreDescription>
+  </pbcoreDescriptionDocument>
+</pbcoreCollection>
