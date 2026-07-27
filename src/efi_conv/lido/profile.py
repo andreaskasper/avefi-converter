@@ -8,6 +8,16 @@ that a new provider needs a profile rather than a new converter.
 
 from dataclasses import dataclass, field
 
+#: The lido:type values that mark a classification as carrying the
+#: colour, the format or the access status rather than a genre. LIDO
+#: does not prescribe them, so a provider labelling its classifications
+#: in German needs its own values here.
+DEFAULT_CLASSIFICATION_TYPES = {
+    "colour": ("colour", "farbe", "farbigkeit"),
+    "format": ("format", "traegerformat", "trägerformat"),
+    "access": ("access", "zugang", "zugangsstatus"),
+}
+
 
 @dataclass(frozen=True)
 class LidoProfile:
@@ -44,6 +54,11 @@ class LidoProfile:
         Lower case roleActor terms denoting a directing activity.
     duration_measurement_terms : frozenset
         Lower case measurementType terms denoting a running time.
+    classification_types : dict
+        AVefi target (``colour``, ``format`` or ``access``) to the
+        lower case ``lido:type`` values marking a classification as
+        carrying it. Classifications of any of these types are consumed
+        by the vocabulary rules; the remaining ones become genres.
     colour_type_map : dict
         Source term (lower case) to AVefi ColourTypeEnum value.
     access_status_map : dict
@@ -83,6 +98,9 @@ class LidoProfile:
     )
     duration_measurement_terms: frozenset = frozenset(
         {"laufzeit", "dauer", "spieldauer", "running time", "duration"}
+    )
+    classification_types: dict = field(
+        default_factory=lambda: dict(DEFAULT_CLASSIFICATION_TYPES)
     )
     colour_type_map: dict = field(default_factory=dict)
     access_status_map: dict = field(default_factory=dict)

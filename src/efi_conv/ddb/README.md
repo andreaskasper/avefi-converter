@@ -54,25 +54,15 @@ actually found in an export vary by contributing institution. Expect to
 extend the vocabularies per delivery rather than once and for all, and
 read the conversion report after every run.
 
-## One thing the profile cannot express
+## Classification types
 
 `efi_conv.lido.mapping` reads the colour type, the carrier format and
-the access status from `lido:classification` elements whose
-`lido:type` attribute is `colour`, `format` or `access`. Those three
-attribute values are hard coded in `mapped_classification()`, and the
-same three make up the set of classifications that are kept out of
-`has_genre`. `LidoProfile` has no field for them.
+the access status from `lido:classification` elements, and LIDO does
+not prescribe the `lido:type` value marking each of them. The profile
+therefore names them, through `classification_types`, and the defaults
+in `efi_conv.lido.profile` accept the English and the German labels.
+A classification of any other type becomes a genre.
 
-An export that types its classifications differently — with German
-labels, or with the terms of a contributing institution's own scheme —
-therefore cannot be configured through a profile. Its carrier terms
-would fall through into `has_genre` instead of into `has_format` and
-`has_colour_type`. The sample under `tests/ddb/` uses the three
-attribute values the mapping expects, and says so in a comment.
-
-Closing this gap needs a field on `LidoProfile`, not a converter here:
-a mapping from the AVefi target (`colour`, `format`, `access`) to the
-`lido:type` values the provider uses, consulted both by
-`mapped_classification()` and by the consumed set in
-`classification_terms()`. Until that field exists, this is the one
-place where a new LIDO provider may need a change in `efi_conv.lido`.
+An instance labelling its classifications differently only needs its
+own `classification_types` in the profile here. The sample under
+`tests/ddb/` uses the default values.

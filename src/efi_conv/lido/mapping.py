@@ -12,7 +12,6 @@ the structure the CSV importer produces for the same institution.
 
 from dataclasses import dataclass
 import logging
-import pathlib
 
 from avefi_schema import model_pydantic_v2 as efi
 
@@ -32,11 +31,15 @@ from ..core.records import (
     merge_alternative_titles,
 )
 from ..core.report import for_file, report_issue
-from ..core.xmlrecords import first, text_of, xml_parser
-from .generated.lido_1_1 import Lido, LidoWrap
+from ..core.xmlrecords import first, parse_records, text_of
+from .generated.lido_1_1 import Lido
 from .profile import LidoProfile
 
 log = logging.getLogger(__name__)
+
+#: Namespace and element name of a LIDO record.
+LIDO_NAMESPACE = "http://www.lido-schema.org"
+LIDO_RECORD_ELEMENT = "lido"
 
 
 @dataclass(frozen=True)
@@ -116,8 +119,9 @@ MAPPING_RULES = (
         "lido:objectClassificationWrap/lido:classificationWrap"
         "/lido:classification",
         "has_genre.has_name",
-        notes="Classifications typed as colour, format or access"
-        " status are consumed by those rules instead",
+        notes="Classifications whose lido:type is named in the"
+        " profile as carrying colour, format or access status are"
+        " consumed by those rules instead",
     ),
     MappingRule(
         "production_date",
@@ -167,21 +171,24 @@ MAPPING_RULES = (
     MappingRule(
         "colour_type",
         "Item",
-        "lido:classification[@lido:type='colour'], profile vocabulary",
+        "lido:classification[@lido:type in profile"
+        " classification_types['colour']]",
         "has_colour_type",
         "Profile vocabulary",
     ),
     MappingRule(
         "format",
         "Item",
-        "lido:classification[@lido:type='format'], profile vocabulary",
+        "lido:classification[@lido:type in profile"
+        " classification_types['format']]",
         "has_format (Film)",
         "Profile vocabulary",
     ),
     MappingRule(
         "access_status",
         "Item",
-        "lido:classification[@lido:type='access'], profile vocabulary",
+        "lido:classification[@lido:type in profile"
+        " classification_types['access']]",
         "has_access_status",
         "Profile vocabulary",
     ),
@@ -230,6 +237,9 @@ ASSUMPTIONS = (
     " mapped; further blocks are reported.",
     "The article lists are provisional and are to be confirmed against"
     " the reference data.",
+    "LIDO does not prescribe the `lido:type` values marking a colour,"
+    " format or access status classification. The profile names them,"
+    " and a classification of any other type becomes a genre.",
 )
 
 
@@ -264,15 +274,18 @@ def render_mapping_markdown(rules=MAPPING_RULES) -> str:
 
 
 def parse_lido(input_file) -> list[Lido]:
-    """Parse a LIDO document and return its records."""
-    parser = xml_parser()
-    path = pathlib.Path(input_file)
-    try:
-        wrap = parser.parse(str(path), LidoWrap)
-    except Exception:
-        # A document may carry a single lido:lido element as its root.
-        return [parser.parse(str(path), Lido)]
-    return list(wrap.lido)
+    """Parse a LIDO document and return its records.
+
+    Whatever wraps the records is ignored. Providers ship a
+    lido:lidoWrap, a single lido:lido element as the root, or a
+    wrapper of their own devising, and all three have to work: parsing
+    a document of the second kind as a wrap used to yield an empty
+    result rather than an error, and lost every record in it.
+
+    """
+    return list(
+        parse_records(input_file, Lido, LIDO_NAMESPACE, LIDO_RECORD_ELEMENT)
+    )
 
 
 def efi_import(
@@ -363,7 +376,9 @@ def map_record(
     work_key = make_work_key(profile, source_key, primary, production)
 
     def new_work():
-        work = build_work(descriptive, primary, alternatives, source_key)
+        work = build_work(
+            descriptive, primary, alternatives, profile, source_key
+        )
         if production is not None:
             work.has_event.append(production)
         return work
@@ -505,7 +520,7 @@ def safe_record_identifier(lido_record) -> str | None:
         return None
 
 
-def build_work(descriptive, primary, alternatives, source_key):
+def build_work(descriptive, primary, alternatives, profile, source_key):
     """Return the WorkVariant for one LIDO record."""
     work = efi.WorkVariant(
         type=efi.WorkVariantTypeEnum("Monographic"),
@@ -513,7 +528,7 @@ def build_work(descriptive, primary, alternatives, source_key):
     )
     for title in alternatives:
         work.has_alternative_title.append(as_title(title, "AlternativeTitle"))
-    for term in classification_terms(descriptive, source_key):
+    for term in classification_terms(descriptive, profile):
         work.has_genre.append(efi.Genre(has_name=term))
     return work
 
@@ -780,14 +795,35 @@ def classifications(descriptive):
     yield from wrap.classification or []
 
 
-def classification_terms(descriptive, profile, kind="genre"):
+def classification_type_values(profile, target: str) -> tuple:
+    """Return the lido:type values marking a classification.
+
+    LIDO leaves the value of ``lido:type`` to the provider, so the
+    labels for colour, format and access status are configuration, not
+    part of the standard.
+
+    """
+    values = profile.classification_types.get(target, (target,))
+    return tuple(str(value).lower() for value in values)
+
+
+def consumed_classification_types(profile) -> set:
+    """Return the lido:type values a vocabulary rule consumes."""
+    return {
+        value
+        for target in profile.classification_types
+        for value in classification_type_values(profile, target)
+    }
+
+
+def classification_terms(descriptive, profile):
     """Yield classification terms not consumed by a vocabulary rule."""
-    consumed = {"colour", "format", "access"}
+    consumed = consumed_classification_types(profile)
     for classification in classifications(descriptive):
         type_value = str(
             getattr(classification, "type_value", "") or ""
         ).lower()
-        if kind == "genre" and type_value in consumed:
+        if type_value in consumed:
             continue
         text = term_text(classification)
         if text:
@@ -795,16 +831,17 @@ def classification_terms(descriptive, profile, kind="genre"):
 
 
 def mapped_classification(
-    descriptive, profile, type_value, vocabulary, source_key
+    descriptive, profile, target, vocabulary, source_key
 ):
     """Return the AVefi value for a typed classification, if mappable."""
     if not vocabulary:
         return None
+    wanted = classification_type_values(profile, target)
     for classification in classifications(descriptive):
-        if (
-            str(getattr(classification, "type_value", "") or "").lower()
-            != type_value
-        ):
+        type_value = str(
+            getattr(classification, "type_value", "") or ""
+        ).lower()
+        if type_value not in wanted:
             continue
         text = term_text(classification)
         if not text:
@@ -813,10 +850,10 @@ def mapped_classification(
         if mapped is None:
             report_issue(
                 "warning",
-                f"No AVefi value configured for {type_value} term",
+                f"No AVefi value configured for {target} term",
                 record_id=source_key,
                 source_field=f"classification[@type='{type_value}']",
-                target_field=type_value,
+                target_field=target,
                 raw_value=text,
             )
             return None

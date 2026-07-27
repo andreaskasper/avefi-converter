@@ -266,3 +266,152 @@ def test_mapping_documentation_is_up_to_date():
         pathlib.Path(mapping.__file__).parent / "MAPPING.md"
     ).read_text(encoding="utf-8")
     assert committed == generated, "Regenerate MAPPING.md from MAPPING_RULES"
+
+
+class TestClassificationTypes:
+    """LIDO leaves the lido:type of a classification to the provider.
+
+    A provider labelling its classifications in German must be able to
+    say so in the profile, rather than needing a converter of its own.
+
+    """
+
+    GERMAN_LABELS = """<?xml version="1.0" encoding="UTF-8"?>
+<lido:lido xmlns:lido="http://www.lido-schema.org">
+  <lido:lidoRecID lido:type="local">DE-0001</lido:lidoRecID>
+  <lido:descriptiveMetadata xml:lang="de">
+    <lido:objectClassificationWrap>
+      <lido:objectWorkTypeWrap>
+        <lido:objectWorkType>
+          <lido:term xml:lang="de">Film</lido:term>
+        </lido:objectWorkType>
+      </lido:objectWorkTypeWrap>
+      <lido:classificationWrap>
+        <lido:classification lido:type="Farbe">
+          <lido:term xml:lang="de">sw</lido:term>
+        </lido:classification>
+        <lido:classification lido:type="Traegerformat">
+          <lido:term xml:lang="de">16mm</lido:term>
+        </lido:classification>
+        <lido:classification lido:type="Gattung">
+          <lido:term xml:lang="de">Dokumentarfilm</lido:term>
+        </lido:classification>
+      </lido:classificationWrap>
+    </lido:objectClassificationWrap>
+    <lido:objectIdentificationWrap>
+      <lido:titleWrap>
+        <lido:titleSet lido:type="preferred">
+          <lido:appellationValue xml:lang="de">Ein Test</lido:appellationValue>
+        </lido:titleSet>
+      </lido:titleWrap>
+    </lido:objectIdentificationWrap>
+  </lido:descriptiveMetadata>
+</lido:lido>
+"""
+
+    def profile(self, **overrides):
+        from efi_conv.lido import LidoProfile
+
+        settings = {
+            "issuer_info": {
+                "has_issuer_id": "https://example.org/test",
+                "has_issuer_name": "Test",
+            },
+            "colour_type_map": {"sw": "BlackAndWhite"},
+            "format_map": {"16mm": "16mmFilm"},
+        }
+        settings.update(overrides)
+        return LidoProfile(**settings)
+
+    def convert(self, tmp_path, profile):
+        source = tmp_path / "german.xml"
+        source.write_text(self.GERMAN_LABELS, encoding="utf-8")
+        return mapping.efi_import(source, profile)
+
+    def test_german_labels_are_understood_by_default(self, tmp_path):
+        records = self.convert(tmp_path, self.profile())
+        item = next(r for r in records if r.category == "avefi:Item")
+        assert str(item.has_colour_type) == "BlackAndWhite"
+        assert [str(f.type) for f in item.has_format] == ["16mmFilm"]
+
+    def test_a_consumed_classification_is_not_also_a_genre(self, tmp_path):
+        records = self.convert(tmp_path, self.profile())
+        work = next(r for r in records if r.category == "avefi:WorkVariant")
+        assert [genre.has_name for genre in work.has_genre] == [
+            "Dokumentarfilm"
+        ]
+
+    def test_a_provider_can_name_its_own_types(self, tmp_path):
+        """Narrowing the profile must narrow what is consumed."""
+        profile = self.profile(
+            classification_types={"colour": ("farbe",), "format": ()}
+        )
+        records = self.convert(tmp_path, profile)
+        item = next(r for r in records if r.category == "avefi:Item")
+        work = next(r for r in records if r.category == "avefi:WorkVariant")
+        assert str(item.has_colour_type) == "BlackAndWhite"
+        assert item.has_format == []
+        # The format classification is no longer consumed, so it stays
+        # available as a genre instead of being lost.
+        assert "16mm" in [genre.has_name for genre in work.has_genre]
+
+    def test_an_unconfigured_term_is_reported(self, tmp_path):
+        report = ConversionReport()
+        with collecting(report):
+            self.convert(tmp_path, self.profile(colour_type_map={"x": "y"}))
+        assert any(
+            entry.target_field == "colour" and entry.raw_value == "sw"
+            for entry in report.entries
+        )
+
+
+class TestDocumentShapes:
+    """A record must be found whatever wraps it."""
+
+    RECORD = """<lido:lido xmlns:lido="http://www.lido-schema.org">
+  <lido:lidoRecID lido:type="local">SHAPE-1</lido:lidoRecID>
+  <lido:descriptiveMetadata xml:lang="de">
+    <lido:objectClassificationWrap>
+      <lido:objectWorkTypeWrap>
+        <lido:objectWorkType>
+          <lido:term xml:lang="de">Film</lido:term>
+        </lido:objectWorkType>
+      </lido:objectWorkTypeWrap>
+    </lido:objectClassificationWrap>
+    <lido:objectIdentificationWrap>
+      <lido:titleWrap>
+        <lido:titleSet lido:type="preferred">
+          <lido:appellationValue xml:lang="de">Ein Film</lido:appellationValue>
+        </lido:titleSet>
+      </lido:titleWrap>
+    </lido:objectIdentificationWrap>
+  </lido:descriptiveMetadata>
+</lido:lido>"""
+
+    HEADER = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    WRAPPED = (
+        HEADER
+        + '<lido:lidoWrap xmlns:lido="http://www.lido-schema.org">\n'
+        + RECORD
+        + "\n</lido:lidoWrap>\n"
+    )
+    BARE = HEADER + RECORD + "\n"
+    FOREIGN_WRAPPER = (
+        HEADER + "<harvest>\n" + RECORD + "\n" + RECORD + "\n</harvest>\n"
+    )
+
+    @pytest.mark.parametrize(
+        ("document", "expected"),
+        [("WRAPPED", 1), ("BARE", 1), ("FOREIGN_WRAPPER", 2)],
+    )
+    def test_records_are_found(self, tmp_path, document, expected):
+        source = tmp_path / "shape.xml"
+        source.write_text(getattr(self, document), encoding="utf-8")
+        assert len(mapping.parse_lido(source)) == expected
+
+    def test_a_document_without_records_yields_none(self, tmp_path):
+        source = tmp_path / "empty.xml"
+        source.write_text(
+            self.HEADER + "<somethingElse/>\n", encoding="utf-8"
+        )
+        assert mapping.parse_lido(source) == []
