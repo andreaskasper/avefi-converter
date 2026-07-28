@@ -176,8 +176,10 @@ Commands:
 | `-f`, `--format` | Source data format; see [converters](#available-converters) |
 | `-o`, `--output FILE` | Output file, stdout if not specified |
 | `--report FILE` | Write a structured JSON report of unconvertible values |
-| `--profile FILE` | Bind the converter to a [mapping profile](#profiles) |
+| `--profile FILE` | Bind the converter to a [mapping profile](#profiles); required for the format converters |
 | `--continue-on-error` | Skip what fails to convert and exit non-zero at the end |
+| `--accept-placeholder-issuer` | Convert without naming the data provider, for trying a mapping out |
+| `--allow-profile-format-mismatch` | Use a profile written for another converter, deliberately |
 | `--list-formats` | List the available converters and exit |
 
 Output is deterministic: records are ordered by category, parents
@@ -483,6 +485,8 @@ What your module has to provide:
 | `ISSUER_INFO` | yes | `has_issuer_id` and `has_issuer_name` for `described_by` |
 | `DESCRIPTION` | no | One line shown by `--list-formats` |
 | `INPUT_FORMAT` | no | Expected input, shown by `--list-formats` |
+| `main(argv=None)` | no | Lets the converter be run as `python -m efi_conv.NAME`; delegate to `efi_conv.core.cli.run_converter_main` |
+| `PROFILE` | no | The profile `efi_import` uses, which `--profile` replaces |
 | `continue_on_error` parameter | no | Lets `from` skip a single bad record instead of the whole file |
 | `context` parameter and `new_context()` | no | Lets `from` group the records of all its input files into one conversion |
 | `PROFILE_CLASS` and `convert(input_file, profile, continue_on_error)` | no | Lets the converter be bound to a [profile](#profiles) |
@@ -603,14 +607,31 @@ applies to. Two works minted for one film can be merged afterwards.
 or item points at a parent that is not in the same file. Convert the
 whole export at once, or pass all the files to a single invocation.
 
-**A conversion produces no output.** With `-o` and an input that yields
-no records, nothing is written and a warning says so. Check the report
-for the reason.
+**A conversion produces no output.** If the converter recognised no
+record at all in a file, the run fails: the file is very probably a
+different schema, or wrapped differently than expected. If the records
+were read and then filtered out — because they describe posters rather
+than film, say — the run succeeds and the report says which values
+made the decision.
 
-**The records name an unspecified data provider.** A format converter
-was run without `--profile`, so it used the placeholder issuer it ships
-with rather than inventing an ISIL for your collection. Supply a
-[profile](#profiles).
+**The conversion is refused because of the placeholder issuer.** A
+format converter cannot know whose collection it is pointed at, and an
+ISIL must not be guessed, so it will not convert until a
+[profile](#profiles) names the data provider.
+`--accept-placeholder-issuer` overrides that while a mapping is being
+worked out; identifiers must not be registered for records produced
+that way.
+
+**A profile is refused as being for another converter.** Its
+vocabularies are the terms of one source schema and mean nothing in
+another. Convert with the converter the profile names, correct its
+`format` key, or pass `--allow-profile-format-mismatch` if you mean
+it.
+
+**A document is refused because it declares an XML entity.** Entities
+are not resolved, because resolving them is how a document gets a
+converter to read a file it should not. Resolve them first, for
+instance with `xmllint --noent export.xml > resolved.xml`.
 
 **A harvest stops with a resumption token error.** The endpoint
 returned a token it had already returned, which would harvest for ever.
