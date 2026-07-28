@@ -7,6 +7,7 @@ import pytest
 from efi_conv import en15907
 from efi_conv.core import avefi, check, from_
 from efi_conv.core.normalise import NormalisationError
+from efi_conv.core.records import local_identifier
 from efi_conv.core.report import ConversionReport, collecting
 from efi_conv.en15907 import mapping
 from efi_conv.en15907.profile import EfgProfile
@@ -48,11 +49,20 @@ def test_map_to_efi(input_path, expected_output):
 
 
 def test_schema_compliance(input_path):
+    """The mapping, not the profile, is what is under test here.
+
+    This converter ships with the placeholder issuer, because it reads
+    a format rather than one institution's export. That is what
+    ``--profile`` is for, and what ``check`` refuses without; here it
+    is accepted deliberately, so that the assertion stays about the
+    records the mapping produces.
+
+    """
     schema_validator = check.get_schema_validator()
     efi_records = records_for(input_path)
-    assert check.pass_checks(efi_records, schema_validator), (
-        "Mapped data did not validate"
-    )
+    assert check.pass_checks(
+        efi_records, schema_validator, accept_placeholder_issuer=True
+    ), "Mapped data did not validate"
 
 
 def test_conversion_is_idempotent(input_path):
@@ -175,7 +185,7 @@ def test_manifestation_without_items_yields_one(input_path):
         r
         for r in efi_records
         if r.category == "avefi:Item"
-        and r.has_identifier[0].id == "MAN-002#item"
+        and r.has_identifier[0].id == local_identifier("MAN-002#item")
     )
     assert item.has_format[0].type == "16mmFilm"
     assert item.has_duration.has_value == "PT01H37M00S"
@@ -260,8 +270,10 @@ def test_entity_without_an_identifier_falls_back_to_title_and_year(
         if r.category == "avefi:WorkVariant"
         and r.has_primary_title.has_name == "Sanitätshunde"
     )
-    assert work.has_identifier[0].id == "Sanitätshunde_1916_work"
-    assert work.described_by[0].has_source_key == ["Sanitätshunde_1916"]
+    assert work.has_identifier[0].id == (
+        f"{local_identifier('Sanitätshunde__1916')}_work"
+    )
+    assert work.described_by[0].has_source_key == ["Sanitätshunde__1916"]
 
 
 def test_a_single_entity_document_is_accepted(tmp_path):
@@ -354,8 +366,8 @@ class TestProfile:
         )
         works = [r for r in efi_records if r.category == "avefi:WorkVariant"]
         assert sorted(w.has_identifier[0].id for w in works) == [
-            "Brücke_Die_1959_work",
-            "Sanitätshunde_1916_work",
+            f"{local_identifier('Brücke, Die__1959')}_work",
+            f"{local_identifier('Sanitätshunde__1916')}_work",
         ]
 
     def test_an_unknown_work_key_field_is_an_error(self, input_path):

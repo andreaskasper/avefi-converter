@@ -14,6 +14,7 @@ from click.testing import CliRunner
 from lxml import etree
 import pytest
 
+from efi_conv.core.report import ConversionReport, collecting
 from efi_conv.core.xmlrecords import (
     EntityDeclarationError,
     iter_record_elements,
@@ -186,3 +187,53 @@ class TestEveryConverterBehavesTheSame:
 
         with pytest.raises(EntityDeclarationError):
             dc.efi_import(source)
+
+
+class TestNothingRecognised:
+    """A document holding no record is reported where that is known.
+
+    ``iter_record_elements`` is the point at which the tool knows the
+    file is not what the converter expects. Concluding it further out,
+    from the absence of output, gets it right only as long as every
+    converter that drops a record says so.
+
+    """
+
+    def test_a_document_without_the_record_element_is_reported(self, document):
+        source = document("plain.xml")
+        report = ConversionReport()
+        with collecting(report):
+            assert list(iter_record_elements(source, None, "nothing")) == []
+        assert report.files_unrecognised == 1
+        entry = report.entries[-1]
+        assert entry.severity == "error"
+        assert "nothing" in entry.message
+        assert str(source) in entry.message
+
+    def test_a_document_with_records_reports_nothing(self, document):
+        source = document("plain.xml")
+        report = ConversionReport()
+        with collecting(report):
+            assert list(iter_record_elements(source, None, "record"))
+        assert report.files_unrecognised == 0
+        assert report.entries == []
+
+    def test_a_caller_that_will_try_again_can_stay_quiet(self, document):
+        """MARCXML looks for the namespaced element before the bare one."""
+        source = document("plain.xml")
+        report = ConversionReport()
+        with collecting(report):
+            list(
+                iter_record_elements(
+                    source, "urn:example", "record", report_if_empty=False
+                )
+            )
+        assert report.files_unrecognised == 0
+        assert report.entries == []
+
+    def test_the_message_names_what_the_converter_expected(self, document):
+        source = document("plain.xml")
+        report = ConversionReport(expects="the dc converter, which reads X")
+        with collecting(report):
+            list(iter_record_elements(source, None, "nothing"))
+        assert "the dc converter" in report.entries[-1].message

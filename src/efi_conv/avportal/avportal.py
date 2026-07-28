@@ -6,6 +6,7 @@ import re
 from avefi_schema import model_pydantic_v2 as efi
 from xsdata.formats.dataclass.parsers import XmlParser
 
+from ..core.records import local_identifier
 from ..core.settings import settings
 from ..core.utils import described_by_issuer
 from .generated.ntm_4_avefi import ntm_4_av_efi as ntm
@@ -180,7 +181,7 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
             if not (id.value.startswith("10.5240/")):
                 raise RuntimeError(f"Cannot handle identifier_type: {id}")
             work.same_as.append(efi.EIDRResource(id=id.value))
-    work_id = efi.LocalResource(id=f"{source_key}_work")
+    work_id = efi.LocalResource(id=f"{local_identifier(source_key)}_work")
     work.has_identifier.append(work_id)
     described_by = described_by_issuer(work, ISSUER_INFO)
     if source_key not in described_by.has_source_key:
@@ -249,7 +250,9 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
         extract_activities_for_event(publication, contrib_dict)
         if publication_year:
             publication.has_date = publication_year
-    manifestation_id = efi.LocalResource(id=f"{source_key}_manifestation")
+    manifestation_id = efi.LocalResource(
+        id=f"{local_identifier(source_key)}_manifestation"
+    )
     manifestation.has_identifier.append(manifestation_id)
     described_by = described_by_issuer(manifestation, ISSUER_INFO)
     if source_key not in described_by.has_source_key:
@@ -311,7 +314,7 @@ def map_to_efi(input: ROOT_CLASS) -> list[efi.MovingImageRecord]:
             if link.link_type == ntm.LinkType.AV_PORTAL:
                 item.has_webresource.append(link.value)
 
-    item_id = efi.LocalResource(id=f"{source_key}_item")
+    item_id = efi.LocalResource(id=f"{local_identifier(source_key)}_item")
     item.has_identifier.append(item_id)
     described_by = described_by_issuer(item, ISSUER_INFO)
     described_by.has_source_key.append(source_key)

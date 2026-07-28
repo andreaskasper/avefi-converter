@@ -26,7 +26,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "https://example.org/oai/film/0001_work"
+        "id": "https_example.org_oai_film_0001~1d91052e_work"
       }
     ],
     "has_primary_title": {
@@ -77,7 +77,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "https://example.org/oai/film/0001_manifestation"
+        "id": "https_example.org_oai_film_0001~1d91052e_manifestation"
       }
     ],
     "has_primary_title": {
@@ -88,7 +88,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "https://example.org/oai/film/0001_work"
+        "id": "https_example.org_oai_film_0001~1d91052e_work"
       }
     ]
   },
@@ -104,7 +104,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "https://example.org/oai/film/0001"
+        "id": "https_example.org_oai_film_0001~1d91052e"
       },
       {
         "category": "avefi:LocalResource",
@@ -136,7 +136,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "https://example.org/oai/film/0001_manifestation"
+      "id": "https_example.org_oai_film_0001~1d91052e_manifestation"
     }
   },
   {

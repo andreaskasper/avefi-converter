@@ -17,7 +17,8 @@ from jsonschema.validators import validator_for
 import requests
 
 from . import avefi
-from .cli import cli_main
+from .cli import cli_main, user_error
+from .profiles import PLACEHOLDER_ISSUER_ID
 from .settings import settings
 
 log = logging.getLogger(__name__)
@@ -50,6 +51,14 @@ ENCODING = "utf-8"
     default=False,
     help="Fetch latest version of the AVefi schema from upstream repo.",
 )
+@click.option(
+    "--accept-placeholder-issuer",
+    is_flag=True,
+    default=False,
+    help="Accept records that still name the documented placeholder"
+    " issuer. For trying out a mapping only: records naming an"
+    " unspecified data provider must not have identifiers registered.",
+)
 @click.argument(
     "efi_files", nargs=-1, type=click.Path(dir_okay=False, exists=True)
 )
@@ -59,6 +68,7 @@ def check(
     preserve_status_removed=False,
     remove_invalid=False,
     update_schema=False,
+    accept_placeholder_issuer=False,
 ):
     """Sanity check EFI_FILES and optionally remove invalid records."""
     schema_validator = get_schema_validator(update_schema=update_schema)
@@ -66,12 +76,26 @@ def check(
         log.info(f"Processing {efi_file}")
         efi_records = avefi.load(efi_file)
         old_count = len(efi_records)
-        if not pass_checks(
+        # Asked here as well as in pass_checks, because this decides
+        # whether the file may be rewritten at all. Dropping every
+        # record of a file that names no data provider is not a
+        # repair, and reporting it as one is how a placeholder issuer
+        # would reach the step that registers identifiers.
+        unnamed = (
+            []
+            if accept_placeholder_issuer
+            else placeholder_issuer_records(efi_records)
+        )
+        passed = pass_checks(
             efi_records,
             schema_validator,
-            remove_invalid=remove_invalid,
+            remove_invalid=remove_invalid and not unnamed,
             preserve_status_removed=preserve_status_removed,
-        ):
+            accept_placeholder_issuer=accept_placeholder_issuer,
+        )
+        if unnamed:
+            raise user_error(placeholder_issuer_message(efi_file, unnamed))
+        if not passed:
             if remove_invalid:
                 avefi.dump(efi_records, efi_file)
                 log.info(
@@ -86,6 +110,46 @@ def check(
                 sys.exit(1)
         else:
             log.info(f"All {old_count} records passed the checks successfully")
+
+
+def placeholder_issuer_records(
+    efi_records: list[efi.MovingImageRecord],
+) -> list[efi.MovingImageRecord]:
+    """Return the records that still name the placeholder issuer.
+
+    ``described_by.has_issuer_id`` says whose collection the record
+    describes, and the format converters ship with
+    :data:`~efi_conv.core.profiles.PLACEHOLDER_ISSUER_ID` because a
+    converter cannot know that. A record that still names it says that
+    the data provider is unspecified, which is not something a
+    persistent identifier may be registered for.
+
+    """
+    found = []
+    for record in efi_records:
+        described_by = record.described_by
+        if described_by is None:
+            continue
+        entries = (
+            described_by if isinstance(described_by, list) else [described_by]
+        )
+        if any(
+            entry.has_issuer_id == PLACEHOLDER_ISSUER_ID for entry in entries
+        ):
+            found.append(record)
+    return found
+
+
+def placeholder_issuer_message(efi_file, unnamed: list) -> str:
+    """Return why a file naming no data provider is refused."""
+    return (
+        f"{efi_file}: {len(unnamed)} record(s) name the placeholder"
+        f" issuer {PLACEHOLDER_ISSUER_ID}, so the data provider is"
+        f" unspecified and no persistent identifier may be registered"
+        f" for them. Convert again with --profile FILE naming the"
+        f" institution, or pass --accept-placeholder-issuer to check"
+        f" the records anyway while trying out a mapping."
+    )
 
 
 def get_schema_validator(update_schema=False):
@@ -208,6 +272,7 @@ def pass_checks(
     schema_validator,
     remove_invalid=False,
     preserve_status_removed=False,
+    accept_placeholder_issuer=False,
 ) -> bool:
     """Check records against schema and additional rules.
 
@@ -229,6 +294,9 @@ def pass_checks(
     preserve_status_removed : bool
         Accept items with access status Removed even when they do not
         carry an AVefi PID yet.
+    accept_placeholder_issuer : bool
+        Accept records whose described_by names the placeholder
+        issuer. For trying out a mapping only.
 
     Returns
     -------
@@ -240,6 +308,21 @@ def pass_checks(
     dependants_by_ref = defaultdict(list)
     all_was_fine = True
     removed_refs = []
+
+    # The issuer says whose collection this is, which is a property of
+    # the conversion rather than of an individual record. The records
+    # are therefore not removed for it, however ``remove_invalid`` is
+    # set: a file emptied of everything is not a file whose data
+    # provider has been named.
+    if not accept_placeholder_issuer:
+        unnamed = placeholder_issuer_records(efi_records)
+        if unnamed:
+            all_was_fine = False
+            log.error(
+                f"{len(unnamed)} record(s) name the placeholder issuer"
+                f" {PLACEHOLDER_ISSUER_ID}; the data provider has to be"
+                f" named before identifiers are registered for them"
+            )
 
     # Check records and track dependencies
     for rec in efi_records.copy():

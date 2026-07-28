@@ -145,7 +145,7 @@ def test_every_record_yields_all_three_levels(input_path):
 def test_house_vocabularies_are_applied(input_path):
     efi_records = from_.import_file(ddb_lido, input_path("sample_data.xml"))
     items = {
-        item.has_identifier[0].id: item
+        item.described_by.has_source_key[0]: item
         for item in efi_records
         if item.category == "avefi:Item"
     }

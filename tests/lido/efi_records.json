@@ -46,7 +46,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+        "id": "Brücke_Die__Wicki_Bernhard__1959~fa362a56_work"
       }
     ],
     "has_primary_title": {
@@ -73,7 +73,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_manifestation"
+        "id": "Brücke_Die__Wicki_Bernhard__1959~b4b5fcb3_manifestation"
       }
     ],
     "has_primary_title": {
@@ -84,7 +84,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+        "id": "Brücke_Die__Wicki_Bernhard__1959~fa362a56_work"
       }
     ]
   },
@@ -113,7 +113,7 @@
     },
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Brücke_Die_Wicki_Bernhard_1959_manifestation"
+      "id": "Brücke_Die__Wicki_Bernhard__1959~b4b5fcb3_manifestation"
     }
   },
   {
@@ -136,7 +136,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Ohne_Titel_Werbefilm_1962/1965_work"
+        "id": "Ohne_Titel_Werbefilm____1962_1965~b5ce53dc_work"
       }
     ],
     "has_primary_title": {
@@ -162,7 +162,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Ohne_Titel_Werbefilm_1962/1965_BlackAndWhite_35mmFilm_manifestation"
+        "id": "Ohne_Titel_Werbefilm____1962_1965__BlackAndWhite__35mmFilm~6f5e9b85_manifestation"
       }
     ],
     "has_primary_title": {
@@ -172,7 +172,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Ohne_Titel_Werbefilm_1962/1965_work"
+        "id": "Ohne_Titel_Werbefilm____1962_1965~b5ce53dc_work"
       }
     ]
   },
@@ -208,7 +208,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Ohne_Titel_Werbefilm_1962/1965_BlackAndWhite_35mmFilm_manifestation"
+      "id": "Ohne_Titel_Werbefilm____1962_1965__BlackAndWhite__35mmFilm~6f5e9b85_manifestation"
     }
   },
   {
@@ -223,7 +223,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_16mmFilm_manifestation"
+        "id": "Brücke_Die__Wicki_Bernhard__1959__BlackAndWhite__16mmFilm~4e87a4bb_manifestation"
       }
     ],
     "has_primary_title": {
@@ -234,7 +234,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+        "id": "Brücke_Die__Wicki_Bernhard__1959~fa362a56_work"
       }
     ]
   },
@@ -267,7 +267,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_16mmFilm_manifestation"
+      "id": "Brücke_Die__Wicki_Bernhard__1959__BlackAndWhite__16mmFilm~4e87a4bb_manifestation"
     }
   }
 ]

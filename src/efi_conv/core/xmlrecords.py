@@ -18,7 +18,6 @@ solved once here rather than in each of them:
 """
 
 from collections.abc import Iterator
-import logging
 import pathlib
 
 from lxml import etree
@@ -26,7 +25,7 @@ from xsdata.formats.dataclass.context import XmlContext
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
 
-log = logging.getLogger(__name__)
+from .report import report_nothing_recognised
 
 #: Parser configuration used by every converter. External entities and
 #: DTDs stay disabled; unknown properties are tolerated because
@@ -67,7 +66,11 @@ def qualified_name(namespace: str | None, local_name: str) -> str:
 
 
 def iter_record_elements(
-    input_file, namespace: str | None, local_name: str
+    input_file,
+    namespace: str | None,
+    local_name: str,
+    *,
+    report_if_empty: bool = True,
 ) -> Iterator[bytes]:
     """Yield the serialised record elements of a document.
 
@@ -84,6 +87,11 @@ def iter_record_elements(
         Namespace URI of the record element, None for no namespace.
     local_name : str
         Local name of the record element.
+    report_if_empty : bool
+        Report a document holding no such element as one the converter
+        recognises nothing in. Set to False by a caller that will look
+        for a different element next, so that only its last attempt
+        speaks.
 
     Yields
     ------
@@ -123,8 +131,10 @@ def iter_record_elements(
         if parent is not None:
             while element.getprevious() is not None:
                 del parent[0]
-    if not found:
-        log.debug(f"No <{local_name}> element found in {path}")
+    if not found and report_if_empty:
+        # This is where the tool knows the document is not what the
+        # converter expects, so this is where it is reported.
+        report_nothing_recognised(path, f"<{local_name}> element")
 
 
 def refuse_entity_declarations(root, path):

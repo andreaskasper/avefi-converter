@@ -38,7 +38,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "STROMMBERG - DIE LETZTE NACHT__Werner Possardt__1981_work"
+        "id": "STROMMBERG_-_DIE_LETZTE_NACHT__Werner_Possardt__1981~de2998c6_work"
       }
     ],
     "has_primary_title": {
@@ -59,7 +59,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "STROMMBERG - DIE LETZTE NACHT_1981_Deutsch___Farbe_35mm"
+        "id": "STROMMBERG_-_DIE_LETZTE_NACHT_1981_Deutsch___Farbe_35mm~79d2d0fd"
       }
     ],
     "has_primary_title": {
@@ -69,7 +69,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "STROMMBERG - DIE LETZTE NACHT__Werner Possardt__1981_work"
+        "id": "STROMMBERG_-_DIE_LETZTE_NACHT__Werner_Possardt__1981~de2998c6_work"
       }
     ]
   },
@@ -110,7 +110,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "STROMMBERG - DIE LETZTE NACHT_1981_Deutsch___Farbe_35mm"
+      "id": "STROMMBERG_-_DIE_LETZTE_NACHT_1981_Deutsch___Farbe_35mm~79d2d0fd"
     }
   },
   {
@@ -139,7 +139,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "STADTARCHIV DÜSSELDORF - BOBBEL SPORTLICH IN DÜSSELDORF?__Unbekannt__1950?_work"
+        "id": "STADTARCHIV_DÜSSELDORF_-_BOBBEL_SPORTLICH_IN_DÜSSELDORF___Unbekannt__1950~bf16a75d_work"
       }
     ],
     "has_primary_title": {
@@ -160,7 +160,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "STADTARCHIV DÜSSELDORF - BOBBEL SPORTLICH IN DÜSSELDORF?_1950?____Schwarz-Weiß_8mm"
+        "id": "STADTARCHIV_DÜSSELDORF_-_BOBBEL_SPORTLICH_IN_DÜSSELDORF__1950_____Schwarz-Weiß_8mm~7ad3b68a"
       }
     ],
     "has_primary_title": {
@@ -170,7 +170,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "STADTARCHIV DÜSSELDORF - BOBBEL SPORTLICH IN DÜSSELDORF?__Unbekannt__1950?_work"
+        "id": "STADTARCHIV_DÜSSELDORF_-_BOBBEL_SPORTLICH_IN_DÜSSELDORF___Unbekannt__1950~bf16a75d_work"
       }
     ]
   },
@@ -202,7 +202,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "STADTARCHIV DÜSSELDORF - BOBBEL SPORTLICH IN DÜSSELDORF?_1950?____Schwarz-Weiß_8mm"
+      "id": "STADTARCHIV_DÜSSELDORF_-_BOBBEL_SPORTLICH_IN_DÜSSELDORF__1950_____Schwarz-Weiß_8mm~7ad3b68a"
     }
   },
   {
@@ -244,7 +244,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "RECHT AUFS DASEIN, DAS__Joseph Delmont__1913_work"
+        "id": "RECHT_AUFS_DASEIN_DAS__Joseph_Delmont__1913~1b8e3aa2_work"
       }
     ],
     "has_primary_title": {
@@ -266,7 +266,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "RECHT AUFS DASEIN, DAS_1913__Deutsch_Niederländisch_Farbe_35mm"
+        "id": "RECHT_AUFS_DASEIN_DAS_1913__Deutsch_Niederländisch_Farbe_35mm~d06f16cc"
       }
     ],
     "has_primary_title": {
@@ -277,7 +277,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "RECHT AUFS DASEIN, DAS__Joseph Delmont__1913_work"
+        "id": "RECHT_AUFS_DASEIN_DAS__Joseph_Delmont__1913~1b8e3aa2_work"
       }
     ]
   },
@@ -324,7 +324,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "RECHT AUFS DASEIN, DAS_1913__Deutsch_Niederländisch_Farbe_35mm"
+      "id": "RECHT_AUFS_DASEIN_DAS_1913__Deutsch_Niederländisch_Farbe_35mm~d06f16cc"
     }
   },
   {
@@ -368,7 +368,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Heinz Paul__1931_work"
+        "id": "ANDERE_SEITE_DIE__Heinz_Paul__1931~e890acb8_work"
       }
     ],
     "has_primary_title": {
@@ -391,7 +391,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE_1931_Englisch___Farbe_16mm"
+        "id": "ANDERE_SEITE_DIE_1931_Englisch___Farbe_16mm~ea5fe7d1"
       }
     ],
     "has_primary_title": {
@@ -402,7 +402,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Heinz Paul__1931_work"
+        "id": "ANDERE_SEITE_DIE__Heinz_Paul__1931~e890acb8_work"
       }
     ]
   },
@@ -443,7 +443,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1931_Englisch___Farbe_16mm"
+      "id": "ANDERE_SEITE_DIE_1931_Englisch___Farbe_16mm~ea5fe7d1"
     }
   },
   {
@@ -458,7 +458,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE_1931_Französisch___Farbe_16mm"
+        "id": "ANDERE_SEITE_DIE_1931_Französisch___Farbe_16mm~51a6d470"
       }
     ],
     "has_primary_title": {
@@ -469,7 +469,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Heinz Paul__1931_work"
+        "id": "ANDERE_SEITE_DIE__Heinz_Paul__1931~e890acb8_work"
       }
     ]
   },
@@ -510,7 +510,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1931_Französisch___Farbe_16mm"
+      "id": "ANDERE_SEITE_DIE_1931_Französisch___Farbe_16mm~51a6d470"
     }
   },
   {
@@ -550,7 +550,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1931_Englisch___Farbe_16mm"
+      "id": "ANDERE_SEITE_DIE_1931_Englisch___Farbe_16mm~ea5fe7d1"
     }
   },
   {
@@ -603,7 +603,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Gerhard Labudda__1976_work"
+        "id": "ANDERE_SEITE_DIE__Gerhard_Labudda__1976~64f23630_work"
       }
     ],
     "has_primary_title": {
@@ -627,7 +627,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE_1976_Deutsch___Farbe_35mm"
+        "id": "ANDERE_SEITE_DIE_1976_Deutsch___Farbe_35mm~ba3297ce"
       }
     ],
     "has_primary_title": {
@@ -638,7 +638,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Gerhard Labudda__1976_work"
+        "id": "ANDERE_SEITE_DIE__Gerhard_Labudda__1976~64f23630_work"
       }
     ]
   },
@@ -679,7 +679,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Deutsch___Farbe_35mm"
+      "id": "ANDERE_SEITE_DIE_1976_Deutsch___Farbe_35mm~ba3297ce"
     }
   },
   {
@@ -719,7 +719,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Deutsch___Farbe_35mm"
+      "id": "ANDERE_SEITE_DIE_1976_Deutsch___Farbe_35mm~ba3297ce"
     }
   },
   {
@@ -759,7 +759,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Deutsch___Farbe_35mm"
+      "id": "ANDERE_SEITE_DIE_1976_Deutsch___Farbe_35mm~ba3297ce"
     }
   },
   {
@@ -775,7 +775,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE_1976_Deutsch___Farbe_16mm"
+        "id": "ANDERE_SEITE_DIE_1976_Deutsch___Farbe_16mm~6a14fd8d"
       }
     ],
     "has_primary_title": {
@@ -786,7 +786,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Gerhard Labudda__1976_work"
+        "id": "ANDERE_SEITE_DIE__Gerhard_Labudda__1976~64f23630_work"
       }
     ]
   },
@@ -827,7 +827,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Deutsch___Farbe_16mm"
+      "id": "ANDERE_SEITE_DIE_1976_Deutsch___Farbe_16mm~6a14fd8d"
     }
   },
   {
@@ -843,7 +843,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE_1976_Englisch___Farbe_16mm"
+        "id": "ANDERE_SEITE_DIE_1976_Englisch___Farbe_16mm~91d79832"
       }
     ],
     "has_primary_title": {
@@ -854,7 +854,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Gerhard Labudda__1976_work"
+        "id": "ANDERE_SEITE_DIE__Gerhard_Labudda__1976~64f23630_work"
       }
     ]
   },
@@ -895,7 +895,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Englisch___Farbe_16mm"
+      "id": "ANDERE_SEITE_DIE_1976_Englisch___Farbe_16mm~91d79832"
     }
   },
   {
@@ -911,7 +911,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE_1976_Französisch___Farbe_16mm"
+        "id": "ANDERE_SEITE_DIE_1976_Französisch___Farbe_16mm~9b832815"
       }
     ],
     "has_primary_title": {
@@ -922,7 +922,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Gerhard Labudda__1976_work"
+        "id": "ANDERE_SEITE_DIE__Gerhard_Labudda__1976~64f23630_work"
       }
     ]
   },
@@ -963,7 +963,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Französisch___Farbe_16mm"
+      "id": "ANDERE_SEITE_DIE_1976_Französisch___Farbe_16mm~9b832815"
     }
   },
   {
@@ -1003,7 +1003,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Französisch___Farbe_16mm"
+      "id": "ANDERE_SEITE_DIE_1976_Französisch___Farbe_16mm~9b832815"
     }
   },
   {
@@ -1043,7 +1043,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Deutsch___Farbe_16mm"
+      "id": "ANDERE_SEITE_DIE_1976_Deutsch___Farbe_16mm~6a14fd8d"
     }
   },
   {
@@ -1083,7 +1083,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Englisch___Farbe_16mm"
+      "id": "ANDERE_SEITE_DIE_1976_Englisch___Farbe_16mm~91d79832"
     }
   },
   {
@@ -1098,7 +1098,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE_1976_Deutsch___Farbe_(not assigned)"
+        "id": "ANDERE_SEITE_DIE_1976_Deutsch___Farbe__not_assigned~a3b16c7d"
       }
     ],
     "has_primary_title": {
@@ -1109,7 +1109,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Gerhard Labudda__1976_work"
+        "id": "ANDERE_SEITE_DIE__Gerhard_Labudda__1976~64f23630_work"
       }
     ]
   },
@@ -1144,7 +1144,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_Deutsch___Farbe_(not assigned)"
+      "id": "ANDERE_SEITE_DIE_1976_Deutsch___Farbe__not_assigned~a3b16c7d"
     }
   },
   {
@@ -1160,7 +1160,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE_1976_____"
+        "id": "ANDERE_SEITE_DIE_1976~f0a2ed8c"
       }
     ],
     "has_primary_title": {
@@ -1171,7 +1171,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "ANDERE SEITE, DIE__Gerhard Labudda__1976_work"
+        "id": "ANDERE_SEITE_DIE__Gerhard_Labudda__1976~64f23630_work"
       }
     ]
   },
@@ -1197,7 +1197,7 @@
     },
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_____"
+      "id": "ANDERE_SEITE_DIE_1976~f0a2ed8c"
     }
   },
   {
@@ -1222,7 +1222,7 @@
     },
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "ANDERE SEITE, DIE_1976_____"
+      "id": "ANDERE_SEITE_DIE_1976~f0a2ed8c"
     }
   }
 ]

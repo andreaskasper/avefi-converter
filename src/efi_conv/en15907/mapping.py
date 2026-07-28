@@ -33,8 +33,8 @@ from ..core.records import (
     SourceTitle,
     as_title,
     attach_source_key,
+    local_identifier,
     make_key,
-    slug,
     work_key,
 )
 from ..core.report import for_file, report_issue, report_record_skipped
@@ -733,7 +733,12 @@ def map_entity(
     )
     production_year = first_production_year(avcreation, identifier)
     work_key = make_work_key(profile, identifier, primary, production_year)
-    source_key = identifier or slug(work_key)
+    # A record without an identifier of its own is given a source
+    # key derived from its work key. That key stands in for the
+    # one the provider did not supply, so it is left as it is;
+    # the identifiers built from it are made safe where they are
+    # minted, and doing it here would do it twice.
+    source_key = identifier or work_key
     if identifier is None:
         report_issue(
             "info",
@@ -910,7 +915,9 @@ def build_item(
         is_item_of=manifestation.has_identifier[0],
         has_primary_title=as_title(primary.title, "TitleProper"),
     )
-    item.has_identifier.append(efi.LocalResource(id=source_key))
+    item.has_identifier.append(
+        efi.LocalResource(id=local_identifier(source_key))
+    )
     copy.apply(item)
     if element is not None:
         map_item_element(item, element, source_key, profile)
@@ -1287,7 +1294,7 @@ def make_work_key(
     parts = {name: values[name] for name in names}
     return work_key(
         parts,
-        identifier or slug(make_key(*parts.values())),
+        identifier or make_key(*parts.values()),
         record_id=identifier,
     )
 

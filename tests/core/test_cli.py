@@ -155,6 +155,7 @@ class TestReport:
             "warning",
             "error",
             "records_skipped",
+            "files_unrecognised",
         }
         assert content["entries"]
 

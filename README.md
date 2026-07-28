@@ -201,6 +201,57 @@ The run exits non-zero when it lost anything: a file that could not be
 read, and a record that could not be converted. A conversion that
 skipped records is not a success, however many records it did write.
 
+#### Local identifiers
+
+A local identifier ends up in a handle, in the addresses built from it
+and in front of the people reviewing a conversion. It therefore keeps
+letters and digits as they are, whatever script they are written in:
+`Brücke`, `Sanitätshunde` and `白蛇伝` stay themselves. Those
+characters are legal in a Handle System suffix and in an IRI; they are
+not legal in a URI, so whoever builds one percent-encodes them there,
+as a browser does when it displays an IRI. The same applies to a value
+put into an HTTP header, or into a filename on a system that cannot
+spell it.
+
+What a URI parser would read is replaced rather than kept: the space
+and `/`, `:`, `#`, `?`, `&`, `%`, `=`, `@`, `+`, `;`, `,`, `<`, `>`,
+the quotes, the backslash, `|`, `^`, the brackets and braces, and the
+control characters. A run of them becomes a single `_`, and `~` is
+replaced too, because it marks the digest below.
+
+Replacing loses information, and losing information would let two
+different source records arrive at one identifier, which cannot be
+taken back once it is registered. Whenever anything was replaced, a
+short digest of the whole value is therefore appended behind `~`, so
+that the two records stay apart:
+
+| Value | Identifier |
+| --- | --- |
+| `FMDU-0001` | `FMDU-0001` |
+| `Brücke, Die__Wicki, Bernhard__1959` | `Brücke_Die__Wicki_Bernhard__1959~fa362a56` |
+| `ger:SpokenLanguage` | `ger_SpokenLanguage~09472c59` |
+
+A value that needs no substitution gets no digest and is passed
+through exactly as it came in, which is the common case for a
+provider's own record identifiers. An identifier without `~` is
+therefore the value itself. A value too long to be workable keeps its
+first 100 characters and is completed by a digest of the whole of it,
+the two separated by `~~`, which no shorter identifier can contain, so
+a shortened identifier can never look like a complete one.
+
+> [!IMPORTANT]
+> This rule changed the identifiers this tool mints. Earlier versions
+> passed `/`, `:`, `#`, `?` and spaces through and dropped other
+> characters altogether, so an identifier minted before is not the
+> identifier minted for the same record now. If you have already
+> registered persistent identifiers for records produced by an earlier
+> version, convert your data again and compare before registering
+> anything further: with
+> [`efi-conv diff`](#comparing-against-avefi) against what is in
+> AVefi, and by mapping your old identifiers onto the new ones through
+> `described_by.has_source_key`, which is the provider's own key and
+> is recorded verbatim, unchanged by this.
+
 ### `efi-conv check`
 
 | Option | Description |
@@ -208,10 +259,20 @@ skipped records is not a success, however many records it did write.
 | `-u`, `--update-schema` | Fetch the current AVefi schema from the upstream repository |
 | `-r`, `--remove-invalid` | Remove invalid records, modifying the file in place |
 | `--preserve-status-removed` | Accept items with access status `Removed` that carry no PID yet |
+| `--accept-placeholder-issuer` | Accept records that still name the placeholder issuer |
 
 The schema is cached in the user cache directory and a warning is
 emitted once it is older than 30 days. Files are rewritten atomically,
 so an interrupted run cannot truncate your data.
+
+A file whose `described_by.has_issuer_id` is still the documented
+placeholder `https://w3id.org/avefi/issuer/unspecified` does not pass.
+It says that the data provider is unspecified, and no persistent
+identifier may be registered for a record that says that. Naming the
+provider is what [`--profile`](#profiles) is for; the check is the last
+step before registration, so this is the last place it can be noticed.
+`--remove-invalid` does not answer it by dropping the records: a file
+emptied of everything is not a file whose data provider has been named.
 
 ### `efi-conv diff`
 
@@ -396,7 +457,7 @@ $ uv run efi-conv from -f fmdu.lido -o efi_records.json \
 {
   "report_format_version": "1.0",
   "avefi_schema_version": { "sha256": "fcf4d251…", "metamodel_version": "1.7.0" },
-  "summary": { "info": 5, "warning": 1, "error": 0, "records_skipped": 0 },
+  "summary": { "info": 5, "warning": 1, "error": 0, "records_skipped": 0, "files_unrecognised": 0 },
   "entries": [
     {
       "severity": "warning",
@@ -412,9 +473,14 @@ $ uv run efi-conv from -f fmdu.lido -o efi_records.json \
 ```
 
 `summary.records_skipped` counts the source records that could not be
-converted and were left out of the output. It is what the exit code of
-`efi-conv from` reflects, so that a pipeline does not have to read
-message text to tell a complete run from a lossy one.
+converted and were left out of the output, and
+`summary.files_unrecognised` the input files that held no record the
+converter recognises. Both are what the exit code of `efi-conv from`
+reflects, so that a pipeline does not have to read message text to
+tell a complete run from a lossy one. A file counted in
+`files_unrecognised` is reported by the reader that went looking for
+the records, so the entry names the file, the converter and the
+element it expected to find.
 
 Severity is used consistently: `info` records a documented decision,
 `warning` says that information was not transferred, and `error` says
@@ -525,6 +591,15 @@ out whether the [xsData][xsdata] or similar projects can help you
 there. In fact, the [avportal module relies on xsData for
 parsing](./src/efi_conv/avportal/README.md) as has been briefly
 documented, as does the [lido module](./src/efi_conv/lido/README.md).
+
+Say so when a file holds nothing you recognise. `xmlrecords.py` does
+that for you when it finds no record element; a converter reading
+another kind of file calls
+`efi_conv.core.report.report_nothing_recognised` itself, at the point
+where it went looking. `efi-conv from` reads that report entry rather
+than concluding anything from a run that produced no records, so a
+converter that stays silent here tells a pipeline that the delivery
+held no films.
 
 The actual mapping is the tedious part. See
 [avportal.py](./src/efi_conv/avportal/avportal.py) for the kind of work

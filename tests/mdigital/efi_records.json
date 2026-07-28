@@ -46,7 +46,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_work"
+        "id": "Saale_bei_Halle_Die__Schmidt_Karl__1954~ae4129c0_work"
       }
     ],
     "has_primary_title": {
@@ -73,7 +73,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_BlackAndWhite_16mmFilm_manifestation"
+        "id": "Saale_bei_Halle_Die__Schmidt_Karl__1954__BlackAndWhite__16mmFilm~d5bea109_manifestation"
       }
     ],
     "has_primary_title": {
@@ -84,7 +84,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_work"
+        "id": "Saale_bei_Halle_Die__Schmidt_Karl__1954~ae4129c0_work"
       }
     ]
   },
@@ -100,7 +100,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "https://nat.museum-digital.de/object/70001"
+        "id": "https_nat.museum-digital.de_object_70001~7c58949c"
       }
     ],
     "has_primary_title": {
@@ -123,7 +123,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_BlackAndWhite_16mmFilm_manifestation"
+      "id": "Saale_bei_Halle_Die__Schmidt_Karl__1954__BlackAndWhite__16mmFilm~d5bea109_manifestation"
     }
   },
   {
@@ -138,7 +138,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_BlackAndWhite_35mmFilm_manifestation"
+        "id": "Saale_bei_Halle_Die__Schmidt_Karl__1954__BlackAndWhite__35mmFilm~a2e7fcc3_manifestation"
       }
     ],
     "has_primary_title": {
@@ -149,7 +149,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_work"
+        "id": "Saale_bei_Halle_Die__Schmidt_Karl__1954~ae4129c0_work"
       }
     ]
   },
@@ -165,7 +165,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "https://nat.museum-digital.de/object/70002"
+        "id": "https_nat.museum-digital.de_object_70002~0275c210"
       }
     ],
     "has_primary_title": {
@@ -182,7 +182,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Saale_bei_Halle_Die_Schmidt_Karl_1954_BlackAndWhite_35mmFilm_manifestation"
+      "id": "Saale_bei_Halle_Die__Schmidt_Karl__1954__BlackAndWhite__35mmFilm~a2e7fcc3_manifestation"
     }
   },
   {
@@ -205,7 +205,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Winterlandschaft_im_Harz_1962_work"
+        "id": "Winterlandschaft_im_Harz____1962~3863ac1b_work"
       }
     ],
     "has_primary_title": {
@@ -226,7 +226,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Winterlandschaft_im_Harz_1962_Colour_8mmFilm_manifestation"
+        "id": "Winterlandschaft_im_Harz____1962___Colour__8mmFilm~8495c325_manifestation"
       }
     ],
     "has_primary_title": {
@@ -236,7 +236,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Winterlandschaft_im_Harz_1962_work"
+        "id": "Winterlandschaft_im_Harz____1962~3863ac1b_work"
       }
     ]
   },
@@ -252,7 +252,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "https://nat.museum-digital.de/object/70003"
+        "id": "https_nat.museum-digital.de_object_70003~539682c1"
       }
     ],
     "has_primary_title": {
@@ -268,7 +268,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Winterlandschaft_im_Harz_1962_Colour_8mmFilm_manifestation"
+      "id": "Winterlandschaft_im_Harz____1962___Colour__8mmFilm~8495c325_manifestation"
     }
   }
 ]

@@ -6,6 +6,8 @@ import re
 
 from avefi_schema import model_pydantic_v2 as efi
 
+from ..core.records import local_identifier
+from ..core.report import report_nothing_recognised
 from ..core.utils import described_by_issuer
 
 log = logging.getLogger(__name__)
@@ -51,6 +53,10 @@ def read_input(input_file, encoding=FILE_ENCODING) -> list[dict]:
     discarded: a changed column count would otherwise shift every value
     into the wrong AVefi field without any error.
 
+    An export holding no data row is reported here rather than left to
+    be inferred from the absence of output: this is where the tool
+    knows that the file is not the export it was pointed at.
+
     """
     with pathlib.Path(input_file).open(encoding=encoding) as f:
         parsed_input = list(
@@ -63,7 +69,7 @@ def read_input(input_file, encoding=FILE_ENCODING) -> list[dict]:
         )
 
     if not parsed_input:
-        log.warning(f"No rows found in {input_file}")
+        report_nothing_recognised(input_file, "data row")
         return []
 
     header = parsed_input[0]
@@ -71,7 +77,10 @@ def read_input(input_file, encoding=FILE_ENCODING) -> list[dict]:
     warn_about_encoding(header, encoding, input_file)
 
     # Drop the header line
-    return parsed_input[1:]
+    rows = parsed_input[1:]
+    if not rows:
+        report_nothing_recognised(input_file, "data row")
+    return rows
 
 
 def check_header(header: dict, input_file):
@@ -200,7 +209,9 @@ def map_to_efi(
                         )
                     )
                 work.has_event.append(event)
-            work_id = efi.LocalResource(id=f"{work_key}_work")
+            work_id = efi.LocalResource(
+                id=f"{local_identifier(work_key)}_work"
+            )
             work.has_identifier.append(work_id)
             efi_records.append(work)
         else:
@@ -238,9 +249,13 @@ def map_to_efi(
                 manifestation
             )
             manifestation_id = efi.LocalResource(
-                id=f"{row['manifestation_title']}_{row['production_year']}"
-                f"_{row['SpokenLanguage']}_{row['Subtitles']}"
-                f"_{row['Intertitles']}_{row['colour_type']}_{row['format']}"
+                id=local_identifier(
+                    f"{row['manifestation_title']}"
+                    f"_{row['production_year']}"
+                    f"_{row['SpokenLanguage']}_{row['Subtitles']}"
+                    f"_{row['Intertitles']}_{row['colour_type']}"
+                    f"_{row['format']}"
+                )
             )
             manifestation.has_identifier.append(manifestation_id)
             efi_records.append(manifestation)
@@ -290,7 +305,7 @@ def map_to_efi(
         )
         if colour_type:
             item.has_colour_type = efi.ColourTypeEnum(colour_type)
-        item_id = efi.LocalResource(id=source_key)
+        item_id = efi.LocalResource(id=local_identifier(source_key))
         item.has_identifier.append(item_id)
         efi_records.append(item)
         for record in (item, manifestation, work):

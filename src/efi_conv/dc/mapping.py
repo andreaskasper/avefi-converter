@@ -42,6 +42,7 @@ from ..core.records import (
     SourceTitle,
     as_title,
     attach_source_key,
+    local_identifier,
     make_key,
 )
 from ..core.report import for_file, report_issue, report_record_skipped
@@ -829,10 +830,15 @@ def build_item(values, profile, primary, source_key):
         is_item_of=efi.LocalResource(id="__pending__"),
         has_primary_title=as_title(primary, "TitleProper"),
     )
-    item.has_identifier.append(efi.LocalResource(id=source_key))
-    for identifier in texts(values, "identifier"):
-        if identifier != source_key:
+    known = {local_identifier(source_key)}
+    item.has_identifier.append(
+        efi.LocalResource(id=local_identifier(source_key))
+    )
+    for value in texts(values, "identifier"):
+        identifier = local_identifier(value)
+        if identifier not in known:
             item.has_identifier.append(efi.LocalResource(id=identifier))
+            known.add(identifier)
     for language in build_languages(values, profile, source_key):
         item.in_language.append(language)
     for film_format in build_formats(values, profile, source_key):

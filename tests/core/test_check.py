@@ -1,9 +1,13 @@
 import copy
 import json
 
+from click.testing import CliRunner
 import pytest
 
-from efi_conv.core import avefi, check
+from efi_conv.core import avefi, check, profiles
+
+# Importing efi_conv.main is what registers the subcommands.
+from efi_conv.main import cli_main
 
 WORK = {
     "category": "avefi:WorkVariant",
@@ -215,3 +219,91 @@ class TestSchemaCache:
         )
         assert check.get_schema_validator() is not None
         assert calls == []
+
+
+class TestPlaceholderIssuer:
+    """A file naming no data provider must not reach registration.
+
+    ``efi-conv from`` refuses to convert with the placeholder issuer
+    unless it is told to, but a file produced that way, or produced by
+    running a converter as ``python -m efi_conv.NAME``, still reaches
+    ``check``. The documented pipeline is from, check, register
+    identifiers, so ``check`` is the last step that can notice it.
+
+    """
+
+    def _with_issuer(self, issuer_id):
+        work = copy.deepcopy(WORK)
+        work["described_by"] = [
+            {
+                "has_issuer_id": issuer_id,
+                "has_issuer_name": "Unspecified data provider",
+                "has_source_key": ["k1"],
+            }
+        ]
+        return records(work, MANIFESTATION, ITEM)
+
+    def _placeholder(self):
+        return self._with_issuer(profiles.PLACEHOLDER_ISSUER_ID)
+
+    def test_a_named_issuer_passes(self, validator):
+        named = self._with_issuer("https://w3id.org/isil/DE-MUS-000000")
+        assert check.pass_checks(named, validator)
+
+    def test_the_placeholder_issuer_does_not_pass(self, validator):
+        assert not check.pass_checks(self._placeholder(), validator)
+
+    def test_it_can_be_accepted_deliberately(self, validator):
+        assert check.pass_checks(
+            self._placeholder(), validator, accept_placeholder_issuer=True
+        )
+
+    def test_removing_invalid_records_does_not_empty_the_file(self, validator):
+        """The issuer is not something a record can be dropped for."""
+        placeholder = self._placeholder()
+        check.pass_checks(placeholder, validator, remove_invalid=True)
+        assert len(placeholder) == 3
+
+
+class TestCheckCommandRejectsThePlaceholder:
+    def _file(self, tmp_path, issuer_id):
+        work = copy.deepcopy(WORK)
+        work["described_by"] = [
+            {
+                "has_issuer_id": issuer_id,
+                "has_issuer_name": "Unspecified data provider",
+                "has_source_key": ["k1"],
+            }
+        ]
+        target = tmp_path / "records.json"
+        target.write_text(
+            json.dumps([work, MANIFESTATION, ITEM]), encoding="utf-8"
+        )
+        return target
+
+    def test_the_command_exits_non_zero(self, tmp_path):
+        runner = CliRunner()
+        target = self._file(tmp_path, profiles.PLACEHOLDER_ISSUER_ID)
+        result = runner.invoke(cli_main, ["check", str(target)])
+        assert result.exit_code != 0
+        assert "placeholder" in result.output.lower()
+
+    def test_the_flag_accepts_it(self, tmp_path):
+        runner = CliRunner()
+        target = self._file(tmp_path, profiles.PLACEHOLDER_ISSUER_ID)
+        result = runner.invoke(
+            cli_main,
+            ["check", "--accept-placeholder-issuer", str(target)],
+        )
+        assert result.exit_code == 0, result.output
+
+    def test_removing_invalid_records_does_not_hide_it(self, tmp_path):
+        """--remove-invalid must not answer this by emptying the file."""
+        runner = CliRunner()
+        target = self._file(tmp_path, profiles.PLACEHOLDER_ISSUER_ID)
+        before = target.read_text(encoding="utf-8")
+        result = runner.invoke(
+            cli_main, ["check", "--remove-invalid", str(target)]
+        )
+        assert result.exit_code != 0
+        assert target.read_text(encoding="utf-8") == before

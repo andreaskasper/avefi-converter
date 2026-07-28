@@ -27,6 +27,7 @@ from ..core.records import (
     SourceTitle,
     as_title,
     attach_source_key,
+    local_identifier,
     make_key,
     merge_alternative_titles,
     work_key,
@@ -437,7 +438,9 @@ def map_record(
     if is_new:
         new_records.append(manifestation)
     item.is_item_of = manifestation.has_identifier[0]
-    item.has_identifier.append(efi.LocalResource(id=source_key))
+    item.has_identifier.append(
+        efi.LocalResource(id=local_identifier(source_key))
+    )
     new_records.append(item)
 
     attach_source_key(

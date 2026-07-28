@@ -67,7 +67,8 @@
         "info": { "type": "integer", "minimum": 0 },
         "warning": { "type": "integer", "minimum": 0 },
         "error": { "type": "integer", "minimum": 0 },
-        "records_skipped": { "type": "integer", "minimum": 0 }
+        "records_skipped": { "type": "integer", "minimum": 0 },
+        "files_unrecognised": { "type": "integer", "minimum": 0 }
       }
     },
     "entries": {

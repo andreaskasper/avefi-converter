@@ -165,7 +165,7 @@ def test_house_vocabularies_are_applied(input_path):
         mdigital_lido, input_path("sample_data.xml")
     )
     items = {
-        item.has_identifier[0].id: item
+        item.described_by.has_source_key[0]: item
         for item in efi_records
         if item.category == "avefi:Item"
     }

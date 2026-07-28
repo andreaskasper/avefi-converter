@@ -89,6 +89,16 @@ class ConversionReport:
         Counted separately from the entries because losing a record is
         what the exit code of ``efi-conv from`` has to reflect, and no
         caller should have to recognise a loss from message text.
+    files_unrecognised : int
+        Input files that held no record the converter recognises.
+        Counted for the same reason as ``records_skipped``: the
+        converter is what knows, and the caller must not have to infer
+        it from the absence of output.
+    expects : str or None
+        What the converter of this run reads, named in the message
+        about a file it recognises nothing in. Set by ``efi-conv
+        from``, which is the layer that knows which converter was
+        asked for; None when a converter is used directly.
 
     """
 
@@ -96,6 +106,8 @@ class ConversionReport:
     source_file: str | None = None
     avefi_schema_version: str | None = None
     records_skipped: int = 0
+    files_unrecognised: int = 0
+    expects: str | None = None
 
     def add(self, severity: str, message: str, **kwargs) -> ReportEntry:
         """Record an issue and log it at the matching level."""
@@ -122,8 +134,12 @@ class ConversionReport:
         }
 
     def summary(self) -> dict[str, int]:
-        """Return the entry counts and the number of records lost."""
-        return {**self.counts(), "records_skipped": self.records_skipped}
+        """Return the entry counts and what the run failed to read."""
+        return {
+            **self.counts(),
+            "records_skipped": self.records_skipped,
+            "files_unrecognised": self.files_unrecognised,
+        }
 
     def to_dict(self) -> dict:
         """Return the report as a JSON serialisable dictionary."""
@@ -222,6 +238,45 @@ def report_record_skipped(reason, **kwargs) -> ReportEntry:
     report = current_report()
     if report is not None:
         report.records_skipped += 1
+    return entry
+
+
+def report_nothing_recognised(source_file, looked_for: str) -> ReportEntry:
+    """Report an input file that held no record the converter reads.
+
+    Called by the reader that went looking, which is the point at
+    which the tool knows that the file is not what the converter
+    expects. Reaching that conclusion further out, from a conversion
+    that produced nothing, is only right as long as every converter
+    reports the records it drops.
+
+    Counted like a skipped record, so that ``efi-conv from`` can exit
+    non-zero for a file it could not read without having to recognise
+    the situation from message text.
+
+    Parameters
+    ----------
+    source_file
+        The file that was read.
+    looked_for : str
+        What was looked for and not found, for instance
+        ``<lido> element``.
+
+    """
+    report = current_report()
+    expects = report.expects if report is not None else None
+    entry = report_issue(
+        "error",
+        f"Nothing in {source_file} could be read"
+        f"{f' by {expects}' if expects else ''}: no {looked_for} found."
+        f" The file parsed, but it holds no record this converter"
+        f" recognises, so it is either another schema or another"
+        f" wrapper than the one expected.",
+        source_file=str(source_file),
+        source_field=looked_for,
+    )
+    if report is not None:
+        report.files_unrecognised += 1
     return entry
 
 

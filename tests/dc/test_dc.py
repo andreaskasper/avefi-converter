@@ -6,6 +6,7 @@ import pytest
 
 from efi_conv.core import avefi, check, from_
 from efi_conv.core.normalise import NormalisationError
+from efi_conv.core.records import local_identifier
 from efi_conv.core.report import ConversionReport, collecting
 from efi_conv.dc import mapping
 from efi_conv.dc.profile import DcProfile
@@ -19,11 +20,20 @@ def test_map_to_efi(input_path, expected_output):
 
 
 def test_schema_compliance(input_path):
+    """The mapping, not the profile, is what is under test here.
+
+    This converter ships with the placeholder issuer, because it reads
+    a format rather than one institution's export. That is what
+    ``--profile`` is for, and what ``check`` refuses without; here it
+    is accepted deliberately, so that the assertion stays about the
+    records the mapping produces.
+
+    """
     schema_validator = check.get_schema_validator()
     efi_records = from_.import_file(mapping, input_path("sample_data.xml"))
-    assert check.pass_checks(efi_records, schema_validator), (
-        "Mapped data did not validate"
-    )
+    assert check.pass_checks(
+        efi_records, schema_validator, accept_placeholder_issuer=True
+    ), "Mapped data did not validate"
 
 
 def test_conversion_is_idempotent(input_path):
@@ -175,8 +185,8 @@ def test_a_uri_identifier_is_preferred_as_the_source_key(input_path):
         in item.described_by.has_source_key
     )
     assert [i.id for i in with_uri.has_identifier] == [
-        "https://example.org/oai/film/0001",
-        "OAI-0001",
+        local_identifier("https://example.org/oai/film/0001"),
+        local_identifier("OAI-0001"),
     ]
 
 

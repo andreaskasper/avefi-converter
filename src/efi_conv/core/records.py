@@ -20,22 +20,134 @@ from .utils import described_by_issuer
 
 #: Identifiers longer than this are shortened and given a digest, so
 #: that they stay usable while remaining unique and reproducible.
-MAX_SLUG_LENGTH = 120
+MAX_IDENTIFIER_LENGTH = 120
+
+#: How much of an over-long value is kept in front of its digest.
+KEPT_BEFORE_DIGEST = 100
 
 #: Separator between the parts of a grouping key. Chosen so that it
 #: cannot occur inside a normalised title or date.
 KEY_SEPARATOR = "__"
 
+#: The characters a minted identifier is allowed to consist of:
+#: Unicode letters and digits, ``-``, ``.``, ``_`` and the ``~`` that
+#: introduces a digest.
+IDENTIFIER_PATTERN = re.compile(r"[\w.~-]+")
 
-def slug(value: str) -> str:
-    """Return a compact, stable identifier fragment for ``value``."""
-    cleaned = re.sub(r"\s+", "_", value.strip())
-    cleaned = re.sub(r"[^\w.:/-]", "", cleaned, flags=re.UNICODE)
-    cleaned = re.sub(r"_{2,}", "_", cleaned).strip("_")
-    if len(cleaned) <= MAX_SLUG_LENGTH:
-        return cleaned or "record"
-    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
-    return f"{cleaned[:100]}_{digest}"
+#: A run of characters no identifier may contain, replaced as a whole
+#: by a single ``_``. That is everything but Unicode letters, digits,
+#: ``-``, ``.`` and ``_``: the space and the URI syntax, from ``/``,
+#: ``:``, ``#``, ``?``, ``&``, ``%``, ``=``, ``@``, ``+``, ``;``,
+#: ``,`` by way of the quotes and brackets to the control characters,
+#: and ``~``, which is reserved as the marker below.
+REPLACED = re.compile(r"[^\w.-]+")
+
+#: Separates the readable part of an identifier from the digest that
+#: makes it unique, and doubled it separates a shortened value from
+#: its digest. No value keeps it, so an identifier carrying no digest
+#: cannot contain it and cannot be mistaken for one that does.
+DIGEST_MARKER = "~"
+
+#: How much of the digest of a substituted value is kept. Enough that
+#: two values whose readable forms coincide do not.
+DIGEST_LENGTH = 8
+
+#: How much of the digest of an over-long value is kept.
+LONG_DIGEST_LENGTH = 12
+
+#: Identifier of a value that is empty once surrounding whitespace is
+#: removed. Carries the marker without a digest behind it, which the
+#: rules below cannot produce, so a record without a key cannot
+#: borrow the identifier of a record that has one.
+EMPTY_IDENTIFIER = f"{DIGEST_MARKER}record"
+
+
+def _digest(value: str, length: int) -> str:
+    """Return the leading ``length`` hexadecimal digits of a digest."""
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:length]
+
+
+def local_identifier(value: str) -> str:
+    """Return the identifier this tool mints for ``value``.
+
+    An AVefi local identifier is not only a key inside the output
+    file: a handle is registered for it, URIs are built from that
+    handle, and people read it. An archivist reviewing a conversion, a
+    developer debugging a mapping and the data provider checking what
+    was registered for their collection all look at these strings, and
+    German titles are the normal case here rather than an edge case.
+    An identifier a German archivist cannot read is worse than one
+    that needs encoding somewhere on the way out.
+
+    Unicode letters and digits are therefore kept as they are: ``ü``,
+    ``ä``, ``ß`` and ``é`` stay themselves. They are legal in a Handle
+    System suffix and in an IRI. They are not legal in a URI, so
+    whoever builds one percent-encodes them at that point, as a
+    browser does when it displays an IRI; the same applies to a value
+    put into an HTTP header or into a filename on a system that
+    cannot spell them. Nothing downstream has to guess, because the
+    identifier is a plain Unicode string.
+
+    What a URI parser would read is replaced rather than kept: the
+    space and ``/``, ``:``, ``#``, ``?``, ``&``, ``%``, ``=``, ``@``,
+    ``+``, ``;``, ``,``, ``<``, ``>``, the quotes, the backslash,
+    ``|``, ``^``, the brackets and braces, and the control
+    characters. A run of them becomes a single ``_``, and ``~`` is
+    replaced too, because it marks the digest below. What is left is
+    stated by :data:`IDENTIFIER_PATTERN`.
+
+    Replacing loses information, and losing information lets two
+    different source keys arrive at one identifier. One identifier
+    registered for two films cannot be undone by a later correction,
+    whereas two identifiers minted for one film can be merged once the
+    duplicate is noticed. Whenever the readable form is therefore not
+    a faithful rendering of the value — whenever anything was replaced
+    at all — a short digest of the whole value is appended behind
+    ``~``. A value that needs no substitution gets no digest and is
+    returned exactly as it came in, which is the common case for a
+    provider's own record identifiers.
+
+    Distinct values therefore keep distinct identifiers. An identifier
+    without ``~`` is the value itself; one with ``~`` names both the
+    readable form and the value it was made from; and only a digest
+    collision could bring two values together. Surrounding whitespace
+    is removed first, so a value differing from another only in that
+    respect is the same value. A value too long to be workable keeps
+    its first :data:`KEPT_BEFORE_DIGEST` characters and is completed
+    by a digest of the whole of it, the two separated by ``~~``, which
+    no shorter identifier can contain, so a shortened identifier can
+    never look like a complete one.
+
+    Parameters
+    ----------
+    value : str
+        The source key, grouping key or other value to identify a
+        record by.
+
+    Returns
+    -------
+    str
+        An identifier matching :data:`IDENTIFIER_PATTERN`.
+
+    """
+    stripped = str(value).strip()
+    if not stripped:
+        return EMPTY_IDENTIFIER
+    readable = REPLACED.sub("_", stripped)
+    if readable == stripped:
+        identifier = readable
+    else:
+        # An underscore standing where the value began or ended says
+        # nothing; the digest is what keeps the value apart.
+        readable = readable.strip("_")
+        identifier = (
+            f"{readable}{DIGEST_MARKER}{_digest(stripped, DIGEST_LENGTH)}"
+        )
+    if len(identifier) <= MAX_IDENTIFIER_LENGTH:
+        return identifier
+    kept = readable[:KEPT_BEFORE_DIGEST]
+    digest = _digest(stripped, LONG_DIGEST_LENGTH)
+    return f"{kept}{DIGEST_MARKER}{DIGEST_MARKER}{digest}"
 
 
 #: Key fields that identify a work on their own. A local identifier
@@ -213,7 +325,9 @@ class GroupingContext:
         if work is not None:
             return work, False
         work = factory()
-        work.has_identifier.append(efi.LocalResource(id=f"{slug(key)}_work"))
+        work.has_identifier.append(
+            efi.LocalResource(id=f"{local_identifier(key)}_work")
+        )
         self.works[key] = work
         return work, True
 
@@ -231,7 +345,7 @@ class GroupingContext:
             return manifestation, False
         manifestation = factory()
         manifestation.has_identifier.append(
-            efi.LocalResource(id=f"{slug(key)}_manifestation")
+            efi.LocalResource(id=f"{local_identifier(key)}_manifestation")
         )
         self.manifestations[key] = manifestation
         return manifestation, True

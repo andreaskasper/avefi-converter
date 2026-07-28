@@ -282,7 +282,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "MAN-002#item"
+        "id": "MAN-002_item~e4bece04"
       }
     ],
     "has_primary_title": {
@@ -387,7 +387,7 @@
         "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
         "has_issuer_name": "Unspecified data provider",
         "has_source_key": [
-          "Sanitätshunde_1916"
+          "Sanitätshunde__1916"
         ]
       }
     ],
@@ -400,7 +400,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Sanitätshunde_1916_work"
+        "id": "Sanitätshunde__1916_work"
       }
     ],
     "has_primary_title": {
@@ -421,13 +421,13 @@
       "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
       "has_issuer_name": "Unspecified data provider",
       "has_source_key": [
-        "Sanitätshunde_1916#manifestation1"
+        "Sanitätshunde__1916#manifestation1"
       ]
     },
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Sanitätshunde_1916_1_manifestation"
+        "id": "Sanitätshunde__1916__1_manifestation"
       }
     ],
     "has_primary_title": {
@@ -437,7 +437,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Sanitätshunde_1916_work"
+        "id": "Sanitätshunde__1916_work"
       }
     ]
   },
@@ -447,13 +447,13 @@
       "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
       "has_issuer_name": "Unspecified data provider",
       "has_source_key": [
-        "Sanitätshunde_1916#manifestation1#item1"
+        "Sanitätshunde__1916#manifestation1#item1"
       ]
     },
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Sanitätshunde_1916#manifestation1#item1"
+        "id": "Sanitätshunde__1916_manifestation1_item1~4b960345"
       }
     ],
     "has_primary_title": {
@@ -467,7 +467,7 @@
     "has_sound_type": "Silent",
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Sanitätshunde_1916_1_manifestation"
+      "id": "Sanitätshunde__1916__1_manifestation"
     }
   },
   {
@@ -496,7 +496,7 @@
     "has_sound_type": "Silent",
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Sanitätshunde_1916_1_manifestation"
+      "id": "Sanitätshunde__1916__1_manifestation"
     }
   }
 ]

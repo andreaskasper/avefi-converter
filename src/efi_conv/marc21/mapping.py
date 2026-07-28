@@ -31,6 +31,7 @@ from ..core.records import (
     SourceTitle,
     as_title,
     attach_source_key,
+    local_identifier,
     make_key,
     merge_alternative_titles,
     work_key,
@@ -628,10 +629,15 @@ def map_record(
     if is_new:
         new_records.append(manifestation)
     item.is_item_of = manifestation.has_identifier[0]
-    item.has_identifier.append(efi.LocalResource(id=source_key))
+    known = {local_identifier(source_key)}
+    item.has_identifier.append(
+        efi.LocalResource(id=local_identifier(source_key))
+    )
     for shelf_mark in shelf_marks(marc_record):
-        if shelf_mark != source_key:
-            item.has_identifier.append(efi.LocalResource(id=shelf_mark))
+        identifier = local_identifier(shelf_mark)
+        if identifier not in known:
+            item.has_identifier.append(efi.LocalResource(id=identifier))
+            known.add(identifier)
     new_records.append(item)
 
     attach_source_key(

@@ -55,7 +55,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Bridge_The_Wicki_Bernhard_1959_work"
+        "id": "Bridge_The__Wicki_Bernhard__1959~7ae37b27_work"
       }
     ],
     "has_primary_title": {
@@ -83,7 +83,7 @@
     "is_part_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Classic_Cinema_SERIES-42_work"
+        "id": "Classic_Cinema______SERIES-42~143d41ac_work"
       }
     ],
     "type": "Monographic"
@@ -120,7 +120,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_35mmFilm_ger:SpokenLanguage_manifestation"
+        "id": "Bridge_The__Wicki_Bernhard__1959__BlackAndWhite__35mmFilm__ger_SpokenLanguage~3918bae1_manifestation"
       }
     ],
     "has_primary_title": {
@@ -138,7 +138,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Bridge_The_Wicki_Bernhard_1959_work"
+        "id": "Bridge_The__Wicki_Bernhard__1959~7ae37b27_work"
       }
     ]
   },
@@ -206,7 +206,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_35mmFilm_ger:SpokenLanguage_manifestation"
+      "id": "Bridge_The__Wicki_Bernhard__1959__BlackAndWhite__35mmFilm__ger_SpokenLanguage~3918bae1_manifestation"
     }
   },
   {
@@ -241,7 +241,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_MP4_ger:SpokenLanguage_manifestation"
+        "id": "Bridge_The__Wicki_Bernhard__1959__BlackAndWhite__MP4__ger_SpokenLanguage~2d0a07c7_manifestation"
       }
     ],
     "has_primary_title": {
@@ -259,7 +259,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Bridge_The_Wicki_Bernhard_1959_work"
+        "id": "Bridge_The__Wicki_Bernhard__1959~7ae37b27_work"
       }
     ]
   },
@@ -319,7 +319,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_MP4_ger:SpokenLanguage_manifestation"
+      "id": "Bridge_The__Wicki_Bernhard__1959__BlackAndWhite__MP4__ger_SpokenLanguage~2d0a07c7_manifestation"
     }
   },
   {
@@ -334,7 +334,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_16mmFilm_ger:SpokenLanguage_manifestation"
+        "id": "Bridge_The__Wicki_Bernhard__1959__BlackAndWhite__16mmFilm__ger_SpokenLanguage~dad003b1_manifestation"
       }
     ],
     "has_primary_title": {
@@ -345,7 +345,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Bridge_The_Wicki_Bernhard_1959_work"
+        "id": "Bridge_The__Wicki_Bernhard__1959~7ae37b27_work"
       }
     ]
   },
@@ -397,7 +397,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Bridge_The_Wicki_Bernhard_1959_BlackAndWhite_16mmFilm_ger:SpokenLanguage_manifestation"
+      "id": "Bridge_The__Wicki_Bernhard__1959__BlackAndWhite__16mmFilm__ger_SpokenLanguage~dad003b1_manifestation"
     }
   },
   {
@@ -438,7 +438,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Untitled_advertising_film_Werbefilm_Hamburg_GmbH_1962/1965_work"
+        "id": "Untitled_advertising_film__Werbefilm_Hamburg_GmbH__1962_1965~e8142acb_work"
       }
     ],
     "has_primary_title": {
@@ -467,7 +467,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Untitled_advertising_film_Werbefilm_Hamburg_GmbH_1962/1965_manifestation"
+        "id": "Untitled_advertising_film__Werbefilm_Hamburg_GmbH__1962_1965~6ff70f26_manifestation"
       }
     ],
     "has_primary_title": {
@@ -477,7 +477,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Untitled_advertising_film_Werbefilm_Hamburg_GmbH_1962/1965_work"
+        "id": "Untitled_advertising_film__Werbefilm_Hamburg_GmbH__1962_1965~e8142acb_work"
       }
     ]
   },
@@ -512,7 +512,7 @@
     },
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Untitled_advertising_film_Werbefilm_Hamburg_GmbH_1962/1965_manifestation"
+      "id": "Untitled_advertising_film__Werbefilm_Hamburg_GmbH__1962_1965~6ff70f26_manifestation"
     }
   },
   {
@@ -529,7 +529,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Classic_Cinema_SERIES-42_work"
+        "id": "Classic_Cinema______SERIES-42~143d41ac_work"
       }
     ],
     "has_primary_title": {

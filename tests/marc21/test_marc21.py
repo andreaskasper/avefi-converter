@@ -5,6 +5,7 @@ import pytest
 
 from efi_conv.core import avefi, check, from_
 from efi_conv.core.normalise import NormalisationError
+from efi_conv.core.records import local_identifier
 from efi_conv.core.report import ConversionReport, collecting
 import efi_conv.marc21 as marc21
 from efi_conv.marc21 import mapping
@@ -18,11 +19,20 @@ def test_map_to_efi(input_path, expected_output):
 
 
 def test_schema_compliance(input_path):
+    """The mapping, not the profile, is what is under test here.
+
+    This converter ships with the placeholder issuer, because it reads
+    a format rather than one institution's export. That is what
+    ``--profile`` is for, and what ``check`` refuses without; here it
+    is accepted deliberately, so that the assertion stays about the
+    records the mapping produces.
+
+    """
     schema_validator = check.get_schema_validator()
     efi_records = from_.import_file(marc21, input_path("sample_data.xml"))
-    assert check.pass_checks(efi_records, schema_validator), (
-        "Mapped data did not validate"
-    )
+    assert check.pass_checks(
+        efi_records, schema_validator, accept_placeholder_issuer=True
+    ), "Mapped data did not validate"
 
 
 def test_conversion_is_idempotent(input_path):
@@ -144,8 +154,8 @@ def test_the_identifier_carries_the_assigning_agency(input_path):
     efi_records = from_.import_file(marc21, input_path("sample_data.xml"))
     items = [r for r in efi_records if r.category == "avefi:Item"]
     identifiers = {item.has_identifier[0].id for item in items}
-    assert "(DE-101)0000012345" in identifiers
-    assert "(DE-Mb112)AK-0007" in identifiers, (
+    assert local_identifier("(DE-101)0000012345") in identifiers
+    assert local_identifier("(DE-Mb112)AK-0007") in identifiers, (
         "A record without 001 must fall back to 035$a"
     )
 
@@ -197,7 +207,7 @@ def test_the_carrier_of_a_videorecording_is_not_read_as_film(input_path):
         r
         for r in efi_records
         if r.category == "avefi:Item"
-        and r.has_identifier[0].id == "(DE-101)0000012347"
+        and r.has_identifier[0].id == local_identifier("(DE-101)0000012347")
     )
     assert [str(fmt.type) for fmt in item.has_format] == ["VHS"]
     assert item.has_colour_type == "BlackAndWhite"
@@ -211,8 +221,8 @@ def test_generation_becomes_the_access_status(input_path):
         for item in efi_records
         if item.category == "avefi:Item"
     }
-    assert statuses["(DE-101)0000012345"] == "Viewing"
-    assert statuses["(DE-101)0000012346"] == "Master"
+    assert statuses[local_identifier("(DE-101)0000012345")] == "Viewing"
+    assert statuses[local_identifier("(DE-101)0000012346")] == "Master"
 
 
 def test_an_unmappable_relator_is_reported(input_path):
@@ -242,7 +252,7 @@ def test_an_unmappable_film_gauge_is_reported(input_path):
         r
         for r in efi_records
         if r.category == "avefi:Item"
-        and r.has_identifier[0].id == "(DE-Mb112)AK-0007"
+        and r.has_identifier[0].id == local_identifier("(DE-Mb112)AK-0007")
     )
     assert not item.has_format, "No format may be invented for 28 mm"
 
@@ -257,7 +267,7 @@ def test_the_more_precise_running_time_wins_and_the_other_is_reported(
         r
         for r in efi_records
         if r.category == "avefi:Item"
-        and r.has_identifier[0].id == "(DE-Mb112)AK-0007"
+        and r.has_identifier[0].id == local_identifier("(DE-Mb112)AK-0007")
     )
     assert item.has_duration.has_value == "PT00H21M30S"
     assert any(
@@ -273,11 +283,11 @@ def test_holdings_become_an_identifier_and_a_note(input_path):
         r
         for r in efi_records
         if r.category == "avefi:Item"
-        and r.has_identifier[0].id == "(DE-101)0000012345"
+        and r.has_identifier[0].id == local_identifier("(DE-101)0000012345")
     )
     assert [i.id for i in item.has_identifier] == [
-        "(DE-101)0000012345",
-        "(DE-Mb112)F 1959/12",
+        local_identifier("(DE-101)0000012345"),
+        local_identifier("(DE-Mb112)F 1959/12"),
     ]
     assert any(note.startswith("Holdings:") for note in item.has_note)
 
@@ -288,7 +298,7 @@ def test_credits_and_cast_are_kept_as_notes(input_path):
         r
         for r in efi_records
         if r.category == "avefi:Item"
-        and r.has_identifier[0].id == "(DE-101)0000012345"
+        and r.has_identifier[0].id == local_identifier("(DE-101)0000012345")
     )
     assert any(
         note.startswith("Production credits:") for note in item.has_note
@@ -317,7 +327,7 @@ def test_subtitles_become_a_language_usage(input_path):
         r
         for r in efi_records
         if r.category == "avefi:Item"
-        and r.has_identifier[0].id == "(DE-101)0000012347"
+        and r.has_identifier[0].id == local_identifier("(DE-101)0000012347")
     )
     usages = {
         str(language.code): [str(u) for u in language.usage]

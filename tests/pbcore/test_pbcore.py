@@ -17,11 +17,20 @@ def test_map_to_efi(input_path, expected_output):
 
 
 def test_schema_compliance(input_path):
+    """The mapping, not the profile, is what is under test here.
+
+    This converter ships with the placeholder issuer, because it reads
+    a format rather than one institution's export. That is what
+    ``--profile`` is for, and what ``check`` refuses without; here it
+    is accepted deliberately, so that the assertion stays about the
+    records the mapping produces.
+
+    """
     schema_validator = check.get_schema_validator()
     efi_records = from_.import_file(pbcore, input_path("sample_data.xml"))
-    assert check.pass_checks(efi_records, schema_validator), (
-        "Mapped data did not validate"
-    )
+    assert check.pass_checks(
+        efi_records, schema_validator, accept_placeholder_issuer=True
+    ), "Mapped data did not validate"
 
 
 def test_conversion_is_idempotent(input_path):

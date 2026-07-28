@@ -167,13 +167,14 @@ def efi_from(
     generated_records = []
     failed_files = []
     unreadable_files = []
-    report = ConversionReport(avefi_schema_version=schema_fingerprint())
+    report = ConversionReport(
+        avefi_schema_version=schema_fingerprint(),
+        expects=expected_input(format_, importer),
+    )
     context = new_shared_context(importer)
     with collecting(report):
         for input_file in input_files:
-            records_before = len(generated_records)
-            entries_before = len(report.entries)
-            skipped_before = report.records_skipped
+            unrecognised_before = report.files_unrecognised
             try:
                 with for_file(input_file):
                     generated_records.extend(
@@ -193,15 +194,10 @@ def efi_from(
                     raise user_error(message, e) from e
                 failed_files.append(input_file)
                 continue
-            if len(generated_records) == records_before and not saw_records(
-                report, entries_before, skipped_before
-            ):
+            # The converter reports a file it recognises nothing in
+            # where it notices, so there is nothing to conclude here.
+            if report.files_unrecognised > unrecognised_before:
                 unreadable_files.append(input_file)
-                report.add(
-                    "error",
-                    unrecognised_input_message(input_file, format_, importer),
-                    source_file=str(input_file),
-                )
     if generated_records:
         sort_source_keys(generated_records)
         generated_records = avefi.sort_records(generated_records)
@@ -248,32 +244,18 @@ def placeholder_issuer_message(format_: str, profile_file) -> str:
     )
 
 
-def saw_records(report, entries_before: int, skipped_before: int) -> bool:
-    """Return True if the converter reported on individual records.
+def expected_input(format_: str, importer) -> str:
+    """Return what this converter reads, for an error message.
 
-    Used to tell a file this converter cannot read from one whose
-    records it read and then left out. Both produce no output, but
-    only the second is a documented outcome: a record that is filtered
-    or skipped is reported, with the identifier of the record it
-    concerns, which is what the README sends the user to the report
-    for.
+    The reader that finds no record in a file knows that the file is
+    not what was expected, but not which converter was asked for; the
+    registry of converters is here. The description is put on the
+    report, so that the message the reader writes can name both.
 
     """
-    return report.records_skipped > skipped_before or any(
-        entry.record_id for entry in report.entries[entries_before:]
-    )
-
-
-def unrecognised_input_message(input_file, format_: str, importer) -> str:
-    """Return why a file that parsed produced nothing at all."""
     input_format = getattr(importer, "INPUT_FORMAT", "")
-    expected = f", expected {input_format}" if input_format else ""
-    return (
-        f"Nothing in {input_file} could be read by the {format_}"
-        f" converter{expected}. The file parsed, but it holds no"
-        f" record this converter recognises, so it is either another"
-        f" schema or another wrapper than the one expected."
-    )
+    expected = f", which reads {input_format}" if input_format else ""
+    return f"the {format_} converter{expected}"
 
 
 def accepts(importer, parameter: str) -> bool:

@@ -6,6 +6,7 @@ import pytest
 from efi_conv import ebucore
 from efi_conv.core import avefi, check, from_
 from efi_conv.core.normalise import NormalisationError
+from efi_conv.core.records import local_identifier
 from efi_conv.core.report import ConversionReport, collecting
 from efi_conv.ebucore import mapping, profile
 
@@ -41,11 +42,20 @@ def test_map_to_efi(input_path, expected_output):
 
 
 def test_schema_compliance(input_path):
+    """The mapping, not the profile, is what is under test here.
+
+    This converter ships with the placeholder issuer, because it reads
+    a format rather than one institution's export. That is what
+    ``--profile`` is for, and what ``check`` refuses without; here it
+    is accepted deliberately, so that the assertion stays about the
+    records the mapping produces.
+
+    """
     schema_validator = check.get_schema_validator()
     efi_records = convert(input_path)
-    assert check.pass_checks(efi_records, schema_validator), (
-        "Mapped data did not validate"
-    )
+    assert check.pass_checks(
+        efi_records, schema_validator, accept_placeholder_issuer=True
+    ), "Mapped data did not validate"
 
 
 def test_conversion_is_idempotent(input_path):
@@ -338,8 +348,8 @@ def test_further_identifiers_are_kept_on_the_item(input_path):
         and record.described_by.has_source_key == ["EBU-0001"]
     )
     assert [resource.id for resource in item.has_identifier] == [
-        "EBU-0001",
-        "ISAN 0000-0000-3A8D-0000-Z-0000-0000-6",
+        local_identifier("EBU-0001"),
+        local_identifier("ISAN 0000-0000-3A8D-0000-Z-0000-0000-6"),
     ]
 
 

@@ -51,7 +51,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+        "id": "Brücke_Die__Wicki_Bernhard__1959~fa362a56_work"
       }
     ],
     "has_primary_title": {
@@ -121,7 +121,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_35mmFilm_ger:SpokenLanguage_manifestation"
+        "id": "Brücke_Die__Wicki_Bernhard__1959__BlackAndWhite__35mmFilm__ger_SpokenLanguage~c1a8e2ad_manifestation"
       }
     ],
     "has_primary_title": {
@@ -132,7 +132,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+        "id": "Brücke_Die__Wicki_Bernhard__1959~fa362a56_work"
       }
     ]
   },
@@ -152,7 +152,7 @@
       },
       {
         "category": "avefi:LocalResource",
-        "id": "ISAN 0000-0000-3A8D-0000-Z-0000-0000-6"
+        "id": "ISAN_0000-0000-3A8D-0000-Z-0000-0000-6~d0e6b182"
       }
     ],
     "has_primary_title": {
@@ -181,7 +181,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_35mmFilm_ger:SpokenLanguage_manifestation"
+      "id": "Brücke_Die__Wicki_Bernhard__1959__BlackAndWhite__35mmFilm__ger_SpokenLanguage~c1a8e2ad_manifestation"
     }
   },
   {
@@ -196,7 +196,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_DigitalBetacam_eng:Subtitlesger:SpokenLanguage_manifestation"
+        "id": "Brücke_Die__Wicki_Bernhard__1959__BlackAndWhite__DigitalBetacam__eng_Subtitles_ger_SpokenLanguage~9230beb0_manifestation"
       }
     ],
     "has_primary_title": {
@@ -207,7 +207,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Brücke_Die_Wicki_Bernhard_1959_work"
+        "id": "Brücke_Die__Wicki_Bernhard__1959~fa362a56_work"
       }
     ]
   },
@@ -259,7 +259,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Brücke_Die_Wicki_Bernhard_1959_BlackAndWhite_DigitalBetacam_eng:Subtitlesger:SpokenLanguage_manifestation"
+      "id": "Brücke_Die__Wicki_Bernhard__1959__BlackAndWhite__DigitalBetacam__eng_Subtitles_ger_SpokenLanguage~9230beb0_manifestation"
     }
   },
   {
@@ -282,7 +282,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Ohne_Titel_Werbefilm_1962/1965_work"
+        "id": "Ohne_Titel_Werbefilm____1962_1965~b5ce53dc_work"
       }
     ],
     "has_primary_title": {
@@ -311,7 +311,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Ohne_Titel_Werbefilm_1962/1965_MXF_manifestation"
+        "id": "Ohne_Titel_Werbefilm____1962_1965____MXF~71599cc3_manifestation"
       }
     ],
     "has_primary_title": {
@@ -321,7 +321,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Ohne_Titel_Werbefilm_1962/1965_work"
+        "id": "Ohne_Titel_Werbefilm____1962_1965~b5ce53dc_work"
       }
     ]
   },
@@ -359,7 +359,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Ohne_Titel_Werbefilm_1962/1965_MXF_manifestation"
+      "id": "Ohne_Titel_Werbefilm____1962_1965____MXF~71599cc3_manifestation"
     }
   }
 ]

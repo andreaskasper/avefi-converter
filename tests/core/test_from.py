@@ -232,3 +232,100 @@ class TestRecordsLost:
             f"Manifestation refers to a work that was never written:"
             f" {referenced - works}"
         )
+
+
+NON_FILM_LIDO = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<lido:lidoWrap xmlns:lido="http://www.lido-schema.org">
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">FOTO-1</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Fotografie</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="preferred">
+            <lido:appellationValue xml:lang="de"
+              >Ansicht der Brücke</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+      </lido:objectIdentificationWrap>
+    </lido:descriptiveMetadata>
+  </lido:lido>
+</lido:lidoWrap>
+"""
+
+
+class TestNothingRecognised:
+    """A file the converter cannot read is told apart from an empty one.
+
+    Both produce no records. Only the first is a failure, and it is
+    the converter that knows which of the two happened: it went
+    looking for its record element and did not find it. ``from`` used
+    to conclude it instead, from a run that produced no records and
+    reported nothing about any record, which is right only for as long
+    as every converter reports what it drops.
+
+    """
+
+    def run(self, runner, tmp_path, source):
+        report = tmp_path / "report.json"
+        result = runner.invoke(
+            cli_main,
+            [
+                "from",
+                "-f",
+                "fmdu.lido",
+                "-o",
+                str(tmp_path / "out.json"),
+                "--report",
+                str(report),
+                str(source),
+            ],
+        )
+        return result, json.loads(report.read_text(encoding="utf-8"))
+
+    def test_a_document_of_another_schema_fails(self, runner, tmp_path):
+        source = tmp_path / "photos.xml"
+        source.write_text(
+            '<?xml version="1.0"?>\n<records><record/></records>\n',
+            encoding="utf-8",
+        )
+        result, report = self.run(runner, tmp_path, source)
+        assert result.exit_code != 0, result.output
+        assert report["summary"]["files_unrecognised"] == 1
+
+    def test_the_report_says_which_file_and_what_was_expected(
+        self, runner, tmp_path
+    ):
+        source = tmp_path / "photos.xml"
+        source.write_text(
+            '<?xml version="1.0"?>\n<records><record/></records>\n',
+            encoding="utf-8",
+        )
+        _, report = self.run(runner, tmp_path, source)
+        unrecognised = [
+            entry
+            for entry in report["entries"]
+            if entry["severity"] == "error"
+            and "photos.xml" in entry["message"]
+        ]
+        assert unrecognised, report["entries"]
+        message = unrecognised[0]["message"]
+        assert "fmdu.lido" in message, "The converter has to be named"
+        assert "lido" in unrecognised[0]["source_field"]
+
+    def test_a_file_whose_records_were_filtered_still_succeeds(
+        self, runner, tmp_path
+    ):
+        """The records were read; that they held no film is reported."""
+        source = tmp_path / "photos.xml"
+        source.write_text(NON_FILM_LIDO, encoding="utf-8")
+        result, report = self.run(runner, tmp_path, source)
+        assert result.exit_code == 0, result.output
+        assert report["summary"]["files_unrecognised"] == 0

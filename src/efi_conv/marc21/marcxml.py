@@ -280,7 +280,12 @@ def iter_records(input_file) -> Iterator[MarcRecord]:
     parser = etree.XMLParser(**LXML_SAFETY)
     found = False
     for serialised in iter_record_elements(
-        input_file, MARC_NAMESPACE, "record"
+        input_file,
+        MARC_NAMESPACE,
+        "record",
+        # A document without the namespace is read below, so an empty
+        # first pass says nothing about the document yet.
+        report_if_empty=False,
     ):
         found = True
         yield parse_record(serialised, parser)

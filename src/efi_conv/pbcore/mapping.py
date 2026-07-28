@@ -35,9 +35,9 @@ from ..core.records import (
     SourceTitle,
     as_title,
     attach_source_key,
+    local_identifier,
     make_key,
     merge_alternative_titles,
-    slug,
     work_key,
 )
 from ..core.report import for_file, report_issue, report_record_skipped
@@ -802,7 +802,9 @@ def map_record(
         local = instantiation_identifier(instantiation)
         item.has_identifier.append(
             efi.LocalResource(
-                id=item_identifier(source_key, local, index, instantiations)
+                id=local_identifier(
+                    item_identifier(source_key, local, index, instantiations)
+                )
             )
         )
         add_instantiation_identifier(item, local, source_key)
@@ -861,9 +863,10 @@ def add_other_identifiers(item, identifiers, source_key):
         if value.lower().startswith(("http://", "https://")):
             merge_strings(item.has_webresource, [value])
             continue
-        if value not in known:
-            item.has_identifier.append(efi.LocalResource(id=value))
-            known.add(value)
+        identifier = local_identifier(value)
+        if identifier not in known:
+            item.has_identifier.append(efi.LocalResource(id=identifier))
+            known.add(identifier)
 
 
 def instantiation_identifier(instantiation) -> str | None:
@@ -892,7 +895,7 @@ def item_identifier(
     """
     if len(instantiations) <= 1:
         return source_key
-    suffix = slug(local) if local else f"{index + 1}"
+    suffix = local or f"{index + 1}"
     report_issue(
         "info",
         "Record describes several instantiations; the item identifier"
@@ -917,12 +920,12 @@ def add_instantiation_identifier(item, local: str | None, source_key: str):
     if not local:
         return
     known = {resource.id for resource in item.has_identifier}
-    if local in known:
+    if local_identifier(local) in known:
         return
     if local.lower().startswith(("http://", "https://")):
         merge_strings(item.has_webresource, [local])
         return
-    item.has_identifier.append(efi.LocalResource(id=local))
+    item.has_identifier.append(efi.LocalResource(id=local_identifier(local)))
 
 
 def safe_record_identifier(document) -> str | None:
