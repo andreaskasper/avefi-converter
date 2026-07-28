@@ -298,6 +298,75 @@ def _language_usage_map() -> dict:
     }
 
 
+def _country_name_map() -> dict:
+    """Return the ISO 3166-1 alpha-2 codes met in EFG exports.
+
+    EFG states the country of reference as a code, and an AVefi
+    GeographicName holds a name. The list below covers Europe, where
+    the archives delivering EFG are, plus the countries a European
+    film is most often co-produced with. It is a vocabulary like any
+    other in this profile: a code that is not in it is reported rather
+    than asserted as a name, and a provider extends the map.
+
+    """
+    return {
+        "AR": "Argentina",
+        "AT": "Austria",
+        "AU": "Australia",
+        "BA": "Bosnia and Herzegovina",
+        "BE": "Belgium",
+        "BG": "Bulgaria",
+        "BR": "Brazil",
+        "BY": "Belarus",
+        "CA": "Canada",
+        "CH": "Switzerland",
+        "CN": "China",
+        "CY": "Cyprus",
+        "CZ": "Czechia",
+        "DD": "German Democratic Republic",
+        "DE": "Germany",
+        "DK": "Denmark",
+        "EE": "Estonia",
+        "ES": "Spain",
+        "FI": "Finland",
+        "FR": "France",
+        "GB": "United Kingdom",
+        "GR": "Greece",
+        "HR": "Croatia",
+        "HU": "Hungary",
+        "IE": "Ireland",
+        "IL": "Israel",
+        "IN": "India",
+        "IS": "Iceland",
+        "IT": "Italy",
+        "JP": "Japan",
+        "LT": "Lithuania",
+        "LU": "Luxembourg",
+        "LV": "Latvia",
+        "MD": "Moldova",
+        "ME": "Montenegro",
+        "MK": "North Macedonia",
+        "MT": "Malta",
+        "MX": "Mexico",
+        "NL": "Netherlands",
+        "NO": "Norway",
+        "PL": "Poland",
+        "PT": "Portugal",
+        "RO": "Romania",
+        "RS": "Serbia",
+        "RU": "Russia",
+        "SE": "Sweden",
+        "SI": "Slovenia",
+        "SK": "Slovakia",
+        "SU": "Soviet Union",
+        "TR": "Türkiye",
+        "UA": "Ukraine",
+        "US": "United States",
+        "YU": "Yugoslavia",
+        "ZA": "South Africa",
+    }
+
+
 @dataclass(frozen=True)
 class EfgProfile:
     """Everything data provider specific about an EFG export.
@@ -389,6 +458,10 @@ class EfgProfile:
         Lower case ``item/type`` values denoting a moving image. Items
         of another type are still converted, but reported, because the
         AVefi model only describes moving image holdings.
+    country_name_map : dict
+        ISO 3166-1 alpha-2 code to the name of the country. A code
+        the map does not know is reported and the production country
+        left unset, a code not being a name.
     work_description_target : str
         Where ``avcreation/description`` and ``avcreation/note`` go.
         ``report`` states in the report that AVefi has no field for
@@ -414,6 +487,7 @@ class EfgProfile:
     )
     title_relation_map: dict = field(default_factory=_title_relation_map)
     directing_role_map: dict = field(default_factory=_directing_role_map)
+    country_name_map: dict = field(default_factory=_country_name_map)
     unknown_agent_names: frozenset = frozenset(
         {"anonymous", "n.n.", "nn", "unbekannt", "unknown", "verschiedene"}
     )

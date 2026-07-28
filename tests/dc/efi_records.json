@@ -34,11 +34,13 @@
       "has_ordering_name": "Brücke, Die",
       "type": "PreferredTitle"
     },
-    "has_genre": [
+    "has_subject": [
       {
+        "category": "avefi:Subject",
         "has_name": "Dokumentarfilm"
       },
       {
+        "category": "avefi:Subject",
         "has_name": "Nachkriegszeit"
       }
     ],

@@ -44,7 +44,8 @@ away.
 | `dc:title` | primary title, further titles as alternative titles |
 | `dc:date` | production date |
 | `dc:language` | `in_language`, with the usage set in the profile |
-| `dc:subject`, `dc:type` | `has_genre` |
+| `dc:subject` | `has_subject`, the topic of the resource |
+| `dc:type` | `has_genre`, unless the term marked the record as film |
 | `dc:format` | item format, through the profile vocabulary |
 | `dc:publisher` | publication event with a `Publisher` activity |
 | `dc:creator` | directing activity, only if the profile says so |
@@ -57,8 +58,13 @@ produces an entry in the conversion report, so run it with `--report`
 and read the result:
 
 ```console
-$ efi-conv from -f dc --report report.json -o records.json export.xml
+$ efi-conv from -f dc --profile provider.json --report report.json \
+    -o records.json export.xml
 ```
+
+The profile names the data provider. Without one the command refuses
+to convert, the shipped issuer being a placeholder; pass
+`--accept-placeholder-issuer` instead while trying a mapping out.
 
 [`MAPPING.md`](MAPPING.md) is rendered from `MAPPING_RULES` in
 `mapping.py`, and a test fails when the two drift apart. The
@@ -76,8 +82,8 @@ ISSUER_INFO = {
 }
 ```
 
-and reports once per run that this has to be replaced with the ISIL of
-the data provider before any identifier is registered.
+and reports once per input file that this has to be replaced with
+the ISIL of the data provider before any identifier is registered.
 
 ## The profile
 

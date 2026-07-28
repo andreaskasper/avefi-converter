@@ -14,10 +14,15 @@ The mapping table and the assumptions behind it are in
 ## Usage
 
 ```console
-$ efi-conv from -f pbcore -o records.json export.xml
+$ efi-conv from -f pbcore --profile provider.json -o records.json export.xml
 ```
 
-or, while developing a mapping:
+The profile names the holding institution; without one the command
+refuses to convert, because the shipped issuer is a placeholder. Pass
+`--accept-placeholder-issuer` instead while trying a mapping out, and
+do not register identifiers for what that produces.
+
+Or, while developing a mapping:
 
 ```console
 $ python -m efi_conv.pbcore export.xml [records.json]
@@ -39,8 +44,8 @@ ISIL. `pbcoreIdentifier/@source` and `instantiationLocation` name an
 organisation in free text, and `pbcoreCollection/@collectionSource` is
 optional and equally unconstrained. Deriving an ISIL from any of them
 would attach a provenance to the records that the source data does not
-support, so the converter does not try. It reports once per run that
-the placeholder is in use. Records carrying it must not have
+support, so the converter does not try. It reports once per input
+file that the placeholder is in use. Records carrying it must not have
 identifiers registered for them; replace the issuer with the ISIL and
 the name of the holding institution first, by constructing a
 `PbcoreProfile` of your own.
@@ -73,6 +78,14 @@ harder cases wrong, for instance where one provider records the colour
 of a print and another leaves it blank. Anyone comparing the output
 against the source should expect the manifestation level to need
 review; the work and item levels are sound.
+
+A description document that names no instantiation states no holding
+at all. Such a record — a series or a screening description, most
+often — yields the WorkVariant and nothing else, because an AVefi Item
+asserts that the institution holds a physical or digital copy, and
+this one says that it does not. The record is reported at warning
+level, and the work it produces is what a `pbcoreRelation` of another
+record resolves to.
 
 The second structural mismatch is smaller but sharper. AVefi names the
 holding institution through `described_by`, one issuer per record.

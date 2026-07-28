@@ -8,8 +8,11 @@ and comes back out as LIDO through its interfaces.
 
 This package is a `LidoProfile`, not a converter. The mapping lives in
 [`efi_conv.lido`](../lido/README.md) and is not touched by adding a
-provider here; `lido.py` contains the house vocabularies and nothing
-else. That is the whole point of the module, and a test asserts it.
+provider here; `lido.py` contains the house vocabularies, and beyond
+them only the reporting of the stand-in issuer, which produces no
+AVefi value of any kind. That is the whole point of the module, and a
+test asserts that the records it yields are exactly the records the
+generic mapping yields from its profile.
 
 ## The DDB is not the holding institution
 
@@ -26,13 +29,28 @@ which is a stand-in and has to be replaced before anything is
 registered. The DDB holds nothing; it republishes what its partners
 deliver. AVefi identifiers are registered by and for the institution
 that holds the material, so a real conversion replaces the issuer with
-the ISIL of that institution, which is in
-`lido:recordSource/lido:legalBodyID` of each record.
+the ISIL of that institution.
+
+The converter says so: it reports once per input file, at warning
+level, that the shipped issuer is a stand-in.
+
+The export itself names the institution each record came from in
+`lido:recordSource`, by name in `lido:legalBodyName` and, where the
+delivery carries one, by identifier in `lido:legalBodyID`. The mapping
+does not read those elements — the issuer comes from the profile, so
+that one conversion has exactly one issuer, whatever the file happens
+to mix. What the file says is reported instead:
+
+```console
+$ efi-conv from -f ddb.lido --report report.json -o records.json \
+    export.xml
+```
 
 This matters more here than for a single museum: a DDB export routinely
 carries the holdings of many institutions in one file, and one AVefi
 conversion has exactly one issuer. Split the export per contributing
-institution before converting it.
+institution before converting it, and read the reported
+`lido:recordSource` values to see which institutions are in it.
 
 ## The vocabularies are extrapolated
 

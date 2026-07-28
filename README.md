@@ -228,8 +228,22 @@ so an interrupted run cannot truncate your data.
 | `-o`, `--output DIR` | Directory to write the harvested pages to |
 | `-m`, `--metadata-prefix` | OAI-PMH metadata prefix, e.g. `lido`, `marc21`, `oai_dc` |
 | `--set`, `--from`, `--until` | Selective OAI-PMH harvesting |
-| `-q`, `--query`, `--record-schema` | SRU query in CQL and the schema to request |
-| `--limit N` | Stop after N records, for trying an endpoint out |
+| `--query`, `--record-schema` | SRU query in CQL and the schema to request |
+| `--page-size N` | Records to request per SRU response |
+| `--limit N` | Write at most N records, for trying an endpoint out |
+| `--contact ADDRESS` | Contact address added to the User-Agent |
+| `--delay SECONDS` | Wait between two requests (default 1) |
+| `--max-retry-after SECONDS` | Give up rather than obey a longer `Retry-After` (default 300) |
+
+`--query` has no short form: `-q` is `--quiet` on `efi-conv` itself,
+and a `-q` here would swallow the next argument as a CQL query on an
+OAI-PMH harvest, where no query is used at all.
+
+A harvest that produced no records exits zero. Nothing matching the
+request, and an incremental harvest whose only changes were deletions,
+are both good runs. What exits non-zero is a run that failed: an
+endpoint that could not be reached or read, and an SRU harvest that
+did not reach the number of records the endpoint reported.
 
 ---
 
@@ -336,10 +350,31 @@ is slow, it should not be repeated against somebody else's server while
 a mapping is being worked out, and the harvest is worth keeping as
 evidence of what the provider actually sent on the day.
 
+Each page holds one `record` element per record, wrapping the payload
+together with the OAI-PMH record header the provider sent with it, and
+carries the request it came from in its `source` attribute. The header
+is what makes the harvest evidence rather than a heap of files: it
+carries the identifier, the datestamp and the sets, so a later
+incremental harvest can be resumed from it. The converters find their
+records by element name whatever wraps them, so neither the wrapper
+nor the header changes what `efi-conv from` reads.
+
 A 503 with `Retry-After` is waited out rather than hammered, a
 resumption token replaces the other arguments as the protocol requires,
 a repeated token is refused instead of harvesting for ever, and deleted
-records are counted and reported rather than silently ignored.
+records are counted and reported rather than silently ignored. An SRU
+endpoint that reports a total and then answers one page with nothing
+has a gap, not an end: the gap is logged and skipped, and only a run of
+empty pages ends the harvest, as an error, so that a truncated harvest
+cannot pass for a complete one.
+
+Being someone else's guest is the point of the rest. Requests identify
+themselves as `efi-conv` with the address of this repository, `--contact`
+adds an address whoever runs the endpoint can write to instead of
+blocking the harvester, and `--delay` sets the pause between two
+requests, one second by default. A server asking to be left alone for
+longer than `--max-retry-after` is left alone: the harvest stops and
+says so rather than sleeping for a day.
 
 ---
 
@@ -581,6 +616,17 @@ with rather than inventing an ISIL for your collection. Supply a
 returned a token it had already returned, which would harvest for ever.
 Report it to whoever runs the server; the pages fetched up to that
 point are usable.
+
+**A harvest stops saying it is not complete.** An SRU endpoint reported
+a number of matching records and then answered several pages in a row
+with none, so the harvest would have ended short of what was announced.
+The pages written are usable; report the gap to whoever runs the server
+and harvest again rather than treating the files as the whole result.
+
+**A harvest stops saying the server asked us to wait too long.** The
+endpoint answered with a `Retry-After` longer than `--max-retry-after`.
+It is asking to be left alone. Come back later, or raise the limit if
+you can really wait that long.
 
 **Every record is skipped as not being a film.** The converter is
 filtering on the work type or record type vocabulary in its profile,

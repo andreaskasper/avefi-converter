@@ -108,6 +108,60 @@ def test_alternative_titles_of_both_entities_reach_the_work(input_path):
     assert titles["Die Brücke bei Cham"] == "AlternativeTitle"
 
 
+def test_a_keyword_identifier_becomes_an_authority_link(input_path):
+    """efi.Subject.same_as exists, so a GND number is not a loss."""
+    efi_records = from_.import_file(en15907, input_path("sample_data.xml"))
+    subjects = [
+        subject
+        for record in efi_records
+        if record.category == "avefi:WorkVariant"
+        for subject in record.has_subject
+    ]
+    linked = next(s for s in subjects if s.has_name == "Second World War")
+    assert [resource.id for resource in linked.same_as or []] == [
+        "gnd/4079143-9"
+    ]
+    assert linked.same_as[0].category == "avefi:GNDResource"
+
+
+def test_the_country_of_reference_is_not_asserted_as_a_name(input_path):
+    """A GeographicName holds a name, and "DE" is a code."""
+    efi_records = from_.import_file(en15907, input_path("sample_data.xml"))
+    places = [
+        place.has_name
+        for record in efi_records
+        if record.category == "avefi:WorkVariant"
+        for event in record.has_event
+        for place in event.located_in
+    ]
+    assert "DE" not in places
+    assert "Germany" in places
+
+
+def test_an_unknown_country_code_is_reported(input_path, tmp_path):
+    source = input_path("sample_data.xml").read_text(encoding="utf-8")
+    changed = tmp_path / "country.xml"
+    changed.write_text(source.replace(">DE<", ">ZZ<"), encoding="utf-8")
+    report = ConversionReport()
+    with collecting(report):
+        records = en15907.efi_import(changed)
+    places = [
+        place.has_name
+        for record in records
+        if record.category == "avefi:WorkVariant"
+        for event in record.has_event
+        for place in event.located_in
+    ]
+    assert "ZZ" not in places
+    assert [
+        entry
+        for entry in report.entries
+        if entry.source_field == "avcreation/countryOfReference"
+        and entry.raw_value == "ZZ"
+        and entry.severity == "warning"
+    ]
+
+
 def test_manifestation_without_items_yields_one(input_path):
     """AVefi keeps the technical description on the item.
 

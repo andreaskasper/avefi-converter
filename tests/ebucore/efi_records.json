@@ -64,6 +64,9 @@
     ],
     "has_genre": [
       {
+        "has_name": "Feature"
+      },
+      {
         "has_name": "Kriegsfilm"
       }
     ],
@@ -146,6 +149,10 @@
       {
         "category": "avefi:LocalResource",
         "id": "EBU-0001"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "ISAN 0000-0000-3A8D-0000-Z-0000-0000-6"
       }
     ],
     "has_primary_title": {
@@ -153,9 +160,6 @@
       "has_ordering_name": "Brücke, Die",
       "type": "TitleProper"
     },
-    "has_note": [
-      "Sieben Schüler verteidigen eine Brücke."
-    ],
     "has_colour_type": "BlackAndWhite",
     "has_duration": {
       "has_value": "PT01H43M00S"
@@ -288,6 +292,11 @@
     "has_form": [
       "Commercial"
     ],
+    "has_genre": [
+      {
+        "has_name": "Werbefilm"
+      }
+    ],
     "type": "Monographic"
   },
   {
@@ -335,11 +344,12 @@
       "has_name": "Ohne Titel, Werbefilm",
       "type": "SuppliedDevisedTitle"
     },
-    "has_note": [
-      "Digitalisat einer Werbefilmrolle ohne Vorspann."
-    ],
     "has_duration": {
       "has_value": "PT00H12M00S"
+    },
+    "has_extent": {
+      "has_unit": "GigaByte",
+      "has_value": "4.5"
     },
     "has_format": [
       {

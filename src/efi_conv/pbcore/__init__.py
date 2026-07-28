@@ -3,8 +3,8 @@
 PBCore is a format rather than an institution, so this converter ships
 with a placeholder issuer. Before the records it produces can be used,
 the profile has to be given the ISIL and the name of the institution
-holding the material; the converter reports once per run that this has
-not happened yet.
+holding the material; the converter reports once per input file that
+this has not happened yet.
 
 Can be used through the common command line interface::
 
@@ -19,8 +19,6 @@ assumptions it rests on, and ``README.md`` for how well PBCore and
 AVefi actually fit together.
 
 """
-
-import sys
 
 from avefi_schema import model_pydantic_v2 as efi
 
@@ -65,9 +63,11 @@ __all__ = (
     "ISSUER_INFO",
     "MAPPING_RULES",
     "PROFILE",
+    "PROFILE_CLASS",
     "MappingContext",
     "MappingRule",
     "PbcoreProfile",
+    "convert",
     "efi_import",
     "main",
     "map_record",
@@ -114,26 +114,19 @@ def new_context(profile: PbcoreProfile | None = None) -> MappingContext:
 
 
 def main(argv=None):
-    """Convert INPUT and write the records to OUTPUT or stdout."""
-    from ..core import avefi
+    """Convert INPUT and write the records to OUTPUT or stdout.
 
-    argv = sys.argv[1:] if argv is None else list(argv)
-    if not argv or argv[0] in ("-h", "--help"):
-        print(
-            "Usage: python -m efi_conv.pbcore INPUT [OUTPUT.json]\n"
-            "\n"
-            "Convert a PBCore 2.1 document into AVefi records.\n"
-            "Equivalent to: efi-conv from -f pbcore -o OUTPUT INPUT",
-            file=sys.stderr if not argv else sys.stdout,
-        )
-        return 0 if argv else 2
-    if len(argv) > 2:
-        print("Expected at most two arguments, see --help", file=sys.stderr)
-        return 2
+    A file that cannot be read is reported as an error naming the file
+    rather than as a traceback; pass -v for the traceback.
 
-    records = efi_import(argv[0])
-    if len(argv) == 2:
-        avefi.dump(avefi.sort_records(records), argv[1])
-    else:
-        print(avefi.dumps(avefi.sort_records(records), indent=2))
-    return 0
+    """
+    from ..core.cli import run_converter_main
+
+    return run_converter_main(
+        argv,
+        "Usage: python -m efi_conv.pbcore INPUT [OUTPUT.json]\n"
+        "\n"
+        "Convert a PBCore 2.1 document into AVefi records.\n"
+        "Equivalent to: efi-conv from -f pbcore -o OUTPUT INPUT",
+        efi_import,
+    )

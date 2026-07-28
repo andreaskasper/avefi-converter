@@ -16,7 +16,7 @@ level can be recovered from the data.
 
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 import logging
 import re
@@ -127,7 +127,8 @@ MAPPING_RULES = (
         notes="PBCore has two levels where AVefi has three. The asset"
         " becomes the work, every instantiation becomes an item, and"
         " instantiations agreeing on colour, format and language share"
-        " a manifestation",
+        " a manifestation. A record naming no instantiation describes"
+        " no holding and yields the work alone",
     ),
     MappingRule(
         "media_type_filter",
@@ -171,9 +172,11 @@ MAPPING_RULES = (
         "Item",
         "pbcoreIdentifier (remaining), instantiationIdentifier",
         "has_identifier (LocalResource), has_webresource",
-        notes="An identifier that is a URL becomes a web resource;"
-        " AVefi has no place for the @source qualifier, which is"
-        " reported per identifier",
+        notes="The instantiationIdentifier is kept on the item"
+        " whether the record describes one copy or several, because"
+        " it is what the archive tracks the copy by. An identifier"
+        " that is a URL becomes a web resource; AVefi has no place"
+        " for the @source qualifier, which is reported per identifier",
     ),
     MappingRule(
         "primary_title",
@@ -265,7 +268,11 @@ MAPPING_RULES = (
         "Work",
         "pbcoreRelation[pbcoreRelationType in profile part_of_relation_types]",
         "is_part_of (LocalResource)",
-        notes="Other relation types are reported",
+        notes="The relation identifier names a record in the source"
+        " system; it is rewritten to the identifier of the work that"
+        " record yields where the run converts it, and reported"
+        " rather than transferred where it does not. Other relation"
+        " types are reported as well",
     ),
     MappingRule(
         "publication",
@@ -376,7 +383,7 @@ MAPPING_RULES = (
         "described_by.has_issuer_id, described_by.has_issuer_name",
         notes="PBCore names no issuer that could be turned into an"
         " ISIL, so the profile supplies one; the shipped default is a"
-        " placeholder and is reported once per run",
+        " placeholder and is reported once per input file",
     ),
 )
 
@@ -397,19 +404,39 @@ ASSUMPTIONS = (
     " version with different colour statements, they will come out as"
     " two manifestations.",
     "An asset with several instantiations therefore yields several"
-    " items. Only the first of them can carry the record identifier"
-    " unchanged; the further ones are identified by the record"
-    " identifier plus their instantiationIdentifier, or plus their"
-    " position when the instantiation has none. This is reported once"
-    " per affected record.",
-    "An asset without any instantiation still yields a manifestation"
-    " and an item, because the AVefi identifier of a holding hangs off"
-    " the item. Such an item carries no carrier information, and the"
-    " record is reported.",
+    " items. An instantiationIdentifier is only unique within its"
+    " record, so it does not identify the item on its own: an asset"
+    " describing one copy yields an item identified by the record"
+    " identifier, and an asset describing several yields items"
+    " identified by the record identifier plus the"
+    " instantiationIdentifier, or plus their position when the"
+    " instantiation has none. Either way the instantiationIdentifier"
+    " itself is kept as a further identifier of the item, because it"
+    " is what the archive tracks the copy by.",
+    "An asset without any instantiation describes no holding, and"
+    " yields the work alone. An AVefi item asserts that the"
+    " institution holds a copy, so a series or a screening"
+    " description, which is what such a record usually is, must not"
+    " produce one. The record is reported at warning level. The work"
+    " is kept rather than dropped because it is what the"
+    " pbcoreRelation of another record resolves to; where nothing"
+    " refers to it, the AVefi checks report it as a work without"
+    " holdings, which is the right place for that judgement.",
+    "A pbcoreRelation identifier names a record in the source system."
+    " Where the run converts that record too, the reference is"
+    " rewritten to the identifier of the work it yields. Where it does"
+    " not, the relation is reported and not transferred, because AVefi"
+    " rejects a local reference resolving to no record of the same"
+    " set, and because the identifier left unchanged would resolve"
+    " inside one output file to the item of the record it names.",
     "An asset whose instantiations are all of another media type is"
-    " skipped, in the same way that the LIDO mapping skips holdings"
-    " that are not film. PBCore is widely used for radio, and audio"
-    " only material is out of scope for AVefi.",
+    " skipped as a whole, work included, in the same way that the"
+    " LIDO mapping skips holdings that are not film. PBCore is widely"
+    " used for radio, and audio only material is out of scope for"
+    " AVefi. That is not the same case as an asset with no"
+    " instantiation, which yields its work: the one describes a"
+    " holding that is out of scope, the other describes no holding at"
+    " all.",
     "PBCore has no language attribute on pbcoreTitle, so the language"
     " for the article handling of every title of a record comes from"
     " the profile. Where a provider mixes languages in one record, the"
@@ -419,9 +446,6 @@ ASSUMPTIONS = (
     " is recorded with the profile's default_language_usage, which is"
     " SpokenLanguage. Languages taken from an essence track use the"
     " usage the profile associates with the track type.",
-    "A pbcoreRelation identifier is transferred unchanged. It names"
-    " the related record in the source system and does not resolve to"
-    " the AVefi local identifier the converter mints for that record.",
     "Whether an agent is a person or an organisation only follows from"
     " the role, so the agent type stays unset for a creator without a"
     " creatorRole rather than defaulting to Person.",
@@ -544,11 +568,81 @@ def efi_import(
                 report_record_skipped(
                     e, record_id=safe_record_identifier(document)
                 )
+        resolve_relations(context)
     return records
 
 
+def resolve_relations(context: "MappingContext"):
+    """Point every is_part_of at the work of the record it names.
+
+    A pbcoreRelation identifies a record in the source system, not an
+    AVefi record. Left as it stands, such a reference resolves to
+    nothing, or worse to the item of the record it names, since an
+    item carries the record identifier unchanged. Every reference
+    whose target the run has converted is therefore rewritten to the
+    identifier of the work that record contributed to.
+
+    A reference the run cannot resolve is not asserted. AVefi rejects
+    a local reference that resolves to no record in the same set, and
+    a converter that emitted one would have the whole work discarded
+    by the checks. It is reported instead, and kept aside so that an
+    input file converted later can still supply the record it names.
+
+    Called once per input file, since the records of one conversion
+    reach the converter file by file.
+
+    """
+    minted = {work.has_identifier[0].id for work in context.works.values()}
+    for work in context.works.values():
+        work_id = work.has_identifier[0].id
+        pending = context.unresolved_relations.pop(work_id, [])
+        resolved = []
+        for identifier in [
+            resource.id for resource in work.is_part_of
+        ] + pending:
+            if identifier in minted:
+                if identifier not in resolved:
+                    resolved.append(identifier)
+                continue
+            target = context.work_ids.get(identifier)
+            if target is not None:
+                if target not in resolved:
+                    resolved.append(target)
+                continue
+            context.unresolved_relations.setdefault(work_id, []).append(
+                identifier
+            )
+            if identifier in context.reported_relations:
+                continue
+            context.reported_relations.add(identifier)
+            report_issue(
+                "warning",
+                "The related record is not among the records converted"
+                " so far, so the relation cannot name an AVefi work"
+                " and is not transferred",
+                record_id=(source_keys_of(work) or [None])[0],
+                source_field="pbcoreRelation/pbcoreRelationIdentifier",
+                target_field="is_part_of",
+                raw_value=identifier,
+            )
+        work.is_part_of = [
+            efi.LocalResource(id=identifier) for identifier in resolved
+        ]
+
+
+def source_keys_of(record) -> list:
+    """Return the source keys recorded for an AVefi record."""
+    described_by = record.described_by
+    if described_by is None:
+        return []
+    entries = (
+        described_by if isinstance(described_by, list) else [described_by]
+    )
+    return [key for entry in entries for key in (entry.has_source_key or [])]
+
+
 def report_placeholder_issuer(profile: PbcoreProfile):
-    """Warn once per run when the issuer is still the placeholder.
+    """Warn per input file when the issuer is still the placeholder.
 
     PBCore is a format, not an institution. Records carrying the
     placeholder issuer must not be registered, so the run says so
@@ -577,9 +671,29 @@ class MappingContext(GroupingContext):
     manifestations are therefore reused across records and across the
     instantiations of a record.
 
+    Attributes
+    ----------
+    profile : PbcoreProfile or None
+        Vocabularies and issuer information of the data provider.
+    work_ids : dict
+        Record identifier to the local identifier of the work that
+        record contributed to. A pbcoreRelation names a record in the
+        source system, and this is what turns that name into a
+        reference to an AVefi work.
+    reported_relations : set
+        Relations already reported as unresolved, so that converting
+        a further file does not report them again.
+    unresolved_relations : dict
+        Work identifier to the relation identifiers that could not be
+        resolved yet, kept so that a file converted later can still
+        supply the record they name.
+
     """
 
     profile: PbcoreProfile | None = None
+    work_ids: dict = field(default_factory=dict)
+    reported_relations: set = field(default_factory=set)
+    unresolved_relations: dict = field(default_factory=dict)
 
 
 def new_context(profile: PbcoreProfile) -> MappingContext:
@@ -632,9 +746,9 @@ def map_record(
         return []
     if not instantiations:
         report_issue(
-            "info",
-            "Record has no instantiation; the manifestation and item"
-            " carry no information about a carrier",
+            "warning",
+            "Record has no instantiation, so it describes no holding;"
+            " a work is created, but no manifestation and no item",
             record_id=source_key,
             source_field="pbcoreInstantiation",
             target_field="Manifestation, Item",
@@ -655,8 +769,13 @@ def map_record(
     else:
         merge_alternative_titles(work, [title for title, _ in alternatives])
     work_id = work.has_identifier[0]
+    context.work_ids.setdefault(source_key, work_id.id)
 
-    for index, instantiation in enumerate(instantiations or [None]):
+    if not instantiations:
+        attach_source_key((work,), profile.issuer_info, source_key)
+        return new_records
+
+    for index, instantiation in enumerate(instantiations):
         item = build_item(instantiation, primary, profile, source_key)
         manifestation_key = make_manifestation_key(work_key, item)
 
@@ -680,13 +799,13 @@ def map_record(
         merge_strings(manifestation.has_webresource, links)
 
         item.is_item_of = manifestation.has_identifier[0]
+        local = instantiation_identifier(instantiation)
         item.has_identifier.append(
             efi.LocalResource(
-                id=item_identifier(
-                    source_key, instantiation, index, instantiations
-                )
+                id=item_identifier(source_key, local, index, instantiations)
             )
         )
+        add_instantiation_identifier(item, local, source_key)
         add_other_identifiers(item, other_identifiers, source_key)
         new_records.append(item)
         attach_source_key(
@@ -747,36 +866,63 @@ def add_other_identifiers(item, identifiers, source_key):
             known.add(value)
 
 
+def instantiation_identifier(instantiation) -> str | None:
+    """Return the first instantiationIdentifier of a copy, if any."""
+    for identifier in (
+        getattr(instantiation, "instantiation_identifier", None) or []
+    ):
+        value = text_of(identifier)
+        if value:
+            return value
+    return None
+
+
 def item_identifier(
-    source_key: str, instantiation, index: int, instantiations
+    source_key: str, local: str | None, index: int, instantiations
 ) -> str:
     """Return the local identifier of the item for one instantiation.
 
     A record describing a single copy yields an item identified by the
     record identifier. A record describing several has to distinguish
-    them, which PBCore only supports through instantiationIdentifier.
+    them, and the instantiationIdentifier is what PBCore offers for
+    that. It is only unique within the record, so it qualifies the
+    record identifier rather than replacing it; the value itself is
+    kept as a further identifier of the item.
 
     """
     if len(instantiations) <= 1:
         return source_key
-    local = None
-    for identifier in (
-        getattr(instantiation, "instantiation_identifier", None) or []
-    ):
-        local = text_of(identifier)
-        if local:
-            break
     suffix = slug(local) if local else f"{index + 1}"
     report_issue(
         "info",
         "Record describes several instantiations; the item identifier"
-        " is derived from the record identifier",
+        " is the record identifier qualified by the instantiation",
         record_id=source_key,
         source_field="instantiationIdentifier",
         target_field="has_identifier",
         raw_value=local,
     )
     return f"{source_key}_{suffix}"
+
+
+def add_instantiation_identifier(item, local: str | None, source_key: str):
+    """Keep the identifier the archive tracks the copy by.
+
+    An AVefi identifier is registered for an item, so the item has to
+    carry the local identifier of the copy. Without this the number
+    the archive files the print under would be missing from every
+    record describing a single copy, which is the common case.
+
+    """
+    if not local:
+        return
+    known = {resource.id for resource in item.has_identifier}
+    if local in known:
+        return
+    if local.lower().startswith(("http://", "https://")):
+        merge_strings(item.has_webresource, [local])
+        return
+    item.has_identifier.append(efi.LocalResource(id=local))
 
 
 def safe_record_identifier(document) -> str | None:

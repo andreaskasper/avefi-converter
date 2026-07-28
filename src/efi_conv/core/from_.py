@@ -9,8 +9,19 @@ import click
 
 from . import avefi
 from .check import schema_fingerprint
-from .cli import IMPORTERS, cli_main
-from .profiles import configure, needs_a_profile
+from .cli import (
+    IMPORTERS,
+    cli_main,
+    describe_input_error,
+    user_error,
+    write_records,
+)
+from .profiles import (
+    PLACEHOLDER_ISSUER_ID,
+    ProfileError,
+    configure,
+    needs_a_profile,
+)
 from .report import ConversionReport, collecting, for_file
 from .utils import described_by_issuer
 
@@ -49,7 +60,10 @@ def print_formats(ctx, param, value):
             click.echo(
                 "    Profile: required, this converter reads a format"
                 " rather than one institution's export, so the issuer"
-                " has to be supplied with --profile"
+                " has to be supplied with --profile."
+                " --accept-placeholder-issuer converts without one,"
+                " for trying out a mapping; identifiers must not be"
+                " registered for the records that produces"
             )
         elif hasattr(mod, "PROFILE_CLASS"):
             click.echo(
@@ -96,6 +110,20 @@ def print_formats(ctx, param, value):
     " placeholder issuer rather than inventing one.",
 )
 @click.option(
+    "--allow-profile-format-mismatch",
+    is_flag=True,
+    default=False,
+    help="Use a profile written for another converter anyway.",
+)
+@click.option(
+    "--accept-placeholder-issuer",
+    is_flag=True,
+    default=False,
+    help="Convert although the issuer is still the documented"
+    " placeholder. For trying out a mapping only: records naming an"
+    " unspecified data provider must not have identifiers registered.",
+)
+@click.option(
     "--continue-on-error",
     is_flag=True,
     default=False,
@@ -107,6 +135,8 @@ def efi_from(
     output=None,
     report_file=None,
     profile_file=None,
+    allow_profile_format_mismatch=False,
+    accept_placeholder_issuer=False,
     continue_on_error=False,
     **kwargs,
 ):
@@ -118,14 +148,32 @@ def efi_from(
     # inside one file do; without this, the same set of files would
     # convert differently depending on how the shell expanded them.
     input_files = sorted(input_files)
-    mod = import_module_for(kwargs["format"])
-    importer = configure(mod, profile_file) if profile_file else mod
+    format_ = kwargs["format"]
+    mod = import_module_for(format_)
+    try:
+        importer = (
+            configure(
+                mod,
+                profile_file,
+                allow_format_mismatch=allow_profile_format_mismatch,
+            )
+            if profile_file
+            else mod
+        )
+    except ProfileError as e:
+        raise user_error(str(e), e) from e
+    if needs_a_profile(importer) and not accept_placeholder_issuer:
+        raise user_error(placeholder_issuer_message(format_, profile_file))
     generated_records = []
     failed_files = []
+    unreadable_files = []
     report = ConversionReport(avefi_schema_version=schema_fingerprint())
     context = new_shared_context(importer)
     with collecting(report):
         for input_file in input_files:
+            records_before = len(generated_records)
+            entries_before = len(report.entries)
+            skipped_before = report.records_skipped
             try:
                 with for_file(input_file):
                     generated_records.extend(
@@ -137,23 +185,28 @@ def efi_from(
                         )
                     )
             except Exception as e:
-                report.add(
-                    "error",
-                    f"Failed to convert file: {e}",
-                    source_file=str(input_file),
-                )
+                message = describe_input_error(input_file, e)
+                report.add("error", message, source_file=str(input_file))
                 if not continue_on_error:
                     if report_file:
                         report.write(report_file)
-                    raise RuntimeError(
-                        f"Failed to convert {input_file}"
-                    ) from e
+                    raise user_error(message, e) from e
                 failed_files.append(input_file)
+                continue
+            if len(generated_records) == records_before and not saw_records(
+                report, entries_before, skipped_before
+            ):
+                unreadable_files.append(input_file)
+                report.add(
+                    "error",
+                    unrecognised_input_message(input_file, format_, importer),
+                    source_file=str(input_file),
+                )
     if generated_records:
         sort_source_keys(generated_records)
         generated_records = avefi.sort_records(generated_records)
         if output and output != "-":
-            avefi.dump(generated_records, output)
+            write_records(generated_records, output)
         else:
             print(avefi.dumps(generated_records, indent=2))
     else:
@@ -165,8 +218,62 @@ def efi_from(
     if report_file:
         report.write(report_file)
         log.info(f"Wrote conversion report to {report_file}")
-    if failed_files or report.records_skipped:
+    if failed_files or unreadable_files or report.records_skipped:
         raise SystemExit(1)
+
+
+def placeholder_issuer_message(format_: str, profile_file) -> str:
+    """Return why a run without a real issuer is refused.
+
+    ``--list-formats`` says a profile is required for the format
+    converters, and the documented pipeline is from, check, register
+    identifiers. Nothing between the first step and the last notices a
+    placeholder issuer, so the run that names an unspecified data
+    provider is discovered at the one step that cannot be undone.
+
+    """
+    source = (
+        f"the profile {profile_file} also names"
+        if profile_file
+        else f"the {format_} converter ships with"
+    )
+    return (
+        f"Refusing to convert: {source} the placeholder issuer"
+        f" {PLACEHOLDER_ISSUER_ID}. A converter cannot know whose"
+        f" collection it is pointed at, and an ISIL must not be"
+        f" guessed, so the data provider has to be named with"
+        f" --profile FILE. Pass --accept-placeholder-issuer to convert"
+        f" anyway while trying out a mapping; identifiers must not be"
+        f" registered for records produced that way."
+    )
+
+
+def saw_records(report, entries_before: int, skipped_before: int) -> bool:
+    """Return True if the converter reported on individual records.
+
+    Used to tell a file this converter cannot read from one whose
+    records it read and then left out. Both produce no output, but
+    only the second is a documented outcome: a record that is filtered
+    or skipped is reported, with the identifier of the record it
+    concerns, which is what the README sends the user to the report
+    for.
+
+    """
+    return report.records_skipped > skipped_before or any(
+        entry.record_id for entry in report.entries[entries_before:]
+    )
+
+
+def unrecognised_input_message(input_file, format_: str, importer) -> str:
+    """Return why a file that parsed produced nothing at all."""
+    input_format = getattr(importer, "INPUT_FORMAT", "")
+    expected = f", expected {input_format}" if input_format else ""
+    return (
+        f"Nothing in {input_file} could be read by the {format_}"
+        f" converter{expected}. The file parsed, but it holds no"
+        f" record this converter recognises, so it is either another"
+        f" schema or another wrapper than the one expected."
+    )
 
 
 def accepts(importer, parameter: str) -> bool:

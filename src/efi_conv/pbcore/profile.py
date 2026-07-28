@@ -268,7 +268,7 @@ class PbcoreProfile:
     issuer_info : dict
         ``has_issuer_id`` and ``has_issuer_name`` for described_by.
         Defaults to :data:`PLACEHOLDER_ISSUER_INFO`, which the
-        converter reports once per run.
+        converter reports once per input file.
     description : str
         Short description shown by ``efi-conv from --list-formats``.
     default_language : str or None

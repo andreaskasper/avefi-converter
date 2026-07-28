@@ -14,7 +14,16 @@ Harvesting is deliberately a separate step rather than an option on
 the conversion. A harvest is slow, it is rude to repeat against
 somebody else's server while a mapping is being developed, and the
 result is worth keeping: it is the evidence of what the provider
-actually sent on the day the records were made.
+actually sent on the day the records were made. That is also why the
+OAI record header is written next to the payload and why each page
+names the request that produced it: without the datestamps and the
+request, the pages say what was received but not when or in answer to
+what, and an incremental harvest cannot be resumed from them.
+
+Being a guest on somebody else's server is taken seriously here. The
+requests identify the tool and, if the operator supplies one, a
+contact address; there is a pause between them; and a server that asks
+for a delay is obeyed up to a limit rather than indefinitely.
 
 """
 
@@ -28,6 +37,7 @@ import click
 from lxml import etree
 import requests
 
+from .. import __version__
 from .cli import cli_main
 
 log = logging.getLogger(__name__)
@@ -38,7 +48,7 @@ SRU_NAMESPACES = (
     "http://www.loc.gov/zing/srw/",
     "http://docs.oasis-open.org/ns/search-ws/sruResponse",
 )
-#: Namespace of the element wrapping a harvested page.
+#: Namespace of the elements wrapping a harvested page.
 HARVEST_NAMESPACE = "https://av-efi.net/efi-conv/harvest"
 
 #: Requests that fail with one of these are worth repeating.
@@ -49,6 +59,19 @@ DEFAULT_RETRIES = 3
 DEFAULT_BACKOFF = 5
 #: Servers vary in what they will hand over in one response.
 DEFAULT_SRU_PAGE_SIZE = 50
+#: Seconds to wait between two requests to the same endpoint. Nobody
+#: harvesting somebody else's repository is in that much of a hurry.
+DEFAULT_DELAY = 1.0
+#: Longest a Retry-After is obeyed before the harvest gives up. A
+#: server may ask for a day; waiting it out is not retrying, it is
+#: hanging, and the operator can always come back tomorrow.
+DEFAULT_MAX_RETRY_AFTER = 300
+#: Empty SRU pages in a row tolerated before a harvest that has not
+#: reached the reported total is called incomplete.
+MAX_EMPTY_PAGES = 5
+#: Named in the User-Agent, so that whoever runs the endpoint can find
+#: out what has been asking and complain to the right people.
+PROJECT_URL = "https://github.com/AV-EFI/efi-conv"
 ENCODING = "utf-8"
 
 
@@ -82,6 +105,30 @@ class HarvestResult:
     requests: int = 0
 
 
+def user_agent(contact=None) -> str:
+    """Return the User-Agent this harvester introduces itself with.
+
+    An OAI aggregator that sees ``python-requests`` with no way of
+    finding out who is behind it blocks it, and is right to.
+
+    Parameters
+    ----------
+    contact : str, optional
+        Address of whoever runs the harvest, added so that the
+        provider can get in touch instead of blocking.
+
+    """
+    agent = f"efi-conv/{__version__} (+{PROJECT_URL})"
+    return f"{agent} ({contact})" if contact else agent
+
+
+def pause(seconds, sleep=None):
+    """Wait between two requests to the same endpoint."""
+    if not seconds or seconds <= 0:
+        return
+    (time.sleep if sleep is None else sleep)(seconds)
+
+
 def fetch(
     url,
     params,
@@ -89,22 +136,29 @@ def fetch(
     timeout=DEFAULT_TIMEOUT,
     retries=DEFAULT_RETRIES,
     backoff=DEFAULT_BACKOFF,
+    max_retry_after=DEFAULT_MAX_RETRY_AFTER,
+    contact=None,
     sleep=None,
 ):
     """Return the body of one request, repeating a failure worth repeating.
 
     An OAI-PMH server under load answers 503 with a Retry-After header
     rather than an error, and expects the harvester to wait and come
-    back. Ignoring that is how a harvester gets blocked.
+    back. Ignoring that is how a harvester gets blocked. Obeying it
+    without a limit is how a harvest hangs for a day, so a server
+    asking for longer than ``max_retry_after`` is left alone instead.
 
     """
     get = (session or requests).get
+    headers = {"User-Agent": user_agent(contact)}
     sleep = time.sleep if sleep is None else sleep
     attempt = 0
     while True:
         attempt += 1
         try:
-            response = get(url, params=params, timeout=timeout)
+            response = get(
+                url, params=params, timeout=timeout, headers=headers
+            )
         except requests.RequestException as e:
             if attempt > retries:
                 raise HarvestError(f"{url}: {e}") from e
@@ -114,6 +168,14 @@ def fetch(
             continue
         if response.status_code in RETRY_STATUS and attempt <= retries:
             wait = retry_after(response, backoff * attempt)
+            if wait > max_retry_after:
+                raise HarvestError(
+                    f"{url} answered HTTP {response.status_code} and asked"
+                    f" us to wait {wait:g} s, more than the"
+                    f" {max_retry_after:g} s this harvest may wait. Come"
+                    f" back when the server is ready, or allow the wait"
+                    f" with --max-retry-after."
+                )
             log.warning(
                 f"{url}: HTTP {response.status_code}, retrying in {wait} s"
             )
@@ -166,6 +228,8 @@ def harvest_oai(
     from_date=None,
     until_date=None,
     limit=None,
+    delay=DEFAULT_DELAY,
+    contact=None,
     session=None,
     **fetch_options,
 ) -> HarvestResult:
@@ -186,8 +250,14 @@ def harvest_oai(
     from_date, until_date : str, optional
         Selective harvesting, in the granularity the endpoint supports.
     limit : int, optional
-        Stop after this many records. For trying an endpoint out
-        without pulling the whole repository.
+        Write at most this many records and then stop. For trying an
+        endpoint out without pulling the whole repository. ListRecords
+        has no way of asking for fewer records than the server cares to
+        send, so the page that reaches the limit is truncated.
+    delay : float
+        Seconds to wait between two requests.
+    contact : str, optional
+        Contact address for the User-Agent.
 
     """
     directory = prepare_directory(output_directory)
@@ -201,9 +271,15 @@ def harvest_oai(
         params["until"] = until_date
     seen_tokens = set()
     page = 0
+    written = 0
     while True:
         page += 1
-        body = fetch(url, params, session=session, **fetch_options)
+        if page > 1:
+            pause(delay)
+        request = describe(url, params)
+        body = fetch(
+            url, params, session=session, contact=contact, **fetch_options
+        )
         result.requests += 1
         root = parse_response(body, url)
         error = oai_error(root)
@@ -212,14 +288,18 @@ def harvest_oai(
                 log.warning(f"{url} has no records matching the request")
                 return result
             raise HarvestError(f"{url} reported {error}")
-        payloads, deleted = oai_payloads(root)
+        records, deleted = oai_payloads(root)
         result.deleted += deleted
-        if payloads:
-            result.files.append(write_page(directory, page, payloads))
-            result.records += len(payloads)
+        records = up_to_the_limit(records, result.records, limit)
+        if records:
+            written += 1
+            result.files.append(
+                write_page(directory, written, records, request)
+            )
+            result.records += len(records)
         log.info(
-            f"Harvested page {page}: {len(payloads)} record(s),"
-            f" {result.records} so far"
+            f"Harvested page {page}: {len(records)} record(s),"
+            f" {result.records} so far, from {request}"
         )
         token = resumption_token(root)
         if limit is not None and result.records >= limit:
@@ -238,20 +318,43 @@ def harvest_oai(
     return result
 
 
+def up_to_the_limit(records, harvested, limit):
+    """Return no more records than the limit still leaves room for.
+
+    A limit is there to fetch a handful of records for a look, so a
+    page arriving with a thousand of them is truncated rather than
+    written whole.
+
+    """
+    if limit is None:
+        return records
+    room = max(limit - harvested, 0)
+    if len(records) <= room:
+        return records
+    log.info(
+        f"Keeping {room} of the {len(records)} record(s) on this page,"
+        f" which is what the limit of {limit} leaves room for"
+    )
+    return records[:room]
+
+
 def oai_payloads(root):
-    """Return the metadata payloads of one OAI response.
+    """Return the records of one OAI response.
 
     Returns
     -------
     tuple
-        The payload elements and the number of deleted records seen.
+        A list of (header, payload) pairs and the number of deleted
+        records seen. The header is kept because it carries the
+        identifier, the datestamp and the sets the record belongs to,
+        none of which the payload has to repeat.
 
     """
-    payloads = []
+    records = []
     deleted = 0
     list_records = root.find(f"{{{OAI_NAMESPACE}}}ListRecords")
     if list_records is None:
-        return payloads, deleted
+        return records, deleted
     for record in list_records.findall(f"{{{OAI_NAMESPACE}}}record"):
         header = record.find(f"{{{OAI_NAMESPACE}}}header")
         if header is not None and header.get("status") == "deleted":
@@ -259,10 +362,22 @@ def oai_payloads(root):
             continue
         metadata = record.find(f"{{{OAI_NAMESPACE}}}metadata")
         if metadata is None or len(metadata) == 0:
-            log.warning("Record without metadata skipped")
+            log.warning(
+                f"Record {oai_identifier(header)} carries no metadata, skipped"
+            )
             continue
-        payloads.append(metadata[0])
-    return payloads, deleted
+        records.append((header, metadata[0]))
+    return records, deleted
+
+
+def oai_identifier(header) -> str:
+    """Return the identifier in an OAI header, or a stand-in for it."""
+    if header is None:
+        return "without a header"
+    element = header.find(f"{{{OAI_NAMESPACE}}}identifier")
+    if element is None or not (element.text or "").strip():
+        return "without an identifier"
+    return element.text.strip()
 
 
 def resumption_token(root) -> str | None:
@@ -284,6 +399,8 @@ def harvest_sru(
     page_size=DEFAULT_SRU_PAGE_SIZE,
     version="1.2",
     limit=None,
+    delay=DEFAULT_DELAY,
+    contact=None,
     session=None,
     **fetch_options,
 ) -> HarvestResult:
@@ -291,6 +408,13 @@ def harvest_sru(
 
     SRU is how library systems are queried, so this is the way to a
     catalogue's film holdings without asking anybody for an export.
+
+    An empty page is not taken as the end of the data. SRU says how
+    many records match, and a server that answers one page with
+    nothing while later pages still hold records would otherwise
+    truncate the harvest silently. Such a gap is logged, skipped and
+    carried on from; only a run of :data:`MAX_EMPTY_PAGES` of them
+    ends the harvest, and then as an error rather than as a success.
 
     Parameters
     ----------
@@ -303,25 +427,42 @@ def harvest_sru(
     page_size : int
         Records per request. Servers cap this, and the response says
         how many were actually returned.
+    limit : int, optional
+        Write at most this many records and then stop. No more than
+        are still needed are requested.
+    delay : float
+        Seconds to wait between two requests.
+    contact : str, optional
+        Contact address for the User-Agent.
 
     """
     directory = prepare_directory(output_directory)
     result = HarvestResult()
     start = 1
     page = 0
+    written = 0
     total = None
+    empty_pages = 0
     while True:
         page += 1
+        if page > 1:
+            pause(delay)
+        wanted = page_size
+        if limit is not None:
+            wanted = min(page_size, limit - result.records)
         params = {
             "version": version,
             "operation": "searchRetrieve",
             "query": query,
             "startRecord": start,
-            "maximumRecords": page_size,
+            "maximumRecords": wanted,
         }
         if record_schema:
             params["recordSchema"] = record_schema
-        body = fetch(url, params, session=session, **fetch_options)
+        request = describe(url, params)
+        body = fetch(
+            url, params, session=session, contact=contact, **fetch_options
+        )
         result.requests += 1
         root = parse_response(body, url)
         diagnostic = sru_diagnostic(root)
@@ -330,22 +471,49 @@ def harvest_sru(
         if total is None:
             total = sru_number_of_records(root)
             log.info(f"{url} reports {total} matching record(s)")
-        payloads = sru_payloads(root)
-        if payloads:
-            result.files.append(write_page(directory, page, payloads))
-            result.records += len(payloads)
+        records = [(None, payload) for payload in sru_payloads(root)]
+        records = up_to_the_limit(records, result.records, limit)
+        if records:
+            empty_pages = 0
+            written += 1
+            result.files.append(
+                write_page(directory, written, records, request)
+            )
+            result.records += len(records)
         log.info(
-            f"Harvested page {page}: {len(payloads)} record(s),"
-            f" {result.records} so far"
+            f"Harvested page {page}: {len(records)} record(s),"
+            f" {result.records} so far, from {request}"
         )
-        if not payloads:
-            break
         if limit is not None and result.records >= limit:
             log.info(f"Stopping after {result.records} record(s) as asked")
             break
         if total is not None and result.records >= total:
             break
-        start += len(payloads)
+        if not records:
+            if total is None:
+                log.info(
+                    f"{url} returned an empty page and reports no total,"
+                    f" so this is the end of the result set"
+                )
+                break
+            empty_pages += 1
+            if empty_pages > MAX_EMPTY_PAGES:
+                raise HarvestError(
+                    f"{url} returned {empty_pages} empty pages in a row"
+                    f" while reporting {total} matching record(s), of"
+                    f" which {result.records} were delivered. The pages"
+                    f" written so far are usable, but the harvest is not"
+                    f" complete."
+                )
+            log.warning(
+                f"{url} returned no records for record {start} onwards"
+                f" although it reports {total} matching record(s) and"
+                f" only {result.records} have been delivered. Skipping"
+                f" the gap and carrying on."
+            )
+            start += wanted
+            continue
+        start += len(records)
     return result
 
 
@@ -410,18 +578,43 @@ def prepare_directory(output_directory) -> pathlib.Path:
     return directory
 
 
-def write_page(directory: pathlib.Path, page: int, payloads) -> str:
-    """Write one page of payloads and return the file name.
+def write_page(
+    directory: pathlib.Path, page: int, records, source=None
+) -> str:
+    """Write one page of records and return the file name.
 
-    Each page becomes one document with the payloads under a wrapper of
-    ours. The readers in this package find their records by element
+    Each page becomes one document. Every record goes into a wrapper
+    of ours holding what the provider sent about it: the payload, and
+    for OAI-PMH the record header with its identifier, datestamp and
+    sets. The readers in this package find their records by element
     name whatever wraps them, so the wrapper costs nothing and keeps
     the payloads exactly as the provider sent them.
 
+    Parameters
+    ----------
+    directory
+        Directory to write into.
+    page : int
+        Number of the page, counted over the pages written rather than
+        over the requests sent, so that the files on disk are numbered
+        without gaps.
+    records
+        Pairs of a header, which may be None, and a payload element.
+    source : str, optional
+        The request that produced this page, recorded on the page so
+        that it can be repeated or accounted for later.
+
     """
-    root = etree.Element(f"{{{HARVEST_NAMESPACE}}}harvest")
-    for payload in payloads:
-        root.append(payload)
+    root = etree.Element(
+        f"{{{HARVEST_NAMESPACE}}}harvest", nsmap={"h": HARVEST_NAMESPACE}
+    )
+    if source:
+        root.set("source", source)
+    for header, payload in records:
+        wrapper = etree.SubElement(root, f"{{{HARVEST_NAMESPACE}}}record")
+        if header is not None:
+            wrapper.append(header)
+        wrapper.append(payload)
     target = directory / f"page-{page:05d}.xml"
     tree = etree.ElementTree(root)
     tree.write(
@@ -434,7 +627,7 @@ def write_page(directory: pathlib.Path, page: int, payloads) -> str:
 
 
 def describe(url, params) -> str:
-    """Return the request as a URL, for the log and for the report."""
+    """Return the request as a URL, for the log and for the page."""
     return f"{url}?{urlencode(params)}"
 
 
@@ -471,7 +664,9 @@ def describe(url, params) -> str:
     "until_date",
     help="Harvest records changed on or before this date.",
 )
-@click.option("-q", "--query", help="SRU query, in CQL.")
+# No -q: that is --quiet on `efi-conv` itself, and a -q here would
+# swallow the next argument as a query on an OAI-PMH harvest.
+@click.option("--query", help="SRU query, in CQL.")
 @click.option(
     "--record-schema", help="SRU record schema, for instance marcxml."
 )
@@ -485,7 +680,26 @@ def describe(url, params) -> str:
 @click.option(
     "--limit",
     type=int,
-    help="Stop after this many records, for trying an endpoint out.",
+    help="Write at most this many records, for trying an endpoint out.",
+)
+@click.option(
+    "--contact",
+    help="Contact address to add to the User-Agent, so that whoever runs"
+    " the endpoint can get in touch rather than block the harvester.",
+)
+@click.option(
+    "--delay",
+    type=float,
+    default=DEFAULT_DELAY,
+    show_default=True,
+    help="Seconds to wait between two requests.",
+)
+@click.option(
+    "--max-retry-after",
+    type=float,
+    default=DEFAULT_MAX_RETRY_AFTER,
+    show_default=True,
+    help="Give up rather than obey a Retry-After longer than this.",
 )
 def efi_harvest(
     protocol,
@@ -499,6 +713,9 @@ def efi_harvest(
     record_schema=None,
     page_size=DEFAULT_SRU_PAGE_SIZE,
     limit=None,
+    contact=None,
+    delay=DEFAULT_DELAY,
+    max_retry_after=DEFAULT_MAX_RETRY_AFTER,
 ):
     """Fetch records from an OAI-PMH or SRU endpoint into a directory.
 
@@ -513,34 +730,49 @@ def efi_harvest(
     worked out, and the result is the evidence of what the provider
     actually sent.
 
+    Give --contact an address whoever runs the endpoint can write to.
+    A harvester that cannot be identified is a harvester that gets
+    blocked.
+
     """
-    if protocol == "oai":
-        if not metadata_prefix:
-            raise click.UsageError(
-                "OAI-PMH needs --metadata-prefix. Ask the endpoint for"
-                " verb=ListMetadataFormats if you do not know what it"
-                " offers."
+    common = {
+        "limit": limit,
+        "contact": contact,
+        "delay": delay,
+        "max_retry_after": max_retry_after,
+    }
+    try:
+        if protocol == "oai":
+            if not metadata_prefix:
+                raise click.UsageError(
+                    "OAI-PMH needs --metadata-prefix. Ask the endpoint for"
+                    " verb=ListMetadataFormats if you do not know what it"
+                    " offers."
+                )
+            result = harvest_oai(
+                url,
+                metadata_prefix,
+                output,
+                set_spec=set_spec,
+                from_date=from_date,
+                until_date=until_date,
+                **common,
             )
-        result = harvest_oai(
-            url,
-            metadata_prefix,
-            output,
-            set_spec=set_spec,
-            from_date=from_date,
-            until_date=until_date,
-            limit=limit,
-        )
-    else:
-        if not query:
-            raise click.UsageError("SRU needs --query.")
-        result = harvest_sru(
-            url,
-            query,
-            output,
-            record_schema=record_schema,
-            page_size=page_size,
-            limit=limit,
-        )
+        else:
+            if not query:
+                raise click.UsageError("SRU needs --query.")
+            result = harvest_sru(
+                url,
+                query,
+                output,
+                record_schema=record_schema,
+                page_size=page_size,
+                **common,
+            )
+    except HarvestError as e:
+        # The pages fetched before the failure are on disk and usable,
+        # so say what went wrong and exit non-zero without a traceback.
+        raise click.ClickException(str(e)) from e
     log.info(
         f"Harvested {result.records} record(s) into {len(result.files)}"
         f" file(s) in {result.requests} request(s)"
@@ -548,4 +780,17 @@ def efi_harvest(
     if result.deleted:
         log.info(f"{result.deleted} deleted record(s) skipped")
     if not result.records:
-        raise SystemExit(1)
+        # Nothing matched is not the same as something went wrong. An
+        # incremental harvest whose only changes were deletions is a
+        # good run, and so is a query nothing answers.
+        if result.deleted:
+            log.warning(
+                f"No records to write: the only changes the endpoint"
+                f" reported were {result.deleted} deletion(s). That is a"
+                f" complete run, not a failure."
+            )
+        else:
+            log.warning(
+                "The endpoint sent no records to write. Nothing matched"
+                " the request, which is not in itself an error."
+            )

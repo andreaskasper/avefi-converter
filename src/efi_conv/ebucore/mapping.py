@@ -16,7 +16,9 @@ README, and everything left behind is reported rather than dropped.
 """
 
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from dataclasses import fields as dataclass_fields
+from decimal import Decimal, InvalidOperation
 import logging
 
 from avefi_schema import model_pydantic_v2 as efi
@@ -74,6 +76,7 @@ MAPPED_CORE_ELEMENTS = frozenset(
         "description",
         "format",
         "identifier",
+        "is_part_of",
         "language",
         "publication_history",
         "subject",
@@ -88,10 +91,22 @@ MAPPED_FORMAT_ELEMENTS = frozenset(
         "audio_format",
         "container_format",
         "duration",
+        "file_size",
         "medium",
         "technical_attribute_string",
         "video_format",
     }
+)
+
+#: Factors from a size in bytes to the byte based units AVefi knows,
+#: largest first. EBUCore states a file size in the unit of its @unit
+#: attribute, which is usually the byte; AVefi has no byte unit, so a
+#: size in bytes is scaled to the largest unit it fills.
+BYTE_UNITS = (
+    ("TeraByte", Decimal(10) ** 12),
+    ("GigaByte", Decimal(10) ** 9),
+    ("MegaByte", Decimal(10) ** 6),
+    ("KiloByte", Decimal(10) ** 3),
 )
 
 #: videoFormat and audioFormat elements the mapping consumes.
@@ -122,7 +137,7 @@ MAPPING_RULES = (
         "described_by.has_issuer_id, described_by.has_issuer_name",
         notes="Taken from the profile, not from"
         " ebuCoreMain/metadataProvider. The shipped default is a"
-        " placeholder and is reported once per run",
+        " placeholder and is reported once per input file",
     ),
     MappingRule(
         "record_id",
@@ -131,8 +146,10 @@ MAPPING_RULES = (
         " else the first identifier, else ebuCoreMain/@documentId",
         "has_identifier, described_by.has_source_key",
         "Profile record_identifier_type_labels",
-        "Further identifiers are reported; AVefi has no slot for the"
-        " house identifiers a broadcaster keeps alongside",
+        "has_identifier is a list, so the further identifiers of the"
+        " record are kept on the item as well; the scheme each of"
+        " them belongs to is reported, AVefi having a resource class"
+        " for only a few of them",
     ),
     MappingRule(
         "work_grouping",
@@ -177,8 +194,10 @@ MAPPING_RULES = (
         " ebucore:type/ebucore:contentFormat/@typeLabel",
         "has_form, has_genre.has_name",
         "Profile work_form_map",
-        "A term the profile knows as an AVefi work form becomes"
-        " has_form, every other term a free text genre",
+        "The term is kept verbatim as a genre, the element it comes"
+        " from being the provider's genre statement; a term the"
+        " profile knows additionally yields a WorkFormEnum value, as"
+        " in the PBCore mapping",
     ),
     MappingRule(
         "subject",
@@ -187,6 +206,16 @@ MAPPING_RULES = (
         "has_subject.has_name",
         notes="EBUCore subject is Dublin Core subject, so has_subject"
         " is the matching AVefi field rather than has_genre",
+    ),
+    MappingRule(
+        "part_of",
+        "Work",
+        "ebucore:isPartOf/dc:relation",
+        "is_part_of (LocalResource)",
+        notes="Rewritten to the identifier of the work the related"
+        " record yields, where the run converts that record;"
+        " otherwise reported and not transferred, AVefi rejecting a"
+        " local reference that resolves to no record of the same set",
     ),
     MappingRule(
         "production_date",
@@ -301,12 +330,23 @@ MAPPING_RULES = (
         " language is not transferred",
     ),
     MappingRule(
-        "description",
+        "extent",
         "Item",
+        "ebucore:format/ebucore:fileSize",
+        "has_extent.has_value, has_extent.has_unit",
+        "Profile extent_unit_map",
+        "A size in bytes is scaled to the largest byte based unit"
+        " AVefi knows that it fills, the schema having no unit for"
+        " the byte itself",
+    ),
+    MappingRule(
+        "description",
+        "—",
         "ebucore:description/dc:description",
-        "has_note",
-        notes="AVefi offers free text only below the work level, so a"
-        " synopsis ends up on the item",
+        "—",
+        notes="A synopsis describes the film, not the copy, and AVefi"
+        " has no description field at any level; reported per value,"
+        " as in the PBCore, Dublin Core and EN 15907 mappings",
     ),
     MappingRule(
         "rights",
@@ -367,15 +407,16 @@ ASSUMPTIONS = (
     " records do not carry.",
     "The issuer is the holding institution and does not follow from"
     " the format. The shipped profile carries a documented"
-    " placeholder, and the converter reports once per run that it has"
-    " to be replaced with the ISIL of the institution before the"
-    " records are used.",
+    " placeholder, and the converter reports once per input file that"
+    " it has to be replaced with the ISIL of the institution before"
+    " the records are used.",
     "Works and manifestations are shared between records according to"
     " the profile key, so several EBUCore records describing the same"
     " programme on different carriers do not produce several works.",
     "WorkVariant.type is always Monographic. EBUCore states series"
-    " and episode membership through relation elements, which this"
-    " mapping does not follow.",
+    " and episode membership through relation elements, and isPartOf"
+    " becomes is_part_of, but neither says at which level the related"
+    " record sits, so the type of the work is not derived from it.",
     "EBUCore has no element for the colour or the sound system. Both"
     " are read from a technicalAttributeString whose typeLabel the"
     " profile names, which is where providers put them.",
@@ -385,6 +426,31 @@ ASSUMPTIONS = (
     "ebucore:subject is mapped to has_subject rather than to"
     " has_genre. It is the Dublin Core subject element, and AVefi has"
     " a matching field for it.",
+    "A genre term is kept verbatim in has_genre, and additionally"
+    " yields a has_form value where the profile knows it as an AVefi"
+    " work form. The element states what the provider calls the genre"
+    " of the film, and the mapping onto the AVefi work forms is a"
+    " reading of that term rather than a replacement for it. The"
+    " PBCore mapping answers the same question the same way.",
+    "An ebucore:description is a synopsis of the content. AVefi has"
+    " no description field at any level, and an item note describes"
+    " the copy rather than the film, so the value is reported instead"
+    " of being written to a note.",
+    "A record commonly carries several identifiers, an ISAN or a"
+    " house number beside the one it is known by. AVefi has a"
+    " resource class for a few identifier schemes only, none of which"
+    " EBUCore names, so the further identifiers are kept as local"
+    " identifiers of the item and the scheme of each is reported.",
+    "An ebucore:isPartOf identifier names a record in the source"
+    " system. It becomes is_part_of where the run converts that"
+    " record too, and is reported rather than transferred where it"
+    " does not: AVefi rejects a local reference that resolves to no"
+    " record of the same set, and a converter emitting one would have"
+    " the whole work discarded by the checks.",
+    "EBUCore states the size of a file, AVefi an extent with a unit"
+    " from a fixed list that has no byte in it. A size in bytes is"
+    " therefore scaled to the largest of KiloByte, MegaByte, GigaByte"
+    " and TeraByte that it fills, using decimal factors.",
     "A timecode duration contributes hours, minutes and seconds. The"
     " frame count is reported, because ISODurationInHours cannot"
     " express it.",
@@ -498,7 +564,72 @@ def efi_import(
                 report_record_skipped(
                     e, record_id=safe_record_identifier(main, profile)
                 )
+        resolve_relations(context)
     return records
+
+
+def resolve_relations(context: "MappingContext"):
+    """Point every is_part_of at the work of the record it names.
+
+    An ebucore:isPartOf identifies a record in the source system, not
+    an AVefi record. A reference the run can resolve is rewritten to
+    the identifier of the work that record contributed to; one it
+    cannot is reported and not asserted, because AVefi rejects a local
+    reference resolving to no record of the same set. Unresolved
+    references are kept aside, so that a file converted later can
+    still supply the record they name.
+
+    Called once per input file, since the records of one conversion
+    reach the converter file by file.
+
+    """
+    minted = {work.has_identifier[0].id for work in context.works.values()}
+    for work in context.works.values():
+        work_id = work.has_identifier[0].id
+        pending = context.unresolved_relations.pop(work_id, [])
+        resolved = []
+        for identifier in [
+            resource.id for resource in work.is_part_of
+        ] + pending:
+            if identifier in minted:
+                if identifier not in resolved:
+                    resolved.append(identifier)
+                continue
+            target = context.work_ids.get(identifier)
+            if target is not None:
+                if target not in resolved:
+                    resolved.append(target)
+                continue
+            context.unresolved_relations.setdefault(work_id, []).append(
+                identifier
+            )
+            if identifier in context.reported_relations:
+                continue
+            context.reported_relations.add(identifier)
+            report_issue(
+                "warning",
+                "The related record is not among the records converted"
+                " so far, so the relation cannot name an AVefi work"
+                " and is not transferred",
+                record_id=(source_keys_of(work) or [None])[0],
+                source_field="isPartOf/dc:relation",
+                target_field="is_part_of",
+                raw_value=identifier,
+            )
+        work.is_part_of = [
+            efi.LocalResource(id=identifier) for identifier in resolved
+        ]
+
+
+def source_keys_of(record) -> list:
+    """Return the source keys recorded for an AVefi record."""
+    described_by = record.described_by
+    if described_by is None:
+        return []
+    entries = (
+        described_by if isinstance(described_by, list) else [described_by]
+    )
+    return [key for entry in entries for key in (entry.has_source_key or [])]
 
 
 @dataclass
@@ -510,9 +641,28 @@ class MappingContext(GroupingContext):
     defeat the purpose of the AVefi identifiers, so works and
     manifestations are reused across the records of a run.
 
+    Attributes
+    ----------
+    profile : EbucoreProfile or None
+        Vocabularies and issuer information of the data provider.
+    work_ids : dict
+        Record identifier to the local identifier of the work that
+        record contributed to, which is what turns an isPartOf
+        relation into a reference to an AVefi work.
+    reported_relations : set
+        Relations already reported as unresolved, so that converting
+        a further file does not report them again.
+    unresolved_relations : dict
+        Work identifier to the relation identifiers that could not be
+        resolved yet, kept so that a file converted later can still
+        supply the record they name.
+
     """
 
     profile: EbucoreProfile | None = None
+    work_ids: dict = dataclass_field(default_factory=dict)
+    reported_relations: set = dataclass_field(default_factory=set)
+    unresolved_relations: dict = dataclass_field(default_factory=dict)
 
 
 def new_context(profile: EbucoreProfile) -> MappingContext:
@@ -537,7 +687,7 @@ def map_record(
     core = main.core_metadata
     if core is None:
         raise ValueError("ebuCoreMain without coreMetadata")
-    source_key = record_identifier(main, profile)
+    source_key, other_identifiers = collect_identifiers(main, profile)
 
     titles = collect_titles(main, profile, source_key)
     if not titles:
@@ -562,6 +712,7 @@ def map_record(
     else:
         merge_alternative_titles(work, alternatives)
     work_id = work.has_identifier[0]
+    context.work_ids.setdefault(source_key, work_id.id)
 
     item = build_item(core, primary, profile, source_key)
     manifestation_key = make_manifestation_key(work_key, item)
@@ -581,8 +732,11 @@ def map_record(
         new_records.append(manifestation)
     item.is_item_of = manifestation.has_identifier[0]
     item.has_identifier.append(efi.LocalResource(id=source_key))
+    for value in other_identifiers:
+        item.has_identifier.append(efi.LocalResource(id=value))
     new_records.append(item)
 
+    report_descriptions(core, source_key)
     report_out_of_scope(main, core, source_key)
     attach_source_key(
         (work, manifestation, item), profile.issuer_info, source_key
@@ -652,6 +806,19 @@ def make_manifestation_key(work_key: str, item) -> str:
 
 def record_identifier(main: EbuCoreMain, profile) -> str:
     """Return the local identifier of an EBUCore record."""
+    return collect_identifiers(main, profile)[0]
+
+
+def collect_identifiers(main: EbuCoreMain, profile) -> tuple[str, list[str]]:
+    """Return the local identifier of a record and the further ones.
+
+    Returns
+    -------
+    tuple
+        The identifier the record is known by, and the values of the
+        remaining identifier elements in document order.
+
+    """
     identifiers = list((main.core_metadata.identifier if main else None) or [])
     chosen = None
     fallback = None
@@ -667,14 +834,17 @@ def record_identifier(main: EbuCoreMain, profile) -> str:
     result = chosen or fallback or text_of(main.document_id)
     if not result:
         raise ValueError("EBUCore record without an identifier")
+    others = []
     for entry in identifiers:
         value = text_of(entry.identifier)
-        if not value or value == result:
+        if not value or value == result or value in others:
             continue
+        others.append(value)
         report_issue(
             "info",
-            "Further identifier not transferred, AVefi keeps one"
-            " local identifier per record",
+            "AVefi has no resource class for the scheme this"
+            " identifier belongs to, so it is kept as a further local"
+            " identifier of the item rather than as a typed link",
             record_id=result,
             source_field="identifier",
             target_field="has_identifier",
@@ -684,7 +854,7 @@ def record_identifier(main: EbuCoreMain, profile) -> str:
                 "formatLabel": entry.format_label,
             },
         )
-    return result
+    return result, others
 
 
 def safe_record_identifier(main, profile) -> str | None:
@@ -788,16 +958,32 @@ def build_work(core, primary, alternatives, profile, source_key):
     for title in alternatives:
         work.has_alternative_title.append(as_title(title, "AlternativeTitle"))
     for term in genre_terms(core):
+        work.has_genre.append(efi.Genre(has_name=term))
         mapped = profile.work_form_map.get(term.lower())
         if mapped:
             form = efi.WorkFormEnum(mapped)
             if form not in work.has_form:
                 work.has_form.append(form)
-        else:
-            work.has_genre.append(efi.Genre(has_name=term))
     for term in subject_terms(core):
         work.has_subject.append(efi.Subject(has_name=term))
+    for resource in part_of_resources(core):
+        work.is_part_of.append(resource)
     return work
+
+
+def part_of_resources(core):
+    """Yield the works an EBUCore record says it is a part of.
+
+    The relation identifier names a record in the source system. It is
+    transferred as it stands: EBUCore states no level for the record
+    it points at, so the converter cannot tell whether that record is
+    among the ones it is converting.
+
+    """
+    for entry in core.is_part_of or []:
+        value = text_of(entry.relation) or text_of(entry.relation_identifier)
+        if value:
+            yield efi.LocalResource(id=value)
 
 
 def genre_terms(core):
@@ -1215,9 +1401,84 @@ def build_item(core, primary, profile, source_key):
         item.has_frame_rate = efi.FrameRateEnum(frame_rate)
     for language in item_languages(core, profile, source_key):
         item.in_language.append(language)
-    for note in description_notes(core):
-        item.has_note.append(note)
+    extent = item_extent(formats, profile, source_key)
+    if extent is not None:
+        item.has_extent = extent
     return item
+
+
+def item_extent(formats, profile, source_key):
+    """Return the extent of the carrier, if EBUCore states a size.
+
+    EBUCore states the size of a file rather than the length of a
+    reel, so this is the digital half of what AVefi calls an extent.
+    A size in bytes is scaled to the largest byte based unit AVefi
+    knows that it fills, because the schema has no unit for the byte
+    itself.
+
+    """
+    for fmt in formats:
+        for size in fmt.file_size or []:
+            value = text_of(size)
+            unit = str(getattr(size, "unit", "") or "").strip().lower()
+            amount = decimal_or_none(value)
+            if amount is None:
+                report_issue(
+                    "warning",
+                    "File size is not a number, no AVefi extent derived",
+                    record_id=source_key,
+                    source_field="format/fileSize",
+                    target_field="has_extent",
+                    raw_value=f"{value} {unit}".strip(),
+                )
+                continue
+            mapped = profile.extent_unit_map.get(unit)
+            if mapped is not None:
+                return efi.Extent(
+                    has_unit=efi.UnitEnum(mapped), has_value=amount
+                )
+            if unit in profile.byte_unit_labels:
+                return byte_extent(amount)
+            report_issue(
+                "warning",
+                "No AVefi unit configured for this file size unit,"
+                " value not transferred",
+                record_id=source_key,
+                source_field="format/fileSize/@unit",
+                target_field="has_extent.has_unit",
+                raw_value=unit or None,
+            )
+    return None
+
+
+def byte_extent(amount: Decimal):
+    """Return a size in bytes as the largest AVefi unit it fills."""
+    for name, factor in BYTE_UNITS:
+        if amount >= factor:
+            return efi.Extent(
+                has_unit=efi.UnitEnum(name),
+                has_value=normalised_decimal(amount / factor),
+            )
+    return efi.Extent(
+        has_unit=efi.UnitEnum("KiloByte"),
+        has_value=normalised_decimal(amount / Decimal(10) ** 3),
+    )
+
+
+def decimal_or_none(value) -> Decimal | None:
+    """Return the number a text carries, or None if it carries none."""
+    if not value:
+        return None
+    try:
+        return Decimal(str(value).replace(" ", "").replace(",", ""))
+    except InvalidOperation:
+        return None
+
+
+def normalised_decimal(value: Decimal) -> Decimal:
+    """Return a decimal without trailing zeros in its fraction."""
+    quantised = value.quantize(Decimal("0.001"))
+    return quantised.normalize() if quantised == value else value
 
 
 def item_duration(formats, profile, source_key) -> str | None:
@@ -1502,13 +1763,31 @@ def resolve_language(tag, source_key) -> str | None:
     return None
 
 
-def description_notes(core):
-    """Yield the descriptions of a record as free text notes."""
+def report_descriptions(core, source_key):
+    """Report the descriptions AVefi has no field for.
+
+    An ebucore:description is a synopsis of the content. AVefi has no
+    description field at any level, and an item note describes the
+    copy rather than the film, so the value is reported with the text
+    it carries instead of being written somewhere it does not belong.
+    The PBCore, Dublin Core and EN 15907 converters answer the same
+    question the same way.
+
+    """
     for entry in core.description or []:
         for description in entry.description or []:
             text = text_of(description)
-            if text:
-                yield text
+            if not text:
+                continue
+            report_issue(
+                "warning",
+                "AVefi has no field for a description at any level,"
+                " value not transferred",
+                record_id=source_key,
+                source_field="description/dc:description",
+                target_field="—",
+                raw_value=text,
+            )
 
 
 # --- reporting what is out of scope -----------------------------------

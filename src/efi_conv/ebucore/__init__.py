@@ -5,7 +5,8 @@ converter ships a documented placeholder issuer instead of an ISIL.
 Replace :data:`ISSUER_INFO` — or pass a profile of your own to
 :func:`efi_conv.ebucore.mapping.efi_import` — with the ISIL and name
 of the holding institution before the records are used. The converter
-reports once per run that the placeholder is still in place.
+reports once per input file that the placeholder is still in
+place.
 
 Can be used through the common command line interface::
 
@@ -16,8 +17,6 @@ or directly, which is convenient while developing a mapping::
     python -m efi_conv.ebucore export.xml [records.json]
 
 """
-
-import sys
 
 from avefi_schema import model_pydantic_v2 as efi
 
@@ -94,32 +93,25 @@ def new_context(profile: EbucoreProfile | None = None) -> MappingContext:
 
 
 def main(argv=None):
-    """Convert INPUT and write the records to OUTPUT or stdout."""
-    from ..core import avefi
+    """Convert INPUT and write the records to OUTPUT or stdout.
 
-    argv = sys.argv[1:] if argv is None else list(argv)
-    if not argv or argv[0] in ("-h", "--help"):
-        print(
-            "Usage: python -m efi_conv.ebucore INPUT [OUTPUT.json]\n"
-            "\n"
-            "Convert an EBUCore export into AVefi records.\n"
-            "The issuer is a placeholder and has to be replaced with"
-            " the ISIL of\n"
-            "the holding institution.\n"
-            "Equivalent to: efi-conv from -f ebucore -o OUTPUT INPUT",
-            file=sys.stderr if not argv else sys.stdout,
-        )
-        return 0 if argv else 2
-    if len(argv) > 2:
-        print("Expected at most two arguments, see --help", file=sys.stderr)
-        return 2
+    A file that cannot be read is reported as an error naming the file
+    rather than as a traceback; pass -v for the traceback.
 
-    records = efi_import(argv[0])
-    if len(argv) == 2:
-        avefi.dump(avefi.sort_records(records), argv[1])
-    else:
-        print(avefi.dumps(avefi.sort_records(records), indent=2))
-    return 0
+    """
+    from ..core.cli import run_converter_main
+
+    return run_converter_main(
+        argv,
+        "Usage: python -m efi_conv.ebucore INPUT [OUTPUT.json]\n"
+        "\n"
+        "Convert an EBUCore export into AVefi records.\n"
+        "The issuer is a placeholder and has to be replaced with"
+        " the ISIL of\n"
+        "the holding institution.\n"
+        "Equivalent to: efi-conv from -f ebucore -o OUTPUT INPUT",
+        efi_import,
+    )
 
 
 __all__ = (
@@ -130,9 +122,11 @@ __all__ = (
     "MAPPING_RULES",
     "PLACEHOLDER_ISSUER_INFO",
     "PROFILE",
+    "PROFILE_CLASS",
     "EbucoreProfile",
     "MappingContext",
     "MappingRule",
+    "convert",
     "efi_import",
     "main",
     "map_record",

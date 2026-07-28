@@ -222,6 +222,34 @@ def test_the_format_vocabulary_is_applied_and_the_rest_reported(
     ]
 
 
+def test_subject_terms_become_subjects_rather_than_genres(input_path):
+    """dc:subject is the topic of the resource, not its genre."""
+    records = from_.import_file(mapping, input_path("sample_data.xml"))
+    works = [r for r in records if r.category == "avefi:WorkVariant"]
+    subjects = [
+        subject.has_name for work in works for subject in work.has_subject
+    ]
+    genres = [genre.has_name for work in works for genre in work.has_genre]
+    assert subjects == ["Dokumentarfilm", "Nachkriegszeit"]
+    assert "Nachkriegszeit" not in genres, (
+        "A post-war period is a topic, not a genre"
+    )
+
+
+def test_a_type_term_beside_the_film_filter_is_still_a_genre(input_path):
+    """dc:type says what kind of resource it is, which is a genre."""
+    records = from_.import_file(mapping, input_path("sample_data.xml"))
+    genres = [
+        genre.has_name
+        for record in records
+        if record.category == "avefi:WorkVariant"
+        for genre in record.has_genre
+    ]
+    assert genres == ["Werbefilm"], (
+        "MovingImage identified the record as film and is consumed"
+    )
+
+
 def test_language_is_mapped_with_the_usage_from_the_profile(input_path):
     records = from_.import_file(mapping, input_path("sample_data.xml"))
     languages = [

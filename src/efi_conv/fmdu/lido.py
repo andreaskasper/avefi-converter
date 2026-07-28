@@ -104,30 +104,23 @@ def new_context(profile: LidoProfile | None = None) -> MappingContext:
 
 
 def main(argv=None):
-    """Convert INPUT and write the records to OUTPUT or stdout."""
-    from ..core import avefi
+    """Convert INPUT and write the records to OUTPUT or stdout.
 
-    argv = sys.argv[1:] if argv is None else list(argv)
-    if not argv or argv[0] in ("-h", "--help"):
-        print(
-            "Usage: python -m efi_conv.fmdu.lido INPUT [OUTPUT.json]\n"
-            "\n"
-            "Convert a LIDO export of the Filmmuseum Düsseldorf into"
-            " AVefi records.\n"
-            "Equivalent to: efi-conv from -f fmdu.lido -o OUTPUT INPUT",
-            file=sys.stderr if not argv else sys.stdout,
-        )
-        return 0 if argv else 2
-    if len(argv) > 2:
-        print("Expected at most two arguments, see --help", file=sys.stderr)
-        return 2
+    A file that cannot be read is reported as an error naming the file
+    rather than as a traceback; pass -v for the traceback.
 
-    records = efi_import(argv[0])
-    if len(argv) == 2:
-        avefi.dump(avefi.sort_records(records), argv[1])
-    else:
-        print(avefi.dumps(avefi.sort_records(records), indent=2))
-    return 0
+    """
+    from ..core.cli import run_converter_main
+
+    return run_converter_main(
+        argv,
+        "Usage: python -m efi_conv.fmdu.lido INPUT [OUTPUT.json]\n"
+        "\n"
+        "Convert a LIDO export of the Filmmuseum Düsseldorf into"
+        " AVefi records.\n"
+        "Equivalent to: efi-conv from -f fmdu.lido -o OUTPUT INPUT",
+        efi_import,
+    )
 
 
 if __name__ == "__main__":

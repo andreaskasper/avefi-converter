@@ -39,6 +39,36 @@ MARC_NAMESPACE = "http://www.loc.gov/MARC21/slim"
 #: written in the MARC documentation, which does end up in exports.
 FILL_CHARACTERS = frozenset({"", " ", "|", "#"})
 
+#: The way the MARC documentation writes a blank position. An export
+#: generated from the documentation rather than from the record
+#: structure carries it wherever a record would carry a blank.
+DOCUMENTED_BLANK = "#"
+
+
+def as_blank(code: str | None) -> str | None:
+    """Return a fixed field code with the documented blank spelled out.
+
+    A position of a MARC fixed field is blank either because nothing
+    is coded there or because the blank is itself a value: 007
+    position 05 defines it as "silent". A vocabulary is therefore
+    keyed on the blank, and both spellings of it have to reach that
+    key.
+
+    Parameters
+    ----------
+    code : str or None
+        Characters read from a fixed field.
+
+    Returns
+    -------
+    str or None
+        The same characters with every ``#`` replaced by a blank.
+
+    """
+    if code is None:
+        return None
+    return code.replace(DOCUMENTED_BLANK, " ")
+
 
 def local_name(element) -> str:
     """Return the local name of an element, ignoring its namespace.

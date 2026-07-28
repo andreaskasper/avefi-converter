@@ -17,6 +17,7 @@ manifestation per ``avManifestation`` and one item per ``item``.
 from dataclasses import dataclass, field
 import decimal
 import logging
+import re
 
 from avefi_schema import model_pydantic_v2 as efi
 
@@ -48,6 +49,20 @@ log = logging.getLogger(__name__)
 #: under a wrapper element of the data provider's choosing.
 NAMESPACE = "http://www.europeanfilmgateway.eu/efg"
 RECORD_ELEMENT = "efgEntity"
+
+#: A bare country code rather than the name of a country.
+COUNTRY_CODE = re.compile(r"^[A-Za-z]{2,3}$")
+
+#: Authority named by the prefix of a keywords/term/@id, and the AVefi
+#: resource class holding an identifier from it. The prefixes follow
+#: the AVefi identifier notation, so that the value can be transferred
+#: as it stands.
+AUTHORITY_RESOURCES = {
+    "aat": efi.AATResource,
+    "gnd": efi.GNDResource,
+    "viaf": efi.VIAFResource,
+    "wikidata": efi.WikidataResource,
+}
 
 
 @dataclass(frozen=True)
@@ -131,16 +146,22 @@ MAPPING_RULES = (
     MappingRule(
         "genre",
         "Work",
-        "avcreation/keywords[type in genre types]/term",
-        "has_genre.has_name",
+        "avcreation/keywords[type in genre types]/term, term/@id",
+        "has_genre.has_name, has_genre.same_as",
         "Profile genre_keyword_types",
+        "A term identifier is transferred when it names an authority"
+        " AVefi has a resource class for; a genre may only link to"
+        " the GND, so any other authority is reported",
     ),
     MappingRule(
         "subject",
         "Work",
-        "avcreation/keywords[type in subject types]/term",
-        "has_subject.has_name",
+        "avcreation/keywords[type in subject types]/term, term/@id",
+        "has_subject.has_name, has_subject.same_as",
         "Profile subject_keyword_types",
+        "A term identifier such as `gnd/4079143-9` becomes an"
+        " authority link; an authority AVefi has no resource class"
+        " for is reported and the term kept without it",
     ),
     MappingRule(
         "production_year",
@@ -155,9 +176,14 @@ MAPPING_RULES = (
         "country_of_reference",
         "Work",
         "avcreation/countryOfReference",
-        "has_event.located_in.has_name (ProductionEvent)",
-        notes="The reference attribute names the code list the"
-        " value comes from and is reported",
+        "has_event.located_in.has_name,"
+        " has_event.located_in.has_alternate_name (ProductionEvent)",
+        "Profile country_name_map",
+        notes="EFG states a country code and AVefi holds a name, so"
+        " the code is expanded and kept as an alternate name; a code"
+        " the profile does not know is reported rather than asserted"
+        " as a name. The reference attribute names the code list and"
+        " is reported",
     ),
     MappingRule(
         "director",
@@ -432,6 +458,17 @@ ASSUMPTIONS = (
     "A `keywords` element whose type is in neither vocabulary has"
     " its terms kept as subjects rather than as genres, a subject"
     " being the weaker of the two claims.",
+    "A `keywords/term/@id` is read as an identifier in the authority"
+    " its prefix names, in the notation AVefi uses for the same"
+    " authorities, and becomes `same_as`. AVefi has a resource class"
+    " for the GND, VIAF, Wikidata and the AAT only, and allows a"
+    " genre to link to the GND alone; anything else is reported and"
+    " the term kept without its identifier.",
+    "`countryOfReference` is a code, and `GeographicName.has_name` is"
+    " a name. The code is expanded through the profile vocabulary and"
+    " kept as an alternate name of the place. A code the profile does"
+    " not know is reported and no production country asserted,"
+    " because a code is not the name of anything.",
     "`format/colour/@hasColor` and `format/sound/@hasSound` are only"
     " read when the element carries no term that maps: true becomes"
     " `Colour` or `Sound`, false `BlackAndWhite` or `Silent`.",
@@ -1255,13 +1292,28 @@ def make_work_key(
     )
 
 
-def merge_named(target: list, names, factory):
-    """Add ``names`` to a list of named AVefi objects, once each."""
+def merge_named(target: list, entries, factory):
+    """Add ``entries`` to a list of named AVefi objects, once each.
+
+    Parameters
+    ----------
+    target : list
+        The AVefi objects collected so far.
+    entries : iterable
+        Pairs of name and authority resource, the latter None where
+        the source names none.
+    factory : type
+        The AVefi class to build, Genre or Subject.
+
+    """
     known = {entry.has_name for entry in target}
-    for name in names:
+    for name, link in entries:
         if name in known:
             continue
-        target.append(factory(has_name=name))
+        entry = factory(has_name=name)
+        if link is not None:
+            entry.same_as = [link]
+        target.append(entry)
         known.add(name)
 
 
@@ -1349,7 +1401,17 @@ def collect_work_descriptions(
 def collect_keyword_terms(
     avcreation, profile: EfgProfile, record_id
 ) -> tuple[list, list]:
-    """Return the genre and subject terms of a creation."""
+    """Return the genre and subject terms of a creation.
+
+    Returns
+    -------
+    tuple
+        Two lists of (term, authority link) pairs, the genres and the
+        subjects. The link is None where the term carries no ``@id``
+        or where AVefi has no resource class for the authority it
+        names.
+
+    """
     genres, subjects = [], []
     for keywords in avcreation.keywords or []:
         kind = str(getattr(keywords, "type_value", "") or "").strip().lower()
@@ -1370,9 +1432,58 @@ def collect_keyword_terms(
             target = subjects
         for term in keywords.term or []:
             value = text_of(term)
-            if value:
-                target.append(value)
+            if not value:
+                continue
+            target.append(
+                (
+                    value,
+                    authority_resource(
+                        getattr(term, "id", None),
+                        efi.GNDResource if target is genres else None,
+                        record_id,
+                    ),
+                )
+            )
     return genres, subjects
+
+
+def authority_resource(identifier, only, record_id):
+    """Return the AVefi resource a keyword identifier names.
+
+    EFG qualifies a keyword term with the identifier it carries in the
+    authority file the provider uses, written as the authority name, a
+    slash and the number. AVefi has a resource class for a few
+    authorities, and ``same_as`` on both Genre and Subject to hold
+    them; a genre may only link to the GND.
+
+    Parameters
+    ----------
+    identifier : str or None
+        Value of ``keywords/term/@id``.
+    only : type or None
+        The single resource class the target field accepts, or None
+        when it accepts all of them.
+    record_id : str
+        Identifier used when reporting.
+
+    """
+    value = (identifier or "").strip()
+    if not value:
+        return None
+    prefix = value.split("/", 1)[0].lower()
+    resource = AUTHORITY_RESOURCES.get(prefix)
+    if resource is None or (only is not None and resource is not only):
+        report_issue(
+            "warning",
+            "AVefi has no resource class for this authority at this"
+            " level, the term is kept without its identifier",
+            record_id=record_id,
+            source_field="avcreation/keywords/term/@id",
+            target_field="same_as",
+            raw_value=value,
+        )
+        return None
+    return resource(id=value)
 
 
 def manifestation_notes(element):
@@ -1412,7 +1523,9 @@ def build_production_event(avcreation, profile: EfgProfile, record_id):
                 target_field="—",
                 raw_value=reference,
             )
-        event.located_in.append(efi.GeographicName(has_name=name))
+        place = country_name(name, profile, record_id)
+        if place is not None:
+            event.located_in.append(place)
     event.has_activity.extend(
         collect_directing_activities(
             avcreation, profile, record_id, "avcreation"
@@ -1421,6 +1534,35 @@ def build_production_event(avcreation, profile: EfgProfile, record_id):
     if not (event.has_date or event.located_in or event.has_activity):
         return None
     return event
+
+
+def country_name(value: str, profile: EfgProfile, record_id):
+    """Return the place a countryOfReference names, if it names one.
+
+    EFG states the country as an ISO 3166-1 alpha-2 code, and an AVefi
+    GeographicName holds a name. A code is therefore expanded through
+    the profile vocabulary; a code the profile does not know is
+    reported rather than asserted as a name, because "ZZ" is not the
+    name of anything.
+
+    """
+    if not COUNTRY_CODE.match(value):
+        return efi.GeographicName(has_name=value)
+    expanded = profile.country_name_map.get(value.upper())
+    if expanded is None:
+        report_issue(
+            "warning",
+            "No country name configured for this code, and a code is"
+            " not a name; production country not transferred",
+            record_id=record_id,
+            source_field="avcreation/countryOfReference",
+            target_field="has_event.located_in.has_name",
+            raw_value=value,
+        )
+        return None
+    return efi.GeographicName(
+        has_name=expanded, has_alternate_name=[value.upper()]
+    )
 
 
 def build_related_production_events(

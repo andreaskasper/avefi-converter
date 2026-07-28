@@ -7,8 +7,11 @@ its OAI-PMH endpoint and through the `lido` output of its object API.
 
 This package is a `LidoProfile`, not a converter. The mapping lives in
 [`efi_conv.lido`](../lido/README.md) and is not touched by adding a
-provider here; `lido.py` contains the house vocabularies and nothing
-else. That is the whole point of the module, and a test asserts it.
+provider here; `lido.py` contains the house vocabularies, and beyond
+them only the reporting of the stand-in issuer, which produces no
+AVefi value of any kind. That is the whole point of the module, and a
+test asserts that the records it yields are exactly the records the
+generic mapping yields from its profile.
 
 ## museum-digital is not the holding institution
 
@@ -25,13 +28,28 @@ which is a stand-in and has to be replaced before anything is
 registered. museum-digital is a publication platform: it presents the
 holdings of a museum, it does not hold them. AVefi identifiers are
 registered by and for the institution that holds the material, so a
-real conversion replaces the issuer with the ISIL of that museum,
-which is in `lido:recordSource/lido:legalBodyID` of each record.
+real conversion replaces the issuer with the ISIL of that museum.
+
+The converter says so: it reports once per input file, at warning
+level, that the shipped issuer is a stand-in.
+
+The export itself names the institution each record came from in
+`lido:recordSource`, by name in `lido:legalBodyName` and, where the
+instance records one, by identifier in `lido:legalBodyID`. The mapping
+does not read those elements — the issuer comes from the profile, so
+that one conversion has exactly one issuer, whatever the file happens
+to mix. What the file says is reported instead, so that the run tells
+you whose holdings you are looking at and which ISIL to configure:
+
+```console
+$ efi-conv from -f mdigital.lido --report report.json -o records.json \
+    export.xml
+```
 
 An export pulled from an aggregating instance such as `nat` carries the
 holdings of many museums at once. Such a file has to be split per
-museum before conversion, because one AVefi conversion has exactly one
-issuer.
+museum before conversion, and the reported `lido:recordSource` values
+are what tells you that it needs splitting.
 
 ## The vocabularies are extrapolated
 

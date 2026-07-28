@@ -68,7 +68,9 @@ def test_copies_of_one_film_share_a_work(input_path):
     efi_records = from_.import_file(pbcore, input_path("sample_data.xml"))
     categories = [record.category for record in efi_records]
     assert categories.count("avefi:WorkVariant") == 3
-    assert categories.count("avefi:Item") == 5
+    # Four moving image instantiations, and the series description,
+    # which names no instantiation, contributes no item.
+    assert categories.count("avefi:Item") == 4
 
     works = [r for r in efi_records if r.category == "avefi:WorkVariant"]
     shared = next(
@@ -111,8 +113,121 @@ def test_manifestations_hang_off_their_work(input_path):
         for r in efi_records
         if r.category == "avefi:WorkVariant"
     }
-    assert len(manifestations) == 5
+    assert len(manifestations) == 4
     assert all(m.is_manifestation_of[0].id in works for m in manifestations)
+
+
+def test_a_record_without_an_instantiation_yields_a_work_alone(
+    input_path,
+):
+    """An Item asserts a holding; a series description is not one.
+
+    SERIES-42 describes a screening series and names no
+    instantiation. Emitting a manifestation and an item for it would
+    assert that the institution holds a copy of something that has no
+    carrier in the source data at all.
+
+    """
+    efi_records = from_.import_file(pbcore, input_path("sample_data.xml"))
+    from_series = [
+        record
+        for record in efi_records
+        for described in (
+            record.described_by
+            if isinstance(record.described_by, list)
+            else [record.described_by]
+        )
+        if described.has_source_key == ["SERIES-42"]
+    ]
+    assert [record.category for record in from_series] == ["avefi:WorkVariant"]
+
+
+def test_a_record_without_an_instantiation_is_reported(input_path):
+    report = ConversionReport()
+    with collecting(report):
+        from_.import_file(pbcore, input_path("sample_data.xml"))
+    entries = [
+        entry
+        for entry in report.entries
+        if entry.record_id == "SERIES-42"
+        and entry.source_field == "pbcoreInstantiation"
+    ]
+    assert entries and entries[0].severity == "warning"
+    assert "no instantiation" in entries[0].message
+
+
+def test_a_relation_resolves_to_the_work_of_the_related_record(
+    input_path,
+):
+    """is_part_of must point at a work, not at an item."""
+    efi_records = from_.import_file(pbcore, input_path("sample_data.xml"))
+    works = {
+        record.has_identifier[0].id: record
+        for record in efi_records
+        if record.category == "avefi:WorkVariant"
+    }
+    series = next(
+        work
+        for work in works.values()
+        if work.has_primary_title.has_name == "Classic Cinema"
+    )
+    parents = [
+        resource.id for work in works.values() for resource in work.is_part_of
+    ]
+    assert parents == [series.has_identifier[0].id]
+    assert "SERIES-42" not in parents, (
+        "The source identifier resolves to the item of another record"
+    )
+
+
+def test_an_unresolved_relation_is_reported_and_not_asserted(tmp_path):
+    """AVefi rejects a reference resolving to no record in the set."""
+    single = tmp_path / "single.xml"
+    single.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        "<pbcoreDescriptionDocument"
+        ' xmlns="http://www.pbcore.org/PBCore/PBCoreNamespace.html">'
+        '<pbcoreIdentifier source="Example">PB-1'
+        "</pbcoreIdentifier>"
+        "<pbcoreTitle>Ein Film</pbcoreTitle>"
+        "<pbcoreRelation><pbcoreRelationType>Is Part Of"
+        "</pbcoreRelationType><pbcoreRelationIdentifier>ELSEWHERE-1"
+        "</pbcoreRelationIdentifier></pbcoreRelation>"
+        "<pbcoreInstantiation>"
+        "<instantiationLocation>Example</instantiationLocation>"
+        "<instantiationMediaType>Moving Image</instantiationMediaType>"
+        "</pbcoreInstantiation>"
+        "</pbcoreDescriptionDocument>",
+        encoding="utf-8",
+    )
+    report = ConversionReport()
+    with collecting(report):
+        records = pbcore.efi_import(single)
+    work = next(r for r in records if r.category == "avefi:WorkVariant")
+    assert work.is_part_of == []
+    assert [
+        entry
+        for entry in report.entries
+        if entry.target_field == "is_part_of"
+        and entry.raw_value == "ELSEWHERE-1"
+        and entry.severity == "warning"
+    ]
+
+
+def test_the_instantiation_identifier_reaches_the_item(input_path):
+    """The archive tracks the copy by it, so the item must carry it."""
+    efi_records = from_.import_file(pbcore, input_path("sample_data.xml"))
+    identifiers = {
+        record.described_by.has_source_key[0]: [
+            resource.id for resource in record.has_identifier
+        ]
+        for record in efi_records
+        if record.category == "avefi:Item"
+    }
+    assert "PBCORE-0002-1" in identifiers["PBCORE-0002"], (
+        "A single instantiation must not cost its identifier"
+    )
+    assert "PBCORE-0003-1" in identifiers["PBCORE-0003"]
 
 
 def test_audio_only_records_are_not_imported(input_path):

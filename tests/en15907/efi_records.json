@@ -52,7 +52,10 @@
         "located_in": [
           {
             "category": "avefi:GeographicName",
-            "has_name": "DE"
+            "has_alternate_name": [
+              "DE"
+            ],
+            "has_name": "Germany"
           }
         ]
       },
@@ -103,7 +106,13 @@
     "has_subject": [
       {
         "category": "avefi:Subject",
-        "has_name": "Second World War"
+        "has_name": "Second World War",
+        "same_as": [
+          {
+            "category": "avefi:GNDResource",
+            "id": "gnd/4079143-9"
+          }
+        ]
       }
     ],
     "type": "Monographic"

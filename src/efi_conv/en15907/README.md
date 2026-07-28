@@ -49,10 +49,16 @@ records = efi_import("export.xml", PROFILE)
 ## Usage
 
 ```console
-$ efi-conv from -f en15907 -o records.json export.xml
+$ efi-conv from -f en15907 --profile provider.json -o records.json \
+    export.xml
 ```
 
-or, which is convenient while developing a mapping,
+The profile names the data provider; without one the command refuses
+to convert, because the shipped issuer is a placeholder. Pass
+`--accept-placeholder-issuer` instead while trying a mapping out, and
+do not register identifiers for what that produces.
+
+Or, which is convenient while developing a mapping,
 
 ```console
 $ python -m efi_conv.en15907 export.xml [records.json]

@@ -296,6 +296,21 @@ def test_credits_and_cast_are_kept_as_notes(input_path):
     assert any(note.startswith("Cast:") for note in item.has_note)
 
 
+def test_notes_lose_their_isbd_terminal_punctuation(input_path):
+    """A note is free text, not a card catalogue entry."""
+    efi_records = from_.import_file(marc21, input_path("sample_data.xml"))
+    notes = [
+        note
+        for record in efi_records
+        for note in getattr(record, "has_note", None) or []
+    ]
+    assert "Edition: 2. Fassung" in notes
+    assert "Language: Deutsch" in notes
+    assert not [note for note in notes if note.endswith(".")], (
+        "ISBD punctuation separates fields on a card, not sentences"
+    )
+
+
 def test_subtitles_become_a_language_usage(input_path):
     efi_records = from_.import_file(marc21, input_path("sample_data.xml"))
     item = next(

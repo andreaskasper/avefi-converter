@@ -36,7 +36,7 @@ from ..core.records import (
     work_key,
 )
 from ..core.report import for_file, report_issue, report_record_skipped
-from .marcxml import fixed_position, is_fill, iter_records
+from .marcxml import as_blank, fixed_position, is_fill, iter_records
 from .profile import Marc21Profile
 
 log = logging.getLogger(__name__)
@@ -177,8 +177,10 @@ MAPPING_RULES = (
         "246$a$b$n$p, 247$a$b",
         "has_alternative_title",
         "Article handling in both directions",
-        "The distinction MARC draws in 246 ind2 and the former title"
-        " semantics of 247 have no AVefi counterpart and are reported",
+        "246 ind2=1 is a parallel title and becomes a"
+        " TranslatedTitle; the other distinctions MARC draws there"
+        " and the former title semantics of 247 have no AVefi"
+        " counterpart and are reported",
     ),
     MappingRule(
         "production_date",
@@ -328,7 +330,7 @@ MAPPING_RULES = (
         "described_by.has_issuer_id, described_by.has_issuer_name",
         notes="Taken from the profile, not from 003 or 852$a, so that"
         " the issuer is unambiguous; the shipped default is a"
-        " placeholder and using it is reported once per run",
+        " placeholder and using it is reported once per input file",
     ),
 )
 
@@ -391,10 +393,21 @@ ASSUMPTIONS = (
     " it does not apply; both yield no duration. Where 306$a and the"
     " fixed field disagree, 306$a wins because it is precise to the"
     " second, and the divergence is reported.",
+    "A title contributed to an already known work by a further"
+    " record is added as an AlternativeTitle. The more specific type"
+    " a 246 states in its second indicator is only kept for the"
+    " record that creates the work, as in the PBCore mapping.",
+    "The ISBD punctuation MARC uses to separate one field from the"
+    " next on a catalogue card is removed from titles, agent names"
+    " and notes. It belongs to the display of a card, not to the"
+    " value.",
     "A blank in 007 position 05 means silent, not uncoded, so the"
     " profile vocabulary is consulted before a position is dismissed"
-    " as a fill character. Everywhere else a blank, a vertical bar or"
-    " a hash means that nothing was coded and is passed over silently.",
+    " as a fill character. The MARC documentation writes a blank as"
+    " `#` and exports generated from it carry that spelling, so the"
+    " vocabulary is consulted for both. Everywhere else a blank, a"
+    " vertical bar or a hash means that nothing was coded and is"
+    " passed over silently.",
     "The character positions of 007 depend on 007/00. For a motion"
     " picture position 04 is the presentation format and 07 the film"
     " gauge; for a videorecording 04 is the videorecording format and"
@@ -525,7 +538,7 @@ def new_context(profile: Marc21Profile) -> MappingContext:
 
 
 def report_placeholder_issuer(profile: Marc21Profile):
-    """Warn once per run when the placeholder issuer is still in use."""
+    """Warn per input file when the placeholder issuer is in use."""
     if profile.issuer_info.get("has_issuer_id") != PLACEHOLDER_ISSUER_ID:
         return
     report_issue(
@@ -563,7 +576,7 @@ def map_record(
     titles = collect_titles(marc_record, profile, source_key)
     if not titles:
         raise ValueError(f"MARC record {source_key} has no usable 245 title")
-    primary, alternatives = titles[0], titles[1:]
+    primary, alternatives = titles[0][0], titles[1:]
 
     dates = dates_from_008(marc_record, profile, source_key)
     production_activities, publication_activities = collect_activities(
@@ -591,7 +604,7 @@ def map_record(
     if is_new:
         new_records.append(work)
     else:
-        merge_alternative_titles(work, alternatives)
+        merge_alternative_titles(work, [title for title, _ in alternatives])
     work_id = work.has_identifier[0]
 
     carrier = carrier_from_007(marc_record, profile, source_key)
@@ -770,8 +783,20 @@ def make_manifestation_key(work_key: str, item) -> str:
 # --- titles -----------------------------------------------------------
 
 
-def collect_titles(marc_record, profile, source_key) -> list[SourceTitle]:
-    """Return the titles of a record, the primary one first."""
+def collect_titles(
+    marc_record, profile, source_key
+) -> list[tuple[SourceTitle, str]]:
+    """Return the titles of a record, the primary one first.
+
+    Returns
+    -------
+    list
+        Pairs of title and AVefi title type, the title proper first.
+        The type of the primary title is decided by the caller, which
+        is the only place that knows whether the title is going to a
+        work, a manifestation or an item.
+
+    """
     language = record_language(marc_record, profile)
     primary = []
     for data_field in marc_record.fields("245"):
@@ -795,7 +820,7 @@ def collect_titles(marc_record, profile, source_key) -> list[SourceTitle]:
             target_field="has_primary_title.has_ordering_name",
         )
         if title:
-            primary.append(title)
+            primary.append((title, "PreferredTitle"))
 
     alternatives = []
     for tag in ("246", "247"):
@@ -820,8 +845,39 @@ def collect_titles(marc_record, profile, source_key) -> list[SourceTitle]:
                     target_field="has_alternative_title",
                     raw_value=title.display,
                 )
-            alternatives.append(title)
+                alternatives.append((title, "AlternativeTitle"))
+                continue
+            alternatives.append(
+                (title, varying_title_type(data_field, profile, source_key))
+            )
     return primary + alternatives
+
+
+def varying_title_type(data_field, profile, source_key) -> str:
+    """Return the AVefi title type a 246 field states in ind2.
+
+    MARC distinguishes nine kinds of varying title in the second
+    indicator. AVefi has a type for one of them, the parallel title,
+    which is a title in another language; the remaining distinctions
+    have no AVefi counterpart, so the title is kept as an
+    AlternativeTitle and the loss is reported.
+
+    """
+    indicator = data_field.ind2
+    mapped = profile.varying_title_type_map.get(indicator)
+    if mapped:
+        return mapped
+    if not is_fill(indicator):
+        report_issue(
+            "info",
+            "AVefi has no title type for this kind of varying title,"
+            " the title is kept as an alternative title",
+            record_id=source_key,
+            source_field="246 ind2",
+            target_field="has_alternative_title.type",
+            raw_value=indicator,
+        )
+    return "AlternativeTitle"
 
 
 def nonfiling_count(indicator: str) -> int:
@@ -1186,12 +1242,16 @@ def mapped_code(
 
     The vocabulary is consulted before the code is dismissed as a fill
     character, because 007 position 05 defines the blank as "silent"
-    rather than as "not coded".
+    rather than as "not coded". It is consulted for both spellings of
+    the blank, so that an export writing it as the documented ``#``
+    yields the same value as one carrying the blank itself.
 
     """
     if not code:
         return None
     mapped = vocabulary.get(code)
+    if mapped is None:
+        mapped = vocabulary.get(as_blank(code))
     if mapped is not None:
         return mapped
     if is_fill(code):
@@ -1227,8 +1287,8 @@ def build_work(marc_record, primary, alternatives, profile, source_key):
         type=work_variant_type(marc_record, profile, source_key),
         has_primary_title=as_title(primary, "PreferredTitle"),
     )
-    for title in alternatives:
-        work.has_alternative_title.append(as_title(title, "AlternativeTitle"))
+    for title, title_type in alternatives:
+        work.has_alternative_title.append(as_title(title, title_type))
     for name in genre_names(marc_record, profile, source_key):
         work.has_genre.append(efi.Genre(has_name=name))
     report_technique(marc_record, source_key)
@@ -1826,7 +1886,7 @@ def item_notes(marc_record, source_key):
     """Yield the notes a copy carries, in a stable order."""
     for tag in ("300", "500", "508", "511", "546", "852"):
         for data_field in marc_record.fields(tag):
-            text = field_text(data_field, note_subfields(tag))
+            text = note_text(data_field, note_subfields(tag))
             if not text:
                 continue
             if tag in ("508", "511"):
@@ -1843,6 +1903,18 @@ def item_notes(marc_record, source_key):
             yield f"{label}: {text}" if label else text
 
 
+def note_text(data_field, codes=None) -> str:
+    """Return the text of a note field, without its ISBD markup.
+
+    The punctuation at the end of a MARC field separates it from the
+    next one on a catalogue card. An AVefi note is free text, so the
+    terminal punctuation is dropped, exactly as it is for a title or
+    an agent name.
+
+    """
+    return strip_trailing_period(strip_isbd(field_text(data_field, codes)))
+
+
 def note_subfields(tag: str):
     """Return the subfields of a note field that carry text."""
     if tag == "852":
@@ -1855,7 +1927,7 @@ def note_subfields(tag: str):
 def manifestation_notes(marc_record, source_key):
     """Yield the notes that belong to the manifestation."""
     for data_field in marc_record.fields("250"):
-        text = field_text(data_field, ("a", "b"))
+        text = note_text(data_field, ("a", "b"))
         if not text:
             continue
         report_issue(

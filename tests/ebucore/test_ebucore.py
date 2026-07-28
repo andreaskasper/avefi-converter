@@ -168,7 +168,10 @@ def test_genre_terms_are_split_into_form_and_genre(input_path):
         and record.has_primary_title.has_name == "Die Brücke"
     )
     assert list(work.has_form) == ["Feature"]
-    assert [genre.has_name for genre in work.has_genre] == ["Kriegsfilm"]
+    assert [genre.has_name for genre in work.has_genre] == [
+        "Feature",
+        "Kriegsfilm",
+    ], "The provider called the term a genre, so it stays one"
     assert [s.has_name for s in work.has_subject] == ["Nachkriegszeit"]
 
 
@@ -245,20 +248,135 @@ def test_technical_detail_is_reported(input_path):
     video = entries_for(report, "EBU-0002", "format/videoFormat")
     assert video and video[0].raw_value == ["height", "width"]
     formats = entries_for(report, "EBU-0003", "format")
-    assert formats and formats[0].raw_value == ["fileName", "fileSize"]
+    assert formats and formats[0].raw_value == ["fileName"]
 
 
 def test_unmapped_core_elements_are_reported(input_path):
     report = report_for(input_path)
     core = entries_for(report, "EBU-0003", "coreMetadata")
-    assert core and core[0].raw_value == ["isPartOf"]
+    assert not core, "Nothing is left unmapped in that record"
 
 
-def test_further_identifiers_are_reported(input_path):
+RECORD = """\
+  <ebuCoreMain xmlns="urn:ebu:metadata-schema:ebucore"
+               xmlns:dc="http://purl.org/dc/elements/1.1/"
+               version="1.10" xml:lang="de" documentId="{key}">
+    <coreMetadata>
+      <title><dc:title>{title}</dc:title></title>
+      <identifier><dc:identifier>{key}</dc:identifier></identifier>
+      <date><produced year="{year}"/></date>
+      {relation}
+    </coreMetadata>
+  </ebuCoreMain>
+"""
+
+
+def two_records(tmp_path, name="related.xml"):
+    """Write a document whose second record is part of the first."""
+    target = tmp_path / name
+    target.write_text(
+        "<ebuCoreRecords>"
+        + RECORD.format(
+            key="EBU-COLLECTION-7",
+            title="Werbefilmsammlung",
+            year="1960",
+            relation="",
+        )
+        + RECORD.format(
+            key="EBU-0009",
+            title="Ein Werbefilm",
+            year="1962",
+            relation="<isPartOf><dc:relation>EBU-COLLECTION-7"
+            "</dc:relation></isPartOf>",
+        )
+        + "</ebuCoreRecords>",
+        encoding="utf-8",
+    )
+    return target
+
+
+def test_is_part_of_becomes_a_work_relation(tmp_path):
+    """WorkVariant.is_part_of exists, so isPartOf is not a loss."""
+    records = ebucore.efi_import(two_records(tmp_path))
+    works = {
+        record.described_by[0].has_source_key[0]: record
+        for record in records
+        if record.category == "avefi:WorkVariant"
+    }
+    assert [resource.id for resource in works["EBU-0009"].is_part_of] == [
+        works["EBU-COLLECTION-7"].has_identifier[0].id
+    ]
+
+
+def test_an_unresolved_relation_is_reported_and_not_asserted(input_path):
+    """AVefi rejects a reference resolving to no record in the set."""
+    efi_records = convert(input_path)
+    work = next(
+        record
+        for record in efi_records
+        if record.category == "avefi:WorkVariant"
+        and record.has_primary_title.has_name == "Ohne Titel, Werbefilm"
+    )
+    assert work.is_part_of == []
+    report = report_for(input_path)
+    assert [
+        entry
+        for entry in report.entries
+        if entry.target_field == "is_part_of"
+        and entry.raw_value == "EBU-COLLECTION-7"
+        and entry.severity == "warning"
+    ]
+
+
+def test_further_identifiers_are_kept_on_the_item(input_path):
+    """has_identifier is a list; an ISAN must not be thrown away."""
+    efi_records = convert(input_path)
+    item = next(
+        record
+        for record in efi_records
+        if record.category == "avefi:Item"
+        and record.described_by.has_source_key == ["EBU-0001"]
+    )
+    assert [resource.id for resource in item.has_identifier] == [
+        "EBU-0001",
+        "ISAN 0000-0000-3A8D-0000-Z-0000-0000-6",
+    ]
+
+
+def test_the_scheme_of_a_further_identifier_is_reported(input_path):
     report = report_for(input_path)
     entries = entries_for(report, "EBU-0001", "identifier")
     assert entries
     assert entries[0].raw_value["typeLabel"] == "ISAN"
+    assert "no resource class" in entries[0].message
+
+
+def test_a_description_is_reported_rather_than_noted(input_path):
+    """The other converters refuse a description; so does this one."""
+    efi_records = convert(input_path)
+    notes = [
+        note
+        for record in efi_records
+        for note in getattr(record, "has_note", None) or []
+    ]
+    assert notes == [], "A synopsis is not a note on a print"
+    report = report_for(input_path)
+    entries = entries_for(report, "EBU-0001", "description/dc:description")
+    assert entries and entries[0].severity == "warning"
+
+
+def test_a_file_size_becomes_an_extent(input_path):
+    """Item.has_extent holds a size in bytes as a byte based unit."""
+    efi_records = convert(input_path)
+    item = next(
+        record
+        for record in efi_records
+        if record.category == "avefi:Item"
+        and record.described_by.has_source_key == ["EBU-0003"]
+    )
+    assert item.has_extent is not None
+    assert item.has_extent.has_unit == "GigaByte"
+    assert float(item.has_extent.has_value) == 4.5
 
 
 def test_timecode_frames_are_reported(input_path):

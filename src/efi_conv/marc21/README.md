@@ -35,7 +35,7 @@ Write a profile as a module of its own, in the same way as
 
 ```python
 from efi_conv.marc21 import Marc21Profile
-from efi_conv.marc21 import efi_import as marc21_import
+from efi_conv.marc21.mapping import efi_import as marc21_import
 
 ISSUER_INFO = {
     "has_issuer_id": "https://w3id.org/isil/DE-Mb112",

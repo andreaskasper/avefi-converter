@@ -10,7 +10,8 @@ do not edit by hand.
 | `levels` | Work, Manifestation, Item | `—` | `WorkVariant, Manifestation, Item` | One of each per record | Dublin Core cannot express the distinction, so the three levels are asserted; reported per record at warning |
 | `primary_title` | Work, Manifestation, Item | `dc:title (first)` | `has_primary_title.has_name, has_primary_title.has_ordering_name` | Article handling in both directions | The order of the elements in the record is the only clue available for picking the primary title |
 | `alternative_title` | Work | `dc:title (remaining)` | `has_alternative_title` | Article handling in both directions | — |
-| `genre` | Work | `dc:subject, dc:type` | `has_genre.has_name` | — | dc:type terms that identified the record as film are consumed by the film filter instead |
+| `genre` | Work | `dc:type` | `has_genre.has_name` | — | dc:type says what kind of resource the record describes; the terms that identified it as film are consumed by the film filter instead |
+| `subject` | Work | `dc:subject` | `has_subject.has_name (Subject)` | — | DCMI defines dc:subject as the topic of the resource, and AVefi separates topical subject from genre, as the PBCore, EBUCore and EN 15907 converters do as well |
 | `production_date` | Work | `dc:date (first)` | `has_event.has_date (ProductionEvent)` | ISODate; abbreviated intervals expanded | Dublin Core does not say what happened on the date; it is read as the production date. Further dc:date values are reported |
 | `director` | Work | `dc:creator` | `has_event.has_activity (DirectingActivity)` | Profile creator_is_director | Only when the provider has confirmed that dc:creator holds the director; otherwise creators are reported as unmapped |
 | `contributor` | Work | `dc:contributor` | `—` | — | Dublin Core does not say in what capacity a contributor contributed, so no activity can be derived |
@@ -19,7 +20,7 @@ do not edit by hand.
 | `format` | Item | `dc:format` | `has_format (Film)` | Profile format_map | dc:format is also used for MIME types and file sizes, which are reported rather than mapped |
 | `webresource` | Item | `dc:relation, dc:source` | `has_webresource` | Only values that are http(s) URIs | Non-URI relations are reported; Dublin Core does not say what the relation is |
 | `dropped` | — | `dc:description, dc:coverage, dc:rights` | `—` | — | No AVefi target; reported per value so that the loss is visible in the conversion report |
-| `issuer` | Work, Manifestation, Item | `profile issuer_info` | `described_by.has_issuer_id, described_by.has_issuer_name` | — | Dublin Core does not name the holding institution. The shipped value is a placeholder and is reported once per run |
+| `issuer` | Work, Manifestation, Item | `profile issuer_info` | `described_by.has_issuer_id, described_by.has_issuer_name` | — | Dublin Core does not name the holding institution. The shipped value is a placeholder and is reported once per input file |
 
 ## Assumptions
 
@@ -33,6 +34,7 @@ Decisions the mapping takes that Dublin Core does not determine, and that need c
 - A `dc:publisher` becomes a PublicationEvent of type `UnknownEvent`, because Dublin Core does not say what kind of publication took place.
 - `WorkVariant.type` is always `Monographic`; serial and analytic works are not derivable from Dublin Core.
 - A record without a recognised `dc:type` is skipped rather than imported as a film, as in the LIDO converter.
-- The shipped issuer is the documented placeholder `https://w3id.org/avefi/issuer/unspecified`. It has to be replaced with the ISIL of the data provider before identifiers are registered; the converter reports this once per run.
+- The shipped issuer is the documented placeholder `https://w3id.org/avefi/issuer/unspecified`. It has to be replaced with the ISIL of the data provider before identifiers are registered; the converter reports this once per input file.
 - Decade expressions such as `50er Jahre` are reported as unconvertible unless `map_decades` is enabled, as in the LIDO converter.
+- `dc:subject` is read as the topic of the resource and becomes `has_subject`, following the DCMI definition of the element and the PBCore, EBUCore and EN 15907 converters. Only `dc:type` terms that did not identify the record as film become genres. A provider whose `dc:subject` holds genre terms has to move them in a mapping of its own.
 - `dc:description`, `dc:coverage` and `dc:rights` have no AVefi target and are reported per value.

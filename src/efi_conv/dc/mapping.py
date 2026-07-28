@@ -63,7 +63,7 @@ INPUT_FORMAT = "XML (OAI-PMH oai_dc, unqualified Dublin Core)"
 
 #: Placeholder issuer. Dublin Core says nothing about who holds the
 #: material, and an ISIL must not be guessed, so the shipped value is
-#: documented as a placeholder and reported once per run.
+#: documented as a placeholder and reported once per input file.
 PLACEHOLDER_ISSUER_ID = "https://w3id.org/avefi/issuer/unspecified"
 ISSUER_INFO = {
     "has_issuer_id": PLACEHOLDER_ISSUER_ID,
@@ -197,10 +197,20 @@ MAPPING_RULES = (
     MappingRule(
         "genre",
         "Work",
-        "dc:subject, dc:type",
+        "dc:type",
         "has_genre.has_name",
-        notes="dc:type terms that identified the record as film are"
+        notes="dc:type says what kind of resource the record"
+        " describes; the terms that identified it as film are"
         " consumed by the film filter instead",
+    ),
+    MappingRule(
+        "subject",
+        "Work",
+        "dc:subject",
+        "has_subject.has_name (Subject)",
+        notes="DCMI defines dc:subject as the topic of the resource,"
+        " and AVefi separates topical subject from genre, as the"
+        " PBCore, EBUCore and EN 15907 converters do as well",
     ),
     MappingRule(
         "production_date",
@@ -279,7 +289,7 @@ MAPPING_RULES = (
         "described_by.has_issuer_id, described_by.has_issuer_name",
         notes="Dublin Core does not name the holding institution."
         " The shipped value is a placeholder and is reported once per"
-        " run",
+        " input file",
     ),
 )
 
@@ -318,10 +328,16 @@ ASSUMPTIONS = (
     "The shipped issuer is the documented placeholder"
     " `https://w3id.org/avefi/issuer/unspecified`. It has to be"
     " replaced with the ISIL of the data provider before identifiers"
-    " are registered; the converter reports this once per run.",
+    " are registered; the converter reports this once per input file.",
     "Decade expressions such as `50er Jahre` are reported as"
     " unconvertible unless `map_decades` is enabled, as in the LIDO"
     " converter.",
+    "`dc:subject` is read as the topic of the resource and becomes"
+    " `has_subject`, following the DCMI definition of the element and"
+    " the PBCore, EBUCore and EN 15907 converters. Only `dc:type`"
+    " terms that did not identify the record as film become genres."
+    " A provider whose `dc:subject` holds genre terms has to move"
+    " them in a mapping of its own.",
     "`dc:description`, `dc:coverage` and `dc:rights` have no AVefi"
     " target and are reported per value.",
 )
@@ -442,7 +458,7 @@ def convert(
 
 
 def report_placeholder_issuer(profile: DcProfile):
-    """Say once per run that the issuer still has to be supplied."""
+    """Say once per input file that the issuer has to be supplied."""
     if profile.issuer_info.get("has_issuer_id") != PLACEHOLDER_ISSUER_ID:
         return
     report_issue(
@@ -502,6 +518,8 @@ def map_record(
             )
         for term in genre_terms(values, profile):
             work.has_genre.append(efi.Genre(has_name=term))
+        for term in subject_terms(values):
+            work.has_subject.append(efi.Subject(has_name=term))
         if production is not None:
             work.has_event.append(production)
         return work
@@ -647,16 +665,28 @@ def collect_titles(values, profile, source_key) -> list[SourceTitle]:
 def genre_terms(values, profile):
     """Yield the terms recorded as genre.
 
-    ``dc:subject`` is the closest Dublin Core comes to a genre. The
-    ``dc:type`` terms that identified the record as film carry no
-    information about the film itself and are left to the film filter.
+    ``dc:type`` says what kind of resource a record describes, which
+    is what an AVefi genre states about a film. The terms that
+    identified the record as film carry no information about the film
+    itself and are left to the film filter.
 
     """
-    for term in texts(values, "subject"):
-        yield term
     for term in texts(values, "type"):
         if term.lower() not in profile.film_type_terms:
             yield term
+
+
+def subject_terms(values):
+    """Yield the terms recorded as the topic of the resource.
+
+    DCMI defines ``dc:subject`` as the topic of the resource, and
+    AVefi keeps a topical subject apart from a genre. A period, a
+    place or an event named there is not a genre, so it goes to
+    ``has_subject``, as it does in the PBCore, EBUCore and EN 15907
+    converters.
+
+    """
+    yield from texts(values, "subject")
 
 
 def build_production_event(values, profile, source_key):

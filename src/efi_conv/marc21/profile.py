@@ -82,6 +82,15 @@ DIMENSION_FORMAT_MAP = {
     "super 16 mm": ("Film", "Super16mmFilm"),
 }
 
+#: Second indicator of field 246 to an AVefi title type. MARC
+#: distinguishes nine kinds of varying title there; only the parallel
+#: title of ind2=1, which is the title in another language, has an
+#: AVefi counterpart. The others are reported and the title is kept as
+#: an AlternativeTitle rather than dropped.
+VARYING_TITLE_TYPE_MAP = {
+    "1": "TranslatedTitle",
+}
+
 #: MARC relator codes and terms to an AVefi activity class and type.
 #: Terms are matched in lower case, so that "Director" and "Regie" both
 #: resolve. Anything absent from this table is reported rather than
@@ -202,6 +211,10 @@ class Marc21Profile:
         Field 007 position 11 to AVefi ItemAccessStatusEnum value.
     dimension_format_map : dict
         Field 300 $c to a pair of AVefi format class and type.
+    varying_title_type_map : dict
+        Second indicator of field 246 to an AVefi TitleTypeEnum value.
+        An indicator that is coded but not listed is reported and the
+        title kept as an AlternativeTitle.
     relator_activities : dict
         Relator code or lower case relator term to a pair of AVefi
         activity class and type.
@@ -240,6 +253,9 @@ class Marc21Profile:
     )
     dimension_format_map: dict = field(
         default_factory=lambda: dict(DIMENSION_FORMAT_MAP)
+    )
+    varying_title_type_map: dict = field(
+        default_factory=lambda: dict(VARYING_TITLE_TYPE_MAP)
     )
     relator_activities: dict = field(
         default_factory=lambda: dict(RELATOR_ACTIVITIES)

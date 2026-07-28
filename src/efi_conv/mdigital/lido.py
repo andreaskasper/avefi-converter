@@ -12,7 +12,9 @@ through the OAI-PMH endpoint of that instance and through the ``lido``
 output of its object API. The issuer configured here is therefore
 museum-digital itself, which is a stand-in: a real conversion replaces
 it with the ISIL of the museum whose holdings are being converted, see
-the README next to this module.
+the README next to this module. The converter reports that once per
+input file, together with the institutions the records name in
+``lido:recordSource``, which the mapping does not read.
 
 The vocabularies below were compiled from the terminology museum-digital
 uses in its German interface and from the LIDO structures its export is
@@ -36,7 +38,8 @@ import sys
 
 from avefi_schema import model_pydantic_v2 as efi
 
-from ..lido import LidoProfile, MappingContext
+from ..core.report import for_file, report_issue
+from ..lido import LidoProfile, MappingContext, parse_lido
 from ..lido import efi_import as lido_import
 from ..lido import new_context as lido_new_context
 
@@ -131,13 +134,105 @@ PROFILE = LidoProfile(
 )
 
 
+def report_stand_in_issuer(input_file, profile: LidoProfile):
+    """Say that the issuer is a stand-in, and name what the file says.
+
+    museum-digital publishes on behalf of the museums that hold the
+    material. AVefi identifiers are registered by and for the holding
+    institution, so records carrying this issuer must not be
+    registered, and the run says so rather than leaving it to be
+    noticed later.
+
+    The export names the institution it came from in
+    ``lido:recordSource``. The generic mapping does not read that
+    element — the issuer comes from the profile, so that it is
+    unambiguous for the whole conversion — so the values found are
+    reported here. Nothing read here reaches an AVefi record.
+
+    Parameters
+    ----------
+    input_file
+        Path of the LIDO document.
+    profile : LidoProfile
+        The profile the conversion runs with. A profile carrying a
+        real ISIL is not reported.
+
+    """
+    if profile.issuer_info != ISSUER_INFO:
+        return
+    report_issue(
+        "warning",
+        "The issuer shipped with this converter is a stand-in."
+        " Replace it with the ISIL of the museum that holds"
+        " the material before identifiers are registered",
+        source_field="profile issuer_info",
+        target_field="described_by.has_issuer_id",
+        raw_value=ISSUER_INFO["has_issuer_id"],
+    )
+    for source in record_sources(input_file):
+        report_issue(
+            "warning",
+            "The record names this institution as its source. The"
+            " mapping does not transfer it: AVefi takes the issuer"
+            " from the profile, so that one conversion has one"
+            " issuer",
+            source_field="lido:recordSource",
+            target_field="—",
+            raw_value=source,
+        )
+
+
+def record_sources(input_file) -> list[dict]:
+    """Return the legal bodies the records of a file name, once each.
+
+    A LIDO record states where it came from in
+    ``lido:recordSource``, by identifier in ``lido:legalBodyID`` and
+    by name in ``lido:legalBodyName``. An aggregated export carries
+    the holdings of several institutions, and this is the only place
+    saying which.
+
+    """
+    found = []
+    for record in parse_lido(input_file):
+        for administrative in record.administrative_metadata or []:
+            wrap = administrative.record_wrap
+            for source in (wrap.record_source if wrap else None) or []:
+                entry = {
+                    "legalBodyID": first_text(source.legal_body_id),
+                    "legalBodyName": first_appellation(source.legal_body_name),
+                }
+                if any(entry.values()) and entry not in found:
+                    found.append(entry)
+    return found
+
+
+def first_text(elements) -> str | None:
+    """Return the text of the first of ``elements``, if there is one."""
+    for element in elements or []:
+        value = (getattr(element, "value", None) or "").strip()
+        if value:
+            return value
+    return None
+
+
+def first_appellation(elements) -> str | None:
+    """Return the first appellation value of a LIDO legal body."""
+    for element in elements or []:
+        value = first_text(element.appellation_value)
+        if value:
+            return value
+    return None
+
+
 def efi_import(
     input_file,
     continue_on_error: bool = False,
     context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a museum-digital LIDO export into AVefi records."""
-    return lido_import(input_file, PROFILE, continue_on_error, context)
+    with for_file(input_file):
+        report_stand_in_issuer(input_file, PROFILE)
+        return lido_import(input_file, PROFILE, continue_on_error, context)
 
 
 def convert(
@@ -154,7 +249,9 @@ def convert(
     profile loaded from a file.
 
     """
-    return lido_import(input_file, profile, continue_on_error, context)
+    with for_file(input_file):
+        report_stand_in_issuer(input_file, profile)
+        return lido_import(input_file, profile, continue_on_error, context)
 
 
 def new_context(profile: LidoProfile | None = None) -> MappingContext:
@@ -170,32 +267,25 @@ def new_context(profile: LidoProfile | None = None) -> MappingContext:
 
 
 def main(argv=None):
-    """Convert INPUT and write the records to OUTPUT or stdout."""
-    from ..core import avefi
+    """Convert INPUT and write the records to OUTPUT or stdout.
 
-    argv = sys.argv[1:] if argv is None else list(argv)
-    if not argv or argv[0] in ("-h", "--help"):
-        print(
-            "Usage: python -m efi_conv.mdigital.lido INPUT"
-            " [OUTPUT.json]\n"
-            "\n"
-            "Convert a LIDO export of a museum-digital instance into"
-            " AVefi records.\n"
-            "Equivalent to: efi-conv from -f mdigital.lido -o OUTPUT"
-            " INPUT",
-            file=sys.stderr if not argv else sys.stdout,
-        )
-        return 0 if argv else 2
-    if len(argv) > 2:
-        print("Expected at most two arguments, see --help", file=sys.stderr)
-        return 2
+    A file that cannot be read is reported as an error naming the file
+    rather than as a traceback; pass -v for the traceback.
 
-    records = efi_import(argv[0])
-    if len(argv) == 2:
-        avefi.dump(avefi.sort_records(records), argv[1])
-    else:
-        print(avefi.dumps(avefi.sort_records(records), indent=2))
-    return 0
+    """
+    from ..core.cli import run_converter_main
+
+    return run_converter_main(
+        argv,
+        "Usage: python -m efi_conv.mdigital.lido INPUT"
+        " [OUTPUT.json]\n"
+        "\n"
+        "Convert a LIDO export of a museum-digital instance into"
+        " AVefi records.\n"
+        "Equivalent to: efi-conv from -f mdigital.lido -o OUTPUT"
+        " INPUT",
+        efi_import,
+    )
 
 
 if __name__ == "__main__":

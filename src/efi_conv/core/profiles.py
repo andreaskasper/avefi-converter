@@ -32,7 +32,10 @@ The document is JSON or TOML::
 Anything under ``settings`` names a field of that converter's profile
 class. An unknown name is an error rather than something to ignore: a
 misspelt vocabulary would otherwise look like a working profile and
-quietly lose every value it was meant to map.
+quietly lose every value it was meant to map. So is a value of the
+wrong type, for the same reason: a vocabulary written as an array
+rather than as a table maps nothing, and the conversion only finds out
+about it somewhere in the middle of a file.
 
 """
 
@@ -42,6 +45,8 @@ import logging
 import pathlib
 import tomllib
 import types
+import typing
+import urllib.parse
 
 log = logging.getLogger(__name__)
 
@@ -118,6 +123,180 @@ def load_profile_document(path) -> dict:
     return document
 
 
+#: What a declared profile field accepts in a profile document, and
+#: how to name it in a message. Neither JSON nor TOML has a set or a
+#: tuple, so every collection arrives as an array whatever the
+#: dataclass declares.
+TYPE_EXPECTATIONS = {
+    "dict": ((dict,), "a table"),
+    "frozenset": ((list, tuple, set, frozenset), "an array"),
+    "set": ((list, tuple, set, frozenset), "an array"),
+    "tuple": ((list, tuple), "an array"),
+    "list": ((list, tuple), "an array"),
+    "str": ((str,), "a string"),
+    "bool": ((bool,), "true or false"),
+    "int": ((int,), "an integer"),
+    "float": ((int, float), "a number"),
+    "NoneType": ((type(None),), "null"),
+}
+
+#: How to name what a profile document actually supplied.
+VALUE_NAMES = {
+    "dict": "a table",
+    "list": "an array",
+    "tuple": "an array",
+    "set": "an array",
+    "str": "a string",
+    "bool": "true or false",
+    "int": "an integer",
+    "float": "a number",
+    "NoneType": "null",
+}
+
+#: Longest value shown in an error message. A vocabulary of several
+#: hundred terms says nothing useful once it is on the screen.
+MAX_SHOWN_VALUE = 120
+
+#: What a profile has to state about the issuer.
+REQUIRED_ISSUER_KEYS = ("has_issuer_id", "has_issuer_name")
+
+
+def describe_value(value) -> str:
+    """Return how to name ``value`` in a message."""
+    name = type(value).__name__
+    return VALUE_NAMES.get(name, f"a {name}")
+
+
+def show_value(value) -> str:
+    """Return ``value`` rendered short enough to read in a message."""
+    shown = repr(value)
+    if len(shown) > MAX_SHOWN_VALUE:
+        shown = f"{shown[: MAX_SHOWN_VALUE - 3]}..."
+    return shown
+
+
+def type_expectation(field_type):
+    """Return what a field declared as ``field_type`` accepts.
+
+    Parameters
+    ----------
+    field_type
+        The annotation the profile dataclass declares the field with.
+
+    Returns
+    -------
+    tuple or None
+        The acceptable Python types and how to name them, or None for
+        an annotation this module has no rule for. An unusual
+        annotation is passed through rather than refused, because
+        refusing a value the converter would have accepted is worse
+        than not checking it.
+
+    """
+    origin = typing.get_origin(field_type)
+    if origin in (typing.Union, types.UnionType):
+        accepted = ()
+        names = []
+        for argument in typing.get_args(field_type):
+            expectation = type_expectation(argument)
+            if expectation is None:
+                return None
+            accepted += expectation[0]
+            names.append(expectation[1])
+        return accepted, " or ".join(dict.fromkeys(names))
+    if origin is not None:
+        field_type = origin
+    if isinstance(field_type, str):
+        # Annotations are objects here, but a converter written with
+        # `from __future__ import annotations` would deliver strings.
+        parts = [part.strip() for part in field_type.split("|")]
+        expectations = [TYPE_EXPECTATIONS.get(part) for part in parts]
+        if any(expectation is None for expectation in expectations):
+            return None
+        accepted = ()
+        for expectation in expectations:
+            accepted += expectation[0]
+        return accepted, " or ".join(
+            dict.fromkeys(expectation[1] for expectation in expectations)
+        )
+    return TYPE_EXPECTATIONS.get(getattr(field_type, "__name__", ""))
+
+
+def check_setting_type(name: str, value, field_type, profile_class):
+    """Refuse a setting whose value is not of the declared type.
+
+    Raises
+    ------
+    ProfileError
+        The value cannot be turned into what the field is declared
+        with. The message names the setting, what was given and what
+        was expected, because that is what has to be corrected in the
+        document.
+
+    """
+    expectation = type_expectation(field_type)
+    if expectation is None:
+        return
+    accepted, expected = expectation
+    acceptable = isinstance(value, accepted)
+    if isinstance(value, bool) and bool not in accepted:
+        # bool is a subclass of int, and true is not a number here.
+        acceptable = False
+    if acceptable:
+        return
+    raise ProfileError(
+        f"Profile setting '{name}' of {profile_class.__name__} expects"
+        f" {expected}, got {describe_value(value)}: {show_value(value)}"
+    )
+
+
+def check_issuer(issuer):
+    """Refuse an issuer a conversion cannot be run with.
+
+    Both keys are checked, not just the one that happens to be looked
+    at first: ``described_by`` needs the name as much as the id, and a
+    profile missing it fails in the middle of a conversion, as a
+    pydantic error about a record rather than about the profile that
+    caused it.
+
+    Raises
+    ------
+    ProfileError
+        The issuer is not a table, does not state both keys, or states
+        an id that is not a URI.
+
+    """
+    if not isinstance(issuer, dict):
+        raise ProfileError(
+            f"Profile must supply an issuer with"
+            f" {' and '.join(REQUIRED_ISSUER_KEYS)}, got"
+            f" {describe_value(issuer)}: {show_value(issuer)}"
+        )
+    for key in REQUIRED_ISSUER_KEYS:
+        value = issuer.get(key)
+        if value is None:
+            raise ProfileError(
+                f"Profile issuer does not state {key};"
+                f" {' and '.join(REQUIRED_ISSUER_KEYS)} are both"
+                f" required"
+            )
+        if not isinstance(value, str):
+            raise ProfileError(
+                f"Profile issuer {key} must be a string, got"
+                f" {describe_value(value)}: {show_value(value)}"
+            )
+        if not value.strip():
+            raise ProfileError(f"Profile issuer {key} is empty")
+    issuer_id = issuer["has_issuer_id"].strip()
+    parsed = urllib.parse.urlsplit(issuer_id)
+    if not parsed.scheme or not (parsed.netloc or parsed.path):
+        raise ProfileError(
+            f"Profile issuer has_issuer_id must be a URI, for instance"
+            f" https://w3id.org/isil/DE-MUS-000000, got"
+            f" {show_value(issuer_id)}"
+        )
+
+
 def coerce(value, field_type):
     """Return ``value`` as the type the profile field is declared with.
 
@@ -146,7 +325,8 @@ def build_profile(document: dict, profile_class):
     ------
     ProfileError
         The document names a setting the profile class does not have,
-        or it does not supply the issuer.
+        gives one a value of the wrong type, or does not supply a
+        usable issuer.
 
     """
     known = {field.name: field for field in fields(profile_class)}
@@ -166,14 +346,16 @@ def build_profile(document: dict, profile_class):
             f" {', '.join(unknown)}."
             f" Known settings: {', '.join(sorted(known))}"
         )
-    issuer_info = settings.get("issuer_info")
-    if not isinstance(issuer_info, dict) or not issuer_info.get(
-        "has_issuer_id"
-    ):
+    if "issuer_info" not in settings:
         raise ProfileError(
-            "Profile must supply an issuer with has_issuer_id and"
-            " has_issuer_name"
+            f"Profile must supply an issuer with"
+            f" {' and '.join(REQUIRED_ISSUER_KEYS)}"
         )
+    check_issuer(settings["issuer_info"])
+    for name, value in settings.items():
+        if name == "issuer_info":
+            continue
+        check_setting_type(name, value, known[name].type, profile_class)
     values = {
         name: coerce(value, known[name].type)
         for name, value in settings.items()
@@ -235,8 +417,24 @@ class ConfiguredImporter:
         return factory(self.profile)
 
 
-def configure(module: types.ModuleType, path) -> ConfiguredImporter:
+def configure(
+    module: types.ModuleType,
+    path,
+    allow_format_mismatch: bool = False,
+) -> ConfiguredImporter:
     """Return ``module`` bound to the profile stored at ``path``.
+
+    Parameters
+    ----------
+    module
+        The converter to configure.
+    path
+        Profile document, JSON or TOML.
+    allow_format_mismatch : bool
+        Use a profile written for another converter anyway. There is
+        no good reason to, but somebody keeping two nearly identical
+        deliveries in one file should be able to say so deliberately
+        rather than be stopped.
 
     Raises
     ------
@@ -254,10 +452,19 @@ def configure(module: types.ModuleType, path) -> ConfiguredImporter:
     declared = document.get("format")
     expected = module.__name__.removeprefix("efi_conv.")
     if declared is not None and declared != expected:
-        log.warning(
-            f"Profile {path} declares format '{declared}' but is being"
-            f" used with '{expected}'"
+        message = (
+            f"Profile {path} was written for the '{declared}' converter"
+            f" but is being used with '{expected}'. The vocabularies of"
+            f" a profile are the terms of one source schema and mean"
+            f" nothing in another, so the issuer would be stamped on"
+            f" records mapped by rules this profile was never checked"
+            f" against. Convert with -f {declared}, correct the"
+            f" 'format' key of the profile, or pass"
+            f" --allow-profile-format-mismatch if you mean it."
         )
+        if not allow_format_mismatch:
+            raise ProfileError(message)
+        log.warning(message)
     profile = build_profile(document, profile_class)
     log.info(
         f"Configured {expected} from {path}"

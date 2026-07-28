@@ -83,7 +83,7 @@
     "is_part_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "SERIES-42"
+        "id": "Classic_Cinema_SERIES-42_work"
       }
     ],
     "type": "Monographic"
@@ -161,6 +161,10 @@
       {
         "category": "avefi:LocalResource",
         "id": "PBCORE-0001_PBCORE-0001-1"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "PBCORE-0001-1"
       }
     ],
     "has_primary_title": {
@@ -272,6 +276,10 @@
       {
         "category": "avefi:LocalResource",
         "id": "PBCORE-0001_PBCORE-0001-2"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "PBCORE-0001-2"
       }
     ],
     "has_primary_title": {
@@ -354,6 +362,10 @@
       {
         "category": "avefi:LocalResource",
         "id": "PBCORE-0002"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "PBCORE-0002-1"
       }
     ],
     "has_primary_title": {
@@ -482,6 +494,10 @@
       {
         "category": "avefi:LocalResource",
         "id": "PBCORE-0003"
+      },
+      {
+        "category": "avefi:LocalResource",
+        "id": "PBCORE-0003-1"
       }
     ],
     "has_primary_title": {
@@ -521,55 +537,5 @@
       "type": "PreferredTitle"
     },
     "type": "Serial"
-  },
-  {
-    "category": "avefi:Manifestation",
-    "described_by": {
-      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
-      "has_issuer_name": "Unspecified data provider",
-      "has_source_key": [
-        "SERIES-42"
-      ]
-    },
-    "has_identifier": [
-      {
-        "category": "avefi:LocalResource",
-        "id": "Classic_Cinema_SERIES-42_manifestation"
-      }
-    ],
-    "has_primary_title": {
-      "has_name": "Classic Cinema",
-      "type": "TitleProper"
-    },
-    "is_manifestation_of": [
-      {
-        "category": "avefi:LocalResource",
-        "id": "Classic_Cinema_SERIES-42_work"
-      }
-    ]
-  },
-  {
-    "category": "avefi:Item",
-    "described_by": {
-      "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
-      "has_issuer_name": "Unspecified data provider",
-      "has_source_key": [
-        "SERIES-42"
-      ]
-    },
-    "has_identifier": [
-      {
-        "category": "avefi:LocalResource",
-        "id": "SERIES-42"
-      }
-    ],
-    "has_primary_title": {
-      "has_name": "Classic Cinema",
-      "type": "TitleProper"
-    },
-    "is_item_of": {
-      "category": "avefi:LocalResource",
-      "id": "Classic_Cinema_SERIES-42_manifestation"
-    }
   }
 ]

@@ -1,0 +1,20 @@
+{
+  "profile_format_version": "1.0",
+  "format": "dc",
+  "description": "Filmarchiv Musterstadt, oai_dc harvest of 2026-07",
+  "issuer": {
+    "has_issuer_id": "https://w3id.org/isil/DE-MUS-000000",
+    "has_issuer_name": "Filmarchiv Musterstadt"
+  },
+  "settings": {
+    "default_language": "ger",
+    "film_type_terms": ["movingimage", "moving image", "film", "video"],
+    "creator_is_director": true,
+    "language_usage": "SpokenLanguage",
+    "format_map": {
+      "16 mm": "16mmFilm",
+      "35 mm": "35mmFilm",
+      "super 8": "Super8mmFilm"
+    }
+  }
+}

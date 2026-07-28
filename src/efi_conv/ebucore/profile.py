@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 #: Placeholder issuer shipped with the converter. EBUCore describes a
 #: format, not an institution, so there is no ISIL to fill in here.
 #: Replace it with the ISIL of the holding institution before the
-#: records are used; the converter reports once per run that it is
+#: records are used; the converter reports per input file that it is
 #: still in place.
 PLACEHOLDER_ISSUER_INFO = {
     "has_issuer_id": "https://w3id.org/avefi/issuer/unspecified",
@@ -273,6 +273,30 @@ PUBLICATION_MEDIUM_EVENT_TYPE_MAP = {
 }
 
 
+#: File size units to AVefi UnitEnum values. EBUCore gives the unit of
+#: a fileSize in an attribute, and providers spell it out in several
+#: ways.
+EXTENT_UNIT_MAP = {
+    "gb": "GigaByte",
+    "gigabyte": "GigaByte",
+    "gigabytes": "GigaByte",
+    "kb": "KiloByte",
+    "kilobyte": "KiloByte",
+    "kilobytes": "KiloByte",
+    "mb": "MegaByte",
+    "megabyte": "MegaByte",
+    "megabytes": "MegaByte",
+    "tb": "TeraByte",
+    "terabyte": "TeraByte",
+    "terabytes": "TeraByte",
+}
+
+#: Unit labels denoting the byte itself, which AVefi has no unit for.
+#: A size given in them is scaled to the largest byte based unit it
+#: fills.
+BYTE_UNIT_LABELS = frozenset({"", "b", "byte", "bytes"})
+
+
 @dataclass(frozen=True)
 class EbucoreProfile:
     """Everything provider specific about an EBUCore export.
@@ -332,6 +356,13 @@ class EbucoreProfile:
         FormatDigitalFileTypeEnum value.
     frame_rate_map : dict
         ``videoFormat/frameRate`` to AVefi FrameRateEnum value.
+    extent_unit_map : dict
+        ``format/fileSize/@unit`` (lower case) to AVefi UnitEnum
+        value.
+    byte_unit_labels : frozenset
+        ``format/fileSize/@unit`` values denoting the byte. AVefi has
+        no unit for it, so such a size is scaled to the largest byte
+        based unit it fills.
     language_usage_map : dict
         ``language/@typeLabel`` (lower case) to AVefi
         LanguageUsageEnum value.
@@ -376,6 +407,10 @@ class EbucoreProfile:
         default_factory=lambda: dict(CONTAINER_FORMAT_MAP)
     )
     frame_rate_map: dict = field(default_factory=lambda: dict(FRAME_RATE_MAP))
+    extent_unit_map: dict = field(
+        default_factory=lambda: dict(EXTENT_UNIT_MAP)
+    )
+    byte_unit_labels: frozenset = BYTE_UNIT_LABELS
     language_usage_map: dict = field(
         default_factory=lambda: dict(LANGUAGE_USAGE_MAP)
     )

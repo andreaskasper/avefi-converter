@@ -267,6 +267,41 @@ class TestCarrier007:
         carrier = self.carrier("mr ba afa arc")
         assert carrier.sound == "Silent"
 
+    def test_the_hash_spelling_of_the_blank_also_means_silent(self):
+        """MARC documentation writes a blank position as a hash.
+
+        An export generated from the documentation carries the hash
+        where the record structure has a blank. Both spellings are the
+        same position value, so a silent film must not lose its sound
+        type over which of them a provider exports.
+
+        """
+        report = ConversionReport()
+        with collecting(report):
+            carrier = self.carrier("mr#ba#afa#arc")
+        assert carrier.sound == "Silent"
+        assert carrier.colour == "BlackAndWhite"
+        assert carrier.formats == [("Film", "35mmFilm")]
+        assert carrier.access_status == "Viewing"
+        assert not [e for e in report.entries if e.severity != "info"], (
+            "A blank written as a hash is not an unmappable code"
+        )
+
+    def test_the_hash_spelling_is_not_reported_at_the_other_positions(
+        self,
+    ):
+        """A hash is a fill everywhere the vocabulary defines no blank."""
+        report = ConversionReport()
+        with collecting(report):
+            carrier = self.carrier("mr#############")
+        assert carrier.colour is None
+        assert carrier.formats == []
+        assert carrier.access_status is None
+        assert carrier.sound == "Silent"
+        assert not [e for e in report.entries if e.source_field != "007/05"], (
+            "Nothing is coded, so there is nothing to report"
+        )
+
     def test_generation_is_read_for_motion_pictures_only(self):
         carrier = self.carrier("vf bbaaou")
         assert carrier.access_status is None
@@ -398,6 +433,69 @@ class TestTextHelpers:
     )
     def test_publication_dates_lose_their_markup(self, value, expected):
         assert mapping.publication_date_text(value) == expected
+
+
+class TestVaryingTitles:
+    """246 says in ind2 what kind of varying title it carries."""
+
+    def record(self, *fields):
+        return MarcRecord(
+            leader="01234ngm a2200349 a 4500",
+            control_fields=(
+                ("008", "590101s1959    gw 103" + " " * 12 + "mbger d"),
+            ),
+            data_fields=(
+                DataField(
+                    tag="245",
+                    ind1="1",
+                    ind2="4",
+                    subfields=(Subfield("a", "Die Brücke."),),
+                ),
+            )
+            + fields,
+        )
+
+    def varying(self, ind2, value="The bridge"):
+        return DataField(
+            tag="246",
+            ind1="3",
+            ind2=ind2,
+            subfields=(Subfield("a", value),),
+        )
+
+    def titles(self, *fields):
+        return mapping.collect_titles(self.record(*fields), PROFILE, "test")
+
+    def test_a_parallel_title_becomes_a_translated_title(self):
+        """AVefi has a title type for the distinction MARC draws."""
+        titles = self.titles(self.varying("1"))
+        assert [(title.display, kind) for title, kind in titles[1:]] == [
+            ("The bridge", "TranslatedTitle")
+        ]
+
+    def test_another_coded_indicator_is_reported(self):
+        """A portion of a title is not an alternative title in AVefi."""
+        report = ConversionReport()
+        with collecting(report):
+            titles = self.titles(self.varying("0"))
+        assert titles[1][1] == "AlternativeTitle"
+        assert [
+            entry
+            for entry in report.entries
+            if entry.source_field == "246 ind2" and entry.raw_value == "0"
+        ], "The distinction MARC draws must not be lost in silence"
+
+    def test_an_uncoded_indicator_is_not_reported(self):
+        """A blank ind2 states nothing, so there is nothing to lose."""
+        report = ConversionReport()
+        with collecting(report):
+            titles = self.titles(self.varying(" "))
+        assert titles[1][1] == "AlternativeTitle"
+        assert not [
+            entry
+            for entry in report.entries
+            if entry.source_field == "246 ind2"
+        ]
 
 
 class TestTitleFromField:

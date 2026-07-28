@@ -67,17 +67,62 @@ def test_the_provider_was_added_without_touching_the_generic_mapping():
     assert own_functions == {
         "convert",
         "efi_import",
+        "first_appellation",
+        "first_text",
         "main",
         "new_context",
+        "record_sources",
+        "report_stand_in_issuer",
     }, "A profile module must not grow mapping code"
-    assert inspect.unwrap(mdigital_lido.efi_import).__code__.co_names == (
-        "lido_import",
-        "PROFILE",
-    ), "efi_import must do nothing but delegate to the generic mapping"
-    assert inspect.unwrap(mdigital_lido.new_context).__code__.co_names == (
-        "lido_new_context",
-        "PROFILE",
-    ), "new_context must do nothing but delegate as well"
+
+
+def test_the_module_maps_nothing_of_its_own(input_path):
+    """Whatever the module adds, it may not touch the mapping.
+
+    `report_stand_in_issuer` reads the export to say which institution
+    the records name as their source. Nothing it reads reaches an
+    AVefi record, and this is what says so: the module produces
+    exactly what the generic mapping produces from its profile.
+
+    """
+    own = mdigital_lido.efi_import(input_path("sample_data.xml"))
+    generic = generic_lido.efi_import(
+        input_path("sample_data.xml"), mdigital_lido.PROFILE
+    )
+    assert avefi.dumps(own) == avefi.dumps(generic)
+
+
+def test_the_stand_in_issuer_is_reported_once_per_input_file(input_path):
+    """Every other converter says so; these two have to as well."""
+    report = ConversionReport()
+    with collecting(report):
+        from_.import_file(mdigital_lido, input_path("sample_data.xml"))
+    entries = [
+        entry
+        for entry in report.entries
+        if entry.target_field == "described_by.has_issuer_id"
+    ]
+    assert len(entries) == 1
+    assert entries[0].severity == "warning"
+    assert entries[0].raw_value == "https://www.museum-digital.de"
+    assert "ISIL" in entries[0].message
+
+
+def test_the_institution_the_record_names_is_reported(input_path):
+    """lido:recordSource names the holder, and the mapping drops it."""
+    report = ConversionReport()
+    with collecting(report):
+        from_.import_file(mdigital_lido, input_path("sample_data.xml"))
+    entries = [
+        entry
+        for entry in report.entries
+        if entry.source_field == "lido:recordSource"
+    ]
+    assert entries and entries[0].severity == "warning"
+    assert entries[0].raw_value == {
+        "legalBodyID": None,
+        "legalBodyName": "Stadtmuseum Halle",
+    }
 
 
 def test_copies_of_one_film_share_a_work(input_path):

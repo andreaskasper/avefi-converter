@@ -73,7 +73,7 @@ ISSUER_INFO = {
 }
 ```
 
-The converter reports once per run, at warning level, that the
+The converter reports once per input file, at warning level, that the
 placeholder is still in place. Replace it with the ISIL and name of the
 holding institution — either by passing a profile of your own to
 `efi_conv.ebucore.mapping.efi_import`, or in a thin institution module
@@ -94,7 +94,7 @@ flowchart TD
     MREUSE --> IT["Item<br/>duration, carrier, colour, sound, language"]
     MNEW --> IT
     IT --> OUT["work + manifestation + item"]
-    IN -.->|"rights, part, relations,<br/>technical detail"| REP[("conversion report")]
+    IN -.->|"rights, part, description,<br/>technical detail"| REP[("conversion report")]
     T -.-> REP
     IT -.-> REP
 ```
@@ -102,6 +102,25 @@ flowchart TD
 [`MAPPING.md`](MAPPING.md) states rule by rule what goes where. It is
 rendered from the `MAPPING_RULES` table in `mapping.py`, and a test
 fails when the two drift apart.
+
+## What EBUCore says and AVefi does not take
+
+`ebucore:description` is a synopsis of the content. AVefi has no
+description field at any level, and an item note describes the copy
+rather than the film, so the value is reported with its text instead
+of being written somewhere it does not belong. The PBCore, Dublin Core
+and EN 15907 converters answer the same question the same way.
+
+`ebucore:rights` and `ebucore:part` have no AVefi counterpart either
+and are reported in full.
+
+An `ebucore:isPartOf` names a record in the source system. Where the
+same run converts that record, the relation becomes `is_part_of` on
+the work and points at the work the related record produced. Where it
+does not, the relation is reported and not transferred: AVefi rejects
+a local reference that resolves to no record of the same set, and a
+converter emitting one would have the whole work discarded by the
+checks. Convert the related records in the same run to keep the link.
 
 ## Durations
 
