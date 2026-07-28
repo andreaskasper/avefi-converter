@@ -51,3 +51,5 @@ Decisions the mapping takes that MARC21 does not determine, and that need confir
 - The physical description in 300 is kept as a note in full, in addition to the duration, extent and format derived from it, so that nothing of it is lost to the partial parsing.
 - Life dates in $d of an agent field are reported, AVefi Agent having no field for them.
 - Every record in scope yields one item. Works and manifestations are shared between records according to the profile key.
+- A work key that would be no more than the title does not group: the record keeps a work of its own, and the decision is reported. Two undated films of the same name are two films, and one AVefi identifier registered for both cannot be corrected afterwards, whereas two works minted for one film can be merged.
+- A running time that cannot be read leaves `has_duration` unset and is reported. Discarding the record over it would cost the work, every manifestation and every item derived from it.

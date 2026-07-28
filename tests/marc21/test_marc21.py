@@ -455,3 +455,83 @@ def test_mapping_documentation_is_up_to_date():
         pathlib.Path(mapping.__file__).parent / "MAPPING.md"
     ).read_text(encoding="utf-8")
     assert committed == generated, "Regenerate MAPPING.md from MAPPING_RULES"
+
+
+MINIMAL = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+{records}</collection>
+"""
+
+UNTITLED = """\
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="001">{control}</controlfield>
+    <controlfield tag="008">590101n        gw {minutes}\
+            mbger d</controlfield>
+    <datafield tag="245" ind1="1" ind2="0">
+      <subfield code="a">{title}</subfield>
+    </datafield>
+  </record>
+"""
+
+
+def _catalogue(tmp_path, *records):
+    target = tmp_path / "degenerate.xml"
+    target.write_text(MINIMAL.format(records="".join(records)), "utf-8")
+    return target
+
+
+class TestDegenerateWorkKey:
+    """Two undated films of the same name are two films.
+
+    Amateur and advertising material carries a generic title, no
+    director and no date, which is exactly the material archives hold
+    a lot of. Merging two of them would register one AVefi identifier
+    for two different films.
+
+    """
+
+    @pytest.fixture
+    def two_films_called_heimatfilm(self, tmp_path):
+        return _catalogue(
+            tmp_path,
+            UNTITLED.format(
+                control="0000099001", minutes="012", title="Heimatfilm"
+            ),
+            UNTITLED.format(
+                control="0000099002", minutes="020", title="Heimatfilm"
+            ),
+        )
+
+    def test_they_do_not_share_a_work(self, two_films_called_heimatfilm):
+        records = marc21.efi_import(two_films_called_heimatfilm)
+        works = [r for r in records if r.category == "avefi:WorkVariant"]
+        assert len(works) == 2, (
+            "One identifier for two films cannot be corrected later"
+        )
+        assert len({w.has_identifier[0].id for w in works}) == 2
+
+    def test_the_decision_is_reported(self, two_films_called_heimatfilm):
+        report = ConversionReport()
+        with collecting(report):
+            marc21.efi_import(two_films_called_heimatfilm)
+        entries = [
+            entry
+            for entry in report.entries
+            if entry.severity == "warning"
+            and entry.target_field == "has_identifier (work)"
+        ]
+        assert len(entries) == 2
+        assert {entry.record_id for entry in entries} == {
+            "0000099001",
+            "0000099002",
+        }
+
+    def test_a_full_key_still_groups(self, input_path):
+        """The records of the sample export keep sharing their work."""
+        records = from_.import_file(marc21, input_path("sample_data.xml"))
+        works = [r for r in records if r.category == "avefi:WorkVariant"]
+        assert len(works) < len(
+            [r for r in records if r.category == "avefi:Item"]
+        )

@@ -25,6 +25,27 @@ ISO_DURATION_PATTERN = re.compile(
     r"^PT[1-9]*[0-9][0-9]H[0-5][0-9]M[0-5][0-9]S$"
 )
 
+#: Pattern for an ISO 8601 duration, which is what this module emits
+#: and therefore what a source that has already been converted once
+#: hands back. Years and months are refused: they say nothing about a
+#: running time. A fractional value is accepted and rounded, as
+#: everywhere else here.
+ISO_8601_DURATION_PATTERN = re.compile(
+    r"^P(?!$)(?:(?P<days>\d+(?:[.,]\d+)?)D)?"
+    r"(?:T(?!$)(?:(?P<hours>\d+(?:[.,]\d+)?)H)?"
+    r"(?:(?P<minutes>\d+(?:[.,]\d+)?)M)?"
+    r"(?:(?P<seconds>\d+(?:[.,]\d+)?)S)?)?$",
+    re.IGNORECASE,
+)
+
+#: Longest span an abbreviated interval such as ``1962-65`` may
+#: denote. Beyond it the second number is far more likely to be a
+#: mistyped month than the end of a production period: ``1959-13``
+#: would otherwise be read as 1959 to 2013 and asserted as fact. An
+#: interval that really is longer is written with four digit years,
+#: which is read as given.
+MAX_ABBREVIATED_INTERVAL_YEARS = 20
+
 #: Values that stand for "no date given" rather than for a date.
 EMPTY_DATE_VALUES = frozenset(
     {
@@ -258,10 +279,19 @@ def _map_date_expression(
     match = re.match(r"^(\d{2})(\d{2})\s*[-/]\s*(\d{2})$", text)
     if match:
         century, start, end = match.groups()
+        start_year = int(f"{century}{start}")
         end_year = int(f"{century}{end}")
-        if end_year < int(f"{century}{start}"):
+        if end_year < start_year:
             end_year += 100
-        return f"{century}{start}/{end_year:04d}"
+        if end_year - start_year > MAX_ABBREVIATED_INTERVAL_YEARS:
+            raise NormalisationError(
+                f"Refusing to read {text!r} as the interval"
+                f" {start_year}/{end_year}: a span of"
+                f" {end_year - start_year} years is far more likely to"
+                f" be a mistyped month. Write the interval with four"
+                f" digit years if it is meant as given."
+            )
+        return f"{start_year:04d}/{end_year:04d}"
 
     # Full interval: "1962-1965", "1962/1965"
     match = re.match(r"^(\d{4})\s*[-/]\s*(\d{4})$", text)
@@ -349,6 +379,18 @@ def normalise_duration(
 
 def _duration_seconds(text: str, unit: str | None) -> float | None:
     """Return the number of seconds expressed by ``text``."""
+    # ISO 8601, the form this module emits itself. EFG duration and
+    # PBCore instantiationDuration are free text, so a value that has
+    # been through a conversion once turns up here again.
+    match = ISO_8601_DURATION_PATTERN.match(text)
+    if match and any(match.groups()):
+        return (
+            _number(match.group("days")) * 86400
+            + _number(match.group("hours")) * 3600
+            + _number(match.group("minutes")) * 60
+            + _number(match.group("seconds"))
+        )
+
     # Clock notation
     match = re.match(r"^(\d+):([0-5]?\d)(?::([0-5]?\d))?$", text)
     if match:
@@ -401,6 +443,51 @@ def _duration_seconds(text: str, unit: str | None) -> float | None:
     if factor is None:
         return None
     return amount * factor
+
+
+def _number(value: str | None) -> float:
+    """Return a duration component as a number, 0 when absent."""
+    if not value:
+        return 0.0
+    return float(value.replace(",", "."))
+
+
+def mapped_duration(
+    value: str | None,
+    unit: str | None = None,
+    *,
+    record_id: str | None = None,
+    source_field: str = "measurementsSet",
+    target_field: str = "has_duration.has_value",
+) -> str | None:
+    """Return the duration of a copy, or None if it cannot be read.
+
+    Every converter reads a running time from free text, and every one
+    of them has to decide what an unreadable value costs. Discarding
+    the record would cost the work, every manifestation and every item
+    derived from it, and with them everything the source says about
+    the film; leaving ``has_duration`` unset costs one field. The
+    field is therefore dropped and reported, and the record is kept.
+
+    """
+    try:
+        return normalise_duration(
+            value,
+            unit,
+            record_id=record_id,
+            source_field=source_field,
+            target_field=target_field,
+        )
+    except NormalisationError as e:
+        report_issue(
+            "warning",
+            f"{e}; the running time is not transferred",
+            record_id=record_id,
+            source_field=source_field,
+            target_field=target_field,
+            raw_value=value,
+        )
+        return None
 
 
 def normalise_title(

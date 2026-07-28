@@ -24,6 +24,7 @@ from avefi_schema import model_pydantic_v2 as efi
 from .mapping import (
     ASSUMPTIONS,
     MAPPING_RULES,
+    MappingContext,
     MappingRule,
     map_record,
     parse_ebucore,
@@ -31,6 +32,9 @@ from .mapping import (
 )
 from .mapping import (
     efi_import as ebucore_import,
+)
+from .mapping import (
+    new_context as ebucore_new_context,
 )
 from .profile import PLACEHOLDER_ISSUER_INFO, EbucoreProfile
 
@@ -54,14 +58,19 @@ PROFILE = EbucoreProfile(issuer_info=ISSUER_INFO, description=DESCRIPTION)
 
 
 def efi_import(
-    input_file, continue_on_error: bool = False
+    input_file,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert an EBUCore export into AVefi records."""
-    return ebucore_import(input_file, PROFILE, continue_on_error)
+    return ebucore_import(input_file, PROFILE, continue_on_error, context)
 
 
 def convert(
-    input_file, profile: EbucoreProfile, continue_on_error: bool = False
+    input_file,
+    profile: EbucoreProfile,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert an EBUCore export using ``profile`` instead of the default.
 
@@ -69,7 +78,19 @@ def convert(
     profile loaded from a file.
 
     """
-    return ebucore_import(input_file, profile, continue_on_error)
+    return ebucore_import(input_file, profile, continue_on_error, context)
+
+
+def new_context(profile: EbucoreProfile | None = None) -> MappingContext:
+    """Return the grouping context for one conversion.
+
+    ``efi-conv from`` builds one per invocation and passes it to every
+    input file, so that records describing one programme in different
+    files share their work instead of being minted twice under the
+    same identifier.
+
+    """
+    return ebucore_new_context(profile or PROFILE)
 
 
 def main(argv=None):
@@ -110,10 +131,12 @@ __all__ = (
     "PLACEHOLDER_ISSUER_INFO",
     "PROFILE",
     "EbucoreProfile",
+    "MappingContext",
     "MappingRule",
     "efi_import",
     "main",
     "map_record",
+    "new_context",
     "parse_ebucore",
     "render_mapping_markdown",
 )

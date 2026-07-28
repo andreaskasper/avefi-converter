@@ -513,7 +513,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Classic_Cinema_work"
+        "id": "Classic_Cinema_SERIES-42_work"
       }
     ],
     "has_primary_title": {
@@ -534,7 +534,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Classic_Cinema_manifestation"
+        "id": "Classic_Cinema_SERIES-42_manifestation"
       }
     ],
     "has_primary_title": {
@@ -544,7 +544,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Classic_Cinema_work"
+        "id": "Classic_Cinema_SERIES-42_work"
       }
     ]
   },
@@ -569,7 +569,7 @@
     },
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Classic_Cinema_manifestation"
+      "id": "Classic_Cinema_SERIES-42_manifestation"
     }
   }
 ]

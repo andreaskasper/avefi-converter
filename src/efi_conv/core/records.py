@@ -8,12 +8,14 @@ cannot quietly arrive at different answers.
 
 """
 
-from dataclasses import dataclass, field
+from contextlib import contextmanager
+from dataclasses import dataclass, field, fields
 import hashlib
 import re
 
 from avefi_schema import model_pydantic_v2 as efi
 
+from .report import report_issue
 from .utils import described_by_issuer
 
 #: Identifiers longer than this are shortened and given a digest, so
@@ -36,11 +38,76 @@ def slug(value: str) -> str:
     return f"{cleaned[:100]}_{digest}"
 
 
+#: Key fields that identify a work on their own. A local identifier
+#: does, because the data provider assigned it to one film. A title
+#: does not, however distinctive it looks.
+SELF_SUFFICIENT_KEY_FIELDS = frozenset({"identifier"})
+
+
 def make_key(*parts) -> str:
     """Return a grouping key from ``parts``."""
     return KEY_SEPARATOR.join(
         "" if part is None else str(part) for part in parts
     )
+
+
+def work_key(
+    parts: dict,
+    source_key: str,
+    *,
+    record_id: str | None = None,
+    source_field: str = "profile work_key_fields",
+) -> str:
+    """Return the key deciding which records describe one work.
+
+    A key has to identify a film. When everything but the title is
+    missing — untitled, undated amateur and advertising material, of
+    which archives hold a great deal — the title alone is left, and
+    two unrelated films of the same name would become one WorkVariant
+    with one identifier. That is the worst outcome this converter can
+    produce: an identifier registered for two films cannot be undone
+    by a later correction, whereas two works minted for one film can
+    be merged once the duplicate is noticed.
+
+    A degenerate key therefore does not group. The record keeps a work
+    of its own, and the decision is reported so that it can be
+    reviewed against the source data.
+
+    Parameters
+    ----------
+    parts : dict
+        Key field names and their values, in key order. A field named
+        in :data:`SELF_SUFFICIENT_KEY_FIELDS` identifies a work on its
+        own; of the others at least two have to be filled.
+    source_key : str
+        Identifier of the source record, appended to a degenerate key
+        so that it groups with nothing but itself.
+    record_id : str or None
+        Identifier used when reporting, ``source_key`` by default.
+
+    Returns
+    -------
+    str
+        The grouping key.
+
+    """
+    filled = [
+        name for name, value in parts.items() if str(value or "").strip()
+    ]
+    if len(filled) > 1 or set(filled) & SELF_SUFFICIENT_KEY_FIELDS:
+        return make_key(*parts.values())
+    key = make_key(*parts.values())
+    report_issue(
+        "warning",
+        f"Work key holds no more than {', '.join(filled) or 'nothing'};"
+        f" this record is kept as a work of its own rather than"
+        f" grouped with any other record carrying the same key",
+        record_id=record_id or source_key,
+        source_field=source_field,
+        target_field="has_identifier (work)",
+        raw_value=key,
+    )
+    return make_key(*parts.values(), source_key)
 
 
 @dataclass(frozen=True)
@@ -101,6 +168,37 @@ class GroupingContext:
 
     works: dict = field(default_factory=dict)
     manifestations: dict = field(default_factory=dict)
+
+    @contextmanager
+    def attempt(self):
+        """Register what a source record contributes, or nothing.
+
+        A converter looks a work up before it has finished mapping the
+        record, so a record failing halfway would leave its work in
+        the context but not in the output: the next record with the
+        same key would find the work known, emit nothing, and refer to
+        a work nobody wrote. Everything the failed record registered
+        is therefore discarded again.
+
+        What an earlier record registered is kept, including the
+        values this record contributed to it before failing; a work is
+        built from several records by design.
+
+        """
+        registered = {
+            entry.name: set(getattr(self, entry.name))
+            for entry in fields(self)
+            if isinstance(getattr(self, entry.name), dict)
+        }
+        try:
+            yield self
+        except BaseException:
+            for name, known in registered.items():
+                shared = getattr(self, name)
+                for key in list(shared):
+                    if key not in known:
+                        del shared[key]
+            raise
 
     def work_for(self, key: str, factory):
         """Return the work for ``key``, creating it if it is new.

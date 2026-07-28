@@ -60,13 +60,14 @@
     },
     "summary": {
       "type": "object",
-      "description": "Number of entries per severity.",
+      "description": "Number of entries per severity, and the number of source records that could not be converted and were left out of the output.",
       "additionalProperties": false,
       "required": ["info", "warning", "error"],
       "properties": {
         "info": { "type": "integer", "minimum": 0 },
         "warning": { "type": "integer", "minimum": 0 },
-        "error": { "type": "integer", "minimum": 0 }
+        "error": { "type": "integer", "minimum": 0 },
+        "records_skipped": { "type": "integer", "minimum": 0 }
       }
     },
     "entries": {

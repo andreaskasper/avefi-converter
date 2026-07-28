@@ -18,8 +18,8 @@ from avefi_schema import model_pydantic_v2 as efi
 from ..core.normalise import (
     NormalisationError,
     language_code,
+    mapped_duration,
     normalise_date,
-    normalise_duration,
     normalise_title,
 )
 from ..core.records import (
@@ -29,8 +29,9 @@ from ..core.records import (
     attach_source_key,
     make_key,
     merge_alternative_titles,
+    work_key,
 )
-from ..core.report import for_file, report_issue
+from ..core.report import for_file, report_issue, report_record_skipped
 from ..core.xmlrecords import first, parse_records, text_of
 from .generated.lido_1_1 import Lido
 from .profile import LidoProfile
@@ -240,6 +241,14 @@ ASSUMPTIONS = (
     "LIDO does not prescribe the `lido:type` values marking a colour,"
     " format or access status classification. The profile names them,"
     " and a classification of any other type becomes a genre.",
+    "A work key that would be no more than the title does not group:"
+    " the record keeps a work of its own, and the decision is reported."
+    " Two undated films of the same name are two films, and one AVefi"
+    " identifier registered for both cannot be corrected afterwards,"
+    " whereas two works minted for one film can be merged.",
+    "A running time that cannot be read leaves `has_duration` unset"
+    " and is reported. Discarding the record over it would cost the"
+    " work, every manifestation and every item derived from it.",
 )
 
 
@@ -289,7 +298,10 @@ def parse_lido(input_file) -> list[Lido]:
 
 
 def efi_import(
-    input_file, profile: LidoProfile, continue_on_error: bool = False
+    input_file,
+    profile: LidoProfile,
+    continue_on_error: bool = False,
+    context: "MappingContext | None" = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a LIDO file into AVefi records using ``profile``.
 
@@ -304,21 +316,27 @@ def efi_import(
         remaining ones, instead of aborting the whole file. A single
         unmappable date in a large export would otherwise cost every
         record in it.
+    context : MappingContext, optional
+        Grouping context to add the records of this file to. One
+        conversion of several files passes the same context to each of
+        them, so that copies of one film described in different files
+        share their work rather than being minted twice with the same
+        identifier. Without it the file is converted on its own.
 
     """
     records = []
-    context = MappingContext(profile=profile)
+    if context is None:
+        context = new_context(profile)
     with for_file(input_file):
         for lido_record in parse_lido(input_file):
             try:
-                records.extend(map_record(lido_record, profile, context))
+                with context.attempt():
+                    records.extend(map_record(lido_record, profile, context))
             except Exception as e:
                 if not continue_on_error:
                     raise
-                report_issue(
-                    "error",
-                    f"Record skipped: {e}",
-                    record_id=safe_record_identifier(lido_record),
+                report_record_skipped(
+                    e, record_id=safe_record_identifier(lido_record)
                 )
     return records
 
@@ -336,6 +354,17 @@ class MappingContext(GroupingContext):
     """
 
     profile: LidoProfile | None = None
+
+
+def new_context(profile: LidoProfile) -> MappingContext:
+    """Return a grouping context for one conversion.
+
+    Handed to :func:`efi_import` once per run rather than once per
+    file, so that the works of a conversion are shared between the
+    input files.
+
+    """
+    return MappingContext(profile=profile)
 
 
 def map_record(
@@ -462,21 +491,21 @@ def make_work_key(profile, source_key, primary, production) -> str:
     """Return the key identifying the work a record belongs to."""
     if not profile.work_key_fields:
         return source_key
-    parts = []
+    parts = {}
     for name in profile.work_key_fields:
         if name == "primary_title":
-            parts.append(primary.ordering or primary.display)
+            parts[name] = primary.ordering or primary.display
         elif name == "director":
-            parts.append(director_names(production))
+            parts[name] = director_names(production)
         elif name == "date":
-            parts.append(
+            parts[name] = (
                 production.has_date
                 if production is not None and production.has_date
                 else ""
             )
         else:
             raise ValueError(f"Unknown work key field: {name}")
-    return make_key(*parts)
+    return work_key(parts, source_key, record_id=source_key)
 
 
 def director_names(production) -> str:
@@ -662,20 +691,9 @@ def build_item(lido_record, descriptive, primary, profile, source_key):
 
     duration_value, duration_unit = duration_measurement(descriptive, profile)
     if duration_value:
-        try:
-            has_value = normalise_duration(
-                duration_value, duration_unit, record_id=source_key
-            )
-        except NormalisationError as e:
-            report_issue(
-                "error",
-                str(e),
-                record_id=source_key,
-                source_field="measurementsSet",
-                target_field="has_duration.has_value",
-                raw_value=duration_value,
-            )
-            raise
+        has_value = mapped_duration(
+            duration_value, duration_unit, record_id=source_key
+        )
         if has_value:
             item.has_duration = efi.Duration(has_value=has_value)
 

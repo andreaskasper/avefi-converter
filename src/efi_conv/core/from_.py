@@ -111,11 +111,19 @@ def efi_from(
     **kwargs,
 ):
     """Convert files from some schema into a JSON file with AVefi records."""
+    # The files of one run are converted in a defined order, so that
+    # the output depends on which files were named rather than on the
+    # order they were named in. Where two records describing one film
+    # disagree, the first one seen decides, exactly as two records
+    # inside one file do; without this, the same set of files would
+    # convert differently depending on how the shell expanded them.
+    input_files = sorted(input_files)
     mod = import_module_for(kwargs["format"])
     importer = configure(mod, profile_file) if profile_file else mod
     generated_records = []
     failed_files = []
     report = ConversionReport(avefi_schema_version=schema_fingerprint())
+    context = new_shared_context(importer)
     with collecting(report):
         for input_file in input_files:
             try:
@@ -125,6 +133,7 @@ def efi_from(
                             importer,
                             input_file,
                             continue_on_error=continue_on_error,
+                            context=context,
                         )
                     )
             except Exception as e:
@@ -141,6 +150,7 @@ def efi_from(
                     ) from e
                 failed_files.append(input_file)
     if generated_records:
+        sort_source_keys(generated_records)
         generated_records = avefi.sort_records(generated_records)
         if output and output != "-":
             avefi.dump(generated_records, output)
@@ -155,17 +165,67 @@ def efi_from(
     if report_file:
         report.write(report_file)
         log.info(f"Wrote conversion report to {report_file}")
-    if failed_files:
+    if failed_files or report.records_skipped:
         raise SystemExit(1)
 
 
-def accepts_continue_on_error(importer: types.ModuleType) -> bool:
-    """Return True if the converter can skip individual records."""
+def accepts(importer, parameter: str) -> bool:
+    """Return True if ``efi_import`` takes the named parameter."""
     try:
         signature = inspect.signature(importer.efi_import)
     except (TypeError, ValueError):  # pragma: no cover - defensive
         return False
-    return "continue_on_error" in signature.parameters
+    return parameter in signature.parameters
+
+
+def accepts_continue_on_error(importer) -> bool:
+    """Return True if the converter can skip individual records."""
+    return accepts(importer, "continue_on_error")
+
+
+def new_shared_context(importer):
+    """Return the grouping context for one invocation, if there is one.
+
+    One invocation of ``efi-conv from`` is one conversion, whatever
+    the input happens to be split into: ``efi-conv harvest`` writes
+    one file per page of a harvest, and the page boundaries have
+    nothing to do with which records describe the same film. A
+    converter that groups records therefore gets one context for the
+    whole run instead of one per file, which is what keeps it from
+    minting the same identifier twice.
+
+    A converter opts in by taking a ``context`` parameter on
+    ``efi_import`` and offering a ``new_context`` factory; for the
+    others nothing changes, and every converter keeps its per file
+    behaviour when ``efi_import`` is called directly.
+
+    """
+    factory = getattr(importer, "new_context", None)
+    if factory is None or not accepts(importer, "context"):
+        return None
+    return factory()
+
+
+def sort_source_keys(records):
+    """Order the source keys of every record, once the run is over.
+
+    A work is contributed to by every record describing it, and those
+    may sit in different input files, so the keys cannot be ordered
+    before the last file has been read. Without this the output would
+    depend on the order the input files were named in.
+
+    """
+    for record in records:
+        described_by = record.described_by
+        if described_by is None:
+            continue
+        # described_by is multivalued on a WorkVariant only.
+        entries = (
+            described_by if isinstance(described_by, list) else [described_by]
+        )
+        for entry in entries:
+            if entry.has_source_key:
+                entry.has_source_key.sort()
 
 
 def log_summary(input_files, generated_records, failed_files, report=None):
@@ -185,26 +245,35 @@ def log_summary(input_files, generated_records, failed_files, report=None):
         log.error(
             f"Skipped {len(failed_files)} file(s): {', '.join(failed_files)}"
         )
+    if report is not None and report.records_skipped:
+        log.error(
+            f"Skipped {report.records_skipped} record(s) that could not"
+            f" be converted; see the conversion report"
+        )
 
 
 def import_file(
     importer: types.ModuleType,
     input_file: str,
     continue_on_error: bool = False,
+    context=None,
 ) -> list[efi.MovingImageRecord]:
     """Convert one input file and complete the issuer information.
 
     Converters that can contain an error to the individual record
     declare a ``continue_on_error`` parameter on ``efi_import``; for
-    the others the flag stays a file level decision, as before.
+    the others the flag stays a file level decision, as before. The
+    same applies to ``context``: a converter that groups records
+    across the files of one run takes one, and a converter that does
+    not is called as before.
 
     """
+    arguments = {}
     if continue_on_error and accepts_continue_on_error(importer):
-        result = importer.efi_import(
-            input_file, continue_on_error=continue_on_error
-        )
-    else:
-        result = importer.efi_import(input_file)
+        arguments["continue_on_error"] = continue_on_error
+    if context is not None and accepts(importer, "context"):
+        arguments["context"] = context
+    result = importer.efi_import(input_file, **arguments)
     for record in result:
         if not (record.has_identifier):
             raise ValueError("has_identifier missing for some record(s)")

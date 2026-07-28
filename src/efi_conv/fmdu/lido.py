@@ -18,8 +18,9 @@ import sys
 
 from avefi_schema import model_pydantic_v2 as efi
 
-from ..lido import LidoProfile
+from ..lido import LidoProfile, MappingContext
 from ..lido import efi_import as lido_import
+from ..lido import new_context as lido_new_context
 
 DESCRIPTION = "Filmmuseum der Landeshauptstadt Düsseldorf, LIDO export"
 INPUT_FORMAT = "XML (LIDO 1.1)"
@@ -67,14 +68,19 @@ PROFILE = LidoProfile(
 
 
 def efi_import(
-    input_file, continue_on_error: bool = False
+    input_file,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a FMDU LIDO export into AVefi records."""
-    return lido_import(input_file, PROFILE, continue_on_error)
+    return lido_import(input_file, PROFILE, continue_on_error, context)
 
 
 def convert(
-    input_file, profile: LidoProfile, continue_on_error: bool = False
+    input_file,
+    profile: LidoProfile,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a FMDU LIDO export using ``profile`` instead of the default.
 
@@ -82,7 +88,19 @@ def convert(
     profile loaded from a file.
 
     """
-    return lido_import(input_file, profile, continue_on_error)
+    return lido_import(input_file, profile, continue_on_error, context)
+
+
+def new_context(profile: LidoProfile | None = None) -> MappingContext:
+    """Return the grouping context for one conversion.
+
+    ``efi-conv from`` builds one context per invocation and passes it
+    to every input file, so that copies of one film described in
+    different files share their work instead of being minted twice
+    under the same identifier.
+
+    """
+    return lido_new_context(profile or PROFILE)
 
 
 def main(argv=None):

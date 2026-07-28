@@ -53,3 +53,137 @@ def _cached_validator(update_schema=False):
 
 
 _VALIDATOR = None
+
+
+#: One LIDO record describing a copy of a film, with the vocabulary
+#: the Filmmuseum Düsseldorf profile knows. Small enough to read in a
+#: test, complete enough to convert.
+LIDO_RECORD = """\
+  <lido:lido>
+    <lido:lidoRecID lido:type="local">{record_id}</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="de">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term xml:lang="de">Film</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification lido:type="colour">
+            <lido:term xml:lang="de">{colour}</lido:term>
+          </lido:classification>
+{genre}\
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="preferred">
+            <lido:appellationValue xml:lang="de" lido:pref="preferred"
+              >{title}</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+        <lido:objectMeasurementsWrap>
+          <lido:objectMeasurementsSet>
+            <lido:objectMeasurements>
+              <lido:measurementsSet>
+                <lido:measurementType
+                  xml:lang="de">Laufzeit</lido:measurementType>
+                <lido:measurementValue>{duration}</lido:measurementValue>
+              </lido:measurementsSet>
+            </lido:objectMeasurements>
+          </lido:objectMeasurementsSet>
+        </lido:objectMeasurementsWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Produktion</lido:term>
+            </lido:eventType>
+{actor}\
+            <lido:eventDate>
+              <lido:displayDate>{date}</lido:displayDate>
+            </lido:eventDate>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="de">
+      <lido:recordWrap>
+        <lido:recordID lido:type="local">{record_id}</lido:recordID>
+        <lido:recordType>
+          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+        </lido:recordType>
+      </lido:recordWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+"""
+
+LIDO_GENRE = """\
+          <lido:classification lido:type="genre">
+            <lido:term xml:lang="de">{genre}</lido:term>
+          </lido:classification>
+"""
+
+LIDO_ACTOR = """\
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>{director}</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="de">Regie</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+"""
+
+LIDO_DOCUMENT = """\
+<?xml version="1.0" encoding="UTF-8"?>
+{doctype}<lido:lidoWrap xmlns:lido="http://www.lido-schema.org">
+{records}</lido:lidoWrap>
+"""
+
+
+def make_lido_record(
+    record_id,
+    title="Die Brücke",
+    director="Wicki, Bernhard",
+    date="1959",
+    colour="sw",
+    duration="103",
+    genre="",
+):
+    """Return the LIDO serialisation of one film holding."""
+    return LIDO_RECORD.format(
+        record_id=record_id,
+        title=title,
+        colour=colour,
+        date=date,
+        duration=duration,
+        genre=LIDO_GENRE.format(genre=genre) if genre else "",
+        actor=LIDO_ACTOR.format(director=director) if director else "",
+    )
+
+
+@pytest.fixture
+def lido_record():
+    """Return a factory for one LIDO record describing a film copy."""
+    return make_lido_record
+
+
+@pytest.fixture
+def lido_page(tmp_path):
+    """Return a factory writing LIDO records to a document."""
+
+    def write(name, *records, doctype=""):
+        target = tmp_path / name
+        target.write_text(
+            LIDO_DOCUMENT.format(doctype=doctype, records="".join(records)),
+            encoding="utf-8",
+        )
+        return target
+
+    return write

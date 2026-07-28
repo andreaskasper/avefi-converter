@@ -5,7 +5,10 @@ solved once here rather than in each of them:
 
 * The input comes from third parties, so entity resolution and DTD
   loading have to be switched off deliberately instead of inheriting
-  whatever the installed lxml happens to default to.
+  whatever the installed lxml happens to default to. A document that
+  relies on entity declarations is refused, because a record is
+  converted on its own, away from the declaration that gives its
+  entities a meaning.
 * A provider may ship one record per file, many records under a
   wrapper element of their own choosing, or a harvest in which the
   records sit inside an envelope. All three have to work.
@@ -42,6 +45,11 @@ LXML_SAFETY = {
     "no_network": True,
     "huge_tree": False,
 }
+
+
+class EntityDeclarationError(ValueError):
+    """Raised for a document whose records rely on XML entities."""
+
 
 #: One shared xsdata context. Building it is expensive, and it caches
 #: the class metadata the parser needs.
@@ -83,14 +91,29 @@ def iter_record_elements(
         One record element, serialised with the namespace declarations
         it needs to be parsed on its own.
 
+    Raises
+    ------
+    EntityDeclarationError
+        The document declares XML entities. See
+        :func:`refuse_entity_declarations`.
+
     """
     tag = qualified_name(namespace, local_name)
     path = pathlib.Path(input_file)
-    context = etree.iterparse(str(path), events=("end",), **LXML_SAFETY)
+    context = etree.iterparse(
+        str(path), events=("start", "end"), **LXML_SAFETY
+    )
     found = False
-    for _, element in context:
+    checked = False
+    for event, element in context:
+        if event == "start":
+            if not checked:
+                checked = True
+                refuse_entity_declarations(element, path)
+            continue
         if element.tag != tag:
             continue
+        refuse_entity_references(element, path)
         found = True
         yield etree.tostring(element, encoding="utf-8")
         # Release the record and everything before it. The parent is
@@ -102,6 +125,72 @@ def iter_record_elements(
                 del parent[0]
     if not found:
         log.debug(f"No <{local_name}> element found in {path}")
+
+
+def refuse_entity_declarations(root, path):
+    """Refuse a document whose document type declares entities.
+
+    Resolving entities from an untrusted export is not an option: an
+    external entity would make the converter fetch whatever the
+    document points it at. Not resolving them is no better as long as
+    the record is then serialised on its own, without the declaration
+    that gave the entity a meaning — the reference and the rest of the
+    text node disappear, and the run reports success. So the document
+    is refused, and the person running the conversion is told how to
+    produce one that can be converted.
+
+    Raises
+    ------
+    EntityDeclarationError
+        The internal subset of the document type declaration declares
+        at least one entity.
+
+    """
+    internal_subset = root.getroottree().docinfo.internalDTD
+    if internal_subset is None:
+        return
+    names = sorted(
+        entity.name for entity in internal_subset.iterentities() or []
+    )
+    if not names:
+        return
+    raise EntityDeclarationError(
+        f"{path} declares the XML"
+        f" {'entities' if len(names) > 1 else 'entity'}"
+        f" {', '.join(names)}. efi-conv does not resolve entities:"
+        f" every record is converted on its own, away from the"
+        f" declaration, so the text of the reference would be lost"
+        f" without a trace, and an external entity would have this"
+        f" tool fetch whatever the document points it at. Resolve the"
+        f" entities before converting, for instance with"
+        f" `xmllint --noent {path} > resolved.xml`, and check the"
+        f" result before using it."
+    )
+
+
+def refuse_entity_references(element, path):
+    """Refuse a record holding an entity reference.
+
+    A second line of defence for entities that the internal subset
+    does not declare, such as those of an external DTD.
+
+    Raises
+    ------
+    EntityDeclarationError
+        The record refers to an entity.
+
+    """
+    names = sorted({entity.name for entity in element.iter(etree.Entity)})
+    if not names:
+        return
+    raise EntityDeclarationError(
+        f"{path} refers to the XML"
+        f" {'entities' if len(names) > 1 else 'entity'}"
+        f" {', '.join(names)}, which efi-conv does not resolve."
+        f" Resolve them before converting, for instance with"
+        f" `xmllint --noent {path} > resolved.xml`, and check the"
+        f" result before using it."
+    )
 
 
 def parse_records(input_file, clazz, namespace: str | None, local_name: str):

@@ -22,8 +22,8 @@ from avefi_schema import model_pydantic_v2 as efi
 from ..core.normalise import (
     NormalisationError,
     language_code,
+    mapped_duration,
     normalise_date,
-    normalise_duration,
     normalise_title,
 )
 from ..core.records import (
@@ -33,8 +33,9 @@ from ..core.records import (
     attach_source_key,
     make_key,
     merge_alternative_titles,
+    work_key,
 )
-from ..core.report import for_file, report_issue
+from ..core.report import for_file, report_issue, report_record_skipped
 from .marcxml import fixed_position, is_fill, iter_records
 from .profile import Marc21Profile
 
@@ -417,6 +418,14 @@ ASSUMPTIONS = (
     " having no field for them.",
     "Every record in scope yields one item. Works and manifestations"
     " are shared between records according to the profile key.",
+    "A work key that would be no more than the title does not group:"
+    " the record keeps a work of its own, and the decision is reported."
+    " Two undated films of the same name are two films, and one AVefi"
+    " identifier registered for both cannot be corrected afterwards,"
+    " whereas two works minted for one film can be merged.",
+    "A running time that cannot be read leaves `has_duration` unset"
+    " and is reported. Discarding the record over it would cost the"
+    " work, every manifestation and every item derived from it.",
 )
 
 
@@ -461,6 +470,7 @@ def efi_import(
     input_file,
     profile: Marc21Profile,
     continue_on_error: bool = False,
+    context: "MappingContext | None" = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a MARCXML file into AVefi records using ``profile``.
 
@@ -473,6 +483,11 @@ def efi_import(
     continue_on_error : bool
         Report a record that cannot be converted and carry on with the
         remaining ones, instead of aborting the whole file.
+    context : MappingContext, optional
+        Grouping context to add the records of this file to. One
+        conversion of several files passes the same context to each of
+        them, so that records describing one film in different files
+        share their work. Without it the file is converted on its own.
 
     Returns
     -------
@@ -481,21 +496,32 @@ def efi_import(
 
     """
     records: list[efi.MovingImageRecord] = []
-    context = MappingContext(profile=profile)
+    if context is None:
+        context = new_context(profile)
     with for_file(input_file):
         report_placeholder_issuer(profile)
         for marc_record in iter_records(input_file):
             try:
-                records.extend(map_record(marc_record, profile, context))
+                with context.attempt():
+                    records.extend(map_record(marc_record, profile, context))
             except Exception as e:
                 if not continue_on_error:
                     raise
-                report_issue(
-                    "error",
-                    f"Record skipped: {e}",
-                    record_id=record_identifier(marc_record, profile),
+                report_record_skipped(
+                    e, record_id=record_identifier(marc_record, profile)
                 )
     return records
+
+
+def new_context(profile: Marc21Profile) -> MappingContext:
+    """Return a grouping context for one conversion.
+
+    Handed to :func:`efi_import` once per run rather than once per
+    file, so that the works of a conversion are shared between the
+    input files.
+
+    """
+    return MappingContext(profile=profile)
 
 
 def report_placeholder_issuer(profile: Marc21Profile):
@@ -694,21 +720,21 @@ def make_work_key(profile, source_key, primary, production) -> str:
     """Return the key identifying the work a record belongs to."""
     if not profile.work_key_fields:
         return source_key
-    parts = []
+    parts = {}
     for name in profile.work_key_fields:
         if name == "primary_title":
-            parts.append(primary.ordering or primary.display)
+            parts[name] = primary.ordering or primary.display
         elif name == "director":
-            parts.append(director_names(production))
+            parts[name] = director_names(production)
         elif name == "date":
-            parts.append(
+            parts[name] = (
                 production.has_date
                 if production is not None and production.has_date
                 else ""
             )
         else:
             raise ValueError(f"Unknown work key field: {name}")
-    return make_key(*parts)
+    return work_key(parts, source_key, record_id=source_key)
 
 
 def director_names(production) -> str:
@@ -1657,9 +1683,7 @@ def duration_from_306(value: str, source_key) -> str | None:
         )
         return None
     clock = f"{text[0:2]}:{text[2:4]}:{text[4:6]}"
-    return normalise_duration(
-        clock, record_id=source_key, source_field="306$a"
-    )
+    return mapped_duration(clock, record_id=source_key, source_field="306$a")
 
 
 def duration_from_008(marc_record, source_key) -> str | None:
@@ -1690,7 +1714,7 @@ def duration_from_008(marc_record, source_key) -> str | None:
             raw_value=raw,
         )
         return None
-    return normalise_duration(
+    return mapped_duration(
         raw, "min", record_id=source_key, source_field="008/18-20"
     )
 
@@ -1701,7 +1725,7 @@ def duration_from_extent(value: str, source_key) -> str | None:
     if not match:
         return None
     unit = "sec" if match.group(2).lower().startswith("s") else "min"
-    return normalise_duration(
+    return mapped_duration(
         match.group(1),
         unit,
         record_id=source_key,

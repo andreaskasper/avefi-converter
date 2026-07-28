@@ -12,7 +12,7 @@ import json
 import pytest
 
 from efi_conv import fmdu, marc21
-from efi_conv.core import profiles
+from efi_conv.core import from_, profiles
 from efi_conv.core.profiles import ProfileError
 from efi_conv.dc import DcProfile
 from efi_conv.fmdu import lido as fmdu_lido
@@ -237,3 +237,43 @@ class TestShippedExamples:
 
 def test_dc_takes_a_profile_too():
     assert profiles.build_profile({"issuer": ISSUER}, DcProfile)
+
+
+class TestConfiguredImporterGroupsAcrossFiles:
+    """A profile must not cost the grouping across input files.
+
+    A configured conversion is the normal case for a data provider, so
+    it has to mint identifiers exactly as the unconfigured one does.
+
+    """
+
+    @pytest.fixture
+    def profile_file(self, tmp_path):
+        return write(
+            tmp_path,
+            {"format": "fmdu.lido", "issuer": ISSUER},
+            name="fmdu.json",
+        )
+
+    def test_the_configured_importer_offers_a_context(self, profile_file):
+        importer = profiles.configure(fmdu_lido, profile_file)
+        context = from_.new_shared_context(importer)
+        assert context is not None
+        assert context.profile.issuer_info == ISSUER
+
+    def test_one_film_in_two_files_is_one_work(
+        self, profile_file, lido_page, lido_record
+    ):
+        importer = profiles.configure(fmdu_lido, profile_file)
+        context = from_.new_shared_context(importer)
+        records = [
+            record
+            for name, colour in (("a.xml", "sw"), ("b.xml", "farbe"))
+            for record in from_.import_file(
+                importer,
+                lido_page(name, lido_record(f"REC-{name}", colour=colour)),
+                context=context,
+            )
+        ]
+        works = [r for r in records if r.category == "avefi:WorkVariant"]
+        assert len(works) == 1

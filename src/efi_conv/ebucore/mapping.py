@@ -24,8 +24,8 @@ from avefi_schema import model_pydantic_v2 as efi
 from ..core.normalise import (
     NormalisationError,
     language_code,
+    mapped_duration,
     normalise_date,
-    normalise_duration,
     normalise_title,
 )
 from ..core.records import (
@@ -35,8 +35,9 @@ from ..core.records import (
     attach_source_key,
     make_key,
     merge_alternative_titles,
+    work_key,
 )
-from ..core.report import for_file, report_issue
+from ..core.report import for_file, report_issue, report_record_skipped
 from ..core.xmlrecords import first, parse_records, text_of
 from .generated.ebucore_1_10 import EbuCoreMain
 from .profile import EbucoreProfile
@@ -393,6 +394,14 @@ ASSUMPTIONS = (
     " schemes plus the English and German spellings met in practice."
     " They are provisional and are to be confirmed against the"
     " reference data of each provider.",
+    "A work key that would be no more than the title does not group:"
+    " the record keeps a work of its own, and the decision is reported."
+    " Two undated films of the same name are two films, and one AVefi"
+    " identifier registered for both cannot be corrected afterwards,"
+    " whereas two works minted for one film can be merged.",
+    "A running time that cannot be read leaves `has_duration` unset"
+    " and is reported. Discarding the record over it would cost the"
+    " work, every manifestation and every item derived from it.",
 )
 
 
@@ -439,7 +448,10 @@ def parse_ebucore(input_file):
 
 
 def efi_import(
-    input_file, profile: EbucoreProfile, continue_on_error: bool = False
+    input_file,
+    profile: EbucoreProfile,
+    continue_on_error: bool = False,
+    context: "MappingContext | None" = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert an EBUCore file into AVefi records using ``profile``.
 
@@ -454,10 +466,17 @@ def efi_import(
         remaining ones, instead of aborting the whole file. A single
         unmappable date in a large export would otherwise cost every
         record in it.
+    context : MappingContext, optional
+        Grouping context to add the records of this file to. One
+        conversion of several files passes the same context to each of
+        them, so that records describing one programme in different
+        files share their work. Without it the file is converted on
+        its own.
 
     """
     records = []
-    context = MappingContext(profile=profile)
+    if context is None:
+        context = new_context(profile)
     with for_file(input_file):
         if profile.uses_placeholder_issuer():
             report_issue(
@@ -471,14 +490,13 @@ def efi_import(
             )
         for main in parse_ebucore(input_file):
             try:
-                records.extend(map_record(main, profile, context))
+                with context.attempt():
+                    records.extend(map_record(main, profile, context))
             except Exception as e:
                 if not continue_on_error:
                     raise
-                report_issue(
-                    "error",
-                    f"Record skipped: {e}",
-                    record_id=safe_record_identifier(main, profile),
+                report_record_skipped(
+                    e, record_id=safe_record_identifier(main, profile)
                 )
     return records
 
@@ -495,6 +513,17 @@ class MappingContext(GroupingContext):
     """
 
     profile: EbucoreProfile | None = None
+
+
+def new_context(profile: EbucoreProfile) -> MappingContext:
+    """Return a grouping context for one conversion.
+
+    Handed to :func:`efi_import` once per run rather than once per
+    file, so that the works of a conversion are shared between the
+    input files.
+
+    """
+    return MappingContext(profile=profile)
 
 
 def map_record(
@@ -568,21 +597,21 @@ def make_work_key(profile, source_key, primary, production) -> str:
     """Return the key identifying the work a record belongs to."""
     if not profile.work_key_fields:
         return source_key
-    parts = []
+    parts = {}
     for name in profile.work_key_fields:
         if name == "primary_title":
-            parts.append(primary.ordering or primary.display)
+            parts[name] = primary.ordering or primary.display
         elif name == "director":
-            parts.append(director_names(production))
+            parts[name] = director_names(production)
         elif name == "date":
-            parts.append(
+            parts[name] = (
                 production.has_date
                 if production is not None and production.has_date
                 else ""
             )
         else:
             raise ValueError(f"Unknown work key field: {name}")
-    return make_key(*parts)
+    return work_key(parts, source_key, record_id=source_key)
 
 
 def director_names(production) -> str:
@@ -1198,24 +1227,15 @@ def item_duration(formats, profile, source_key) -> str | None:
             value, unit = duration_expression(duration, source_key)
             if value is None:
                 continue
-            try:
-                return normalise_duration(
-                    value,
-                    unit,
-                    record_id=source_key,
-                    source_field="format/duration",
-                    target_field="has_duration.has_value",
-                )
-            except NormalisationError as e:
-                report_issue(
-                    "error",
-                    str(e),
-                    record_id=source_key,
-                    source_field="format/duration",
-                    target_field="has_duration.has_value",
-                    raw_value=value,
-                )
-                raise
+            has_value = mapped_duration(
+                value,
+                unit,
+                record_id=source_key,
+                source_field="format/duration",
+                target_field="has_duration.has_value",
+            )
+            if has_value:
+                return has_value
     return None
 
 

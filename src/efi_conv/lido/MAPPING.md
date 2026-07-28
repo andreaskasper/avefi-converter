@@ -39,3 +39,5 @@ Decisions the mapping takes that LIDO does not determine, and that need confirmi
 - Only the first `lido:descriptiveMetadata` block of a record is mapped; further blocks are reported.
 - The article lists are provisional and are to be confirmed against the reference data.
 - LIDO does not prescribe the `lido:type` values marking a colour, format or access status classification. The profile names them, and a classification of any other type becomes a genre.
+- A work key that would be no more than the title does not group: the record keeps a work of its own, and the decision is reported. Two undated films of the same name are two films, and one AVefi identifier registered for both cannot be corrected afterwards, whereas two works minted for one film can be merged.
+- A running time that cannot be read leaves `has_duration` unset and is reported. Discarding the record over it would cost the work, every manifestation and every item derived from it.

@@ -149,7 +149,12 @@ class TestReport:
         assert result.exit_code == 0, result.output
         content = json.loads(report.read_text(encoding="utf-8"))
         assert content["report_format_version"]
-        assert set(content["summary"]) == {"info", "warning", "error"}
+        assert set(content["summary"]) == {
+            "info",
+            "warning",
+            "error",
+            "records_skipped",
+        }
         assert content["entries"]
 
     def test_unmapped_role_appears_in_the_report(self, runner, tmp_path):

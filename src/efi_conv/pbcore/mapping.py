@@ -26,8 +26,8 @@ from avefi_schema import model_pydantic_v2 as efi
 from ..core.normalise import (
     NormalisationError,
     language_code,
+    mapped_duration,
     normalise_date,
-    normalise_duration,
     normalise_title,
 )
 from ..core.records import (
@@ -38,8 +38,9 @@ from ..core.records import (
     make_key,
     merge_alternative_titles,
     slug,
+    work_key,
 )
-from ..core.report import for_file, report_issue
+from ..core.report import for_file, report_issue, report_record_skipped
 from ..core.xmlrecords import first, parse_records, text_of
 from .generated.pbcore_2_1 import PbcoreDescriptionDocument
 from .generated.pbcore_2_1.pbcore_2_1 import __NAMESPACE__ as PBCORE_NAMESPACE
@@ -445,6 +446,14 @@ ASSUMPTIONS = (
     " identify the data provider in a form that could become an ISIL,"
     " and the records are not usable until the holding institution is"
     " configured.",
+    "A work key that would be no more than the title does not group:"
+    " the record keeps a work of its own, and the decision is reported."
+    " Two undated films of the same name are two films, and one AVefi"
+    " identifier registered for both cannot be corrected afterwards,"
+    " whereas two works minted for one film can be merged.",
+    "A running time that cannot be read leaves `has_duration` unset"
+    " and is reported. Discarding the record over it would cost the"
+    " work, every manifestation and every item derived from it.",
 )
 
 
@@ -495,7 +504,10 @@ def parse_pbcore(input_file):
 
 
 def efi_import(
-    input_file, profile: PbcoreProfile, continue_on_error: bool = False
+    input_file,
+    profile: PbcoreProfile,
+    continue_on_error: bool = False,
+    context: "MappingContext | None" = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a PBCore file into AVefi records using ``profile``.
 
@@ -510,22 +522,27 @@ def efi_import(
         remaining ones, instead of aborting the whole file. A single
         unmappable date in a large export would otherwise cost every
         record in it.
+    context : MappingContext, optional
+        Grouping context to add the records of this file to. One
+        conversion of several files passes the same context to each of
+        them, so that assets describing one film in different files
+        share their work. Without it the file is converted on its own.
 
     """
     records = []
-    context = MappingContext(profile=profile)
+    if context is None:
+        context = new_context(profile)
     with for_file(input_file):
         report_placeholder_issuer(profile)
         for document in parse_pbcore(input_file):
             try:
-                records.extend(map_record(document, profile, context))
+                with context.attempt():
+                    records.extend(map_record(document, profile, context))
             except Exception as e:
                 if not continue_on_error:
                     raise
-                report_issue(
-                    "error",
-                    f"Record skipped: {e}",
-                    record_id=safe_record_identifier(document),
+                report_record_skipped(
+                    e, record_id=safe_record_identifier(document)
                 )
     return records
 
@@ -563,6 +580,17 @@ class MappingContext(GroupingContext):
     """
 
     profile: PbcoreProfile | None = None
+
+
+def new_context(profile: PbcoreProfile) -> MappingContext:
+    """Return a grouping context for one conversion.
+
+    Handed to :func:`efi_import` once per run rather than once per
+    file, so that the works of a conversion are shared between the
+    input files.
+
+    """
+    return MappingContext(profile=profile)
 
 
 def map_record(
@@ -930,21 +958,21 @@ def make_work_key(profile, source_key, primary, production) -> str:
     """Return the key identifying the work a record belongs to."""
     if not profile.work_key_fields:
         return source_key
-    parts = []
+    parts = {}
     for name in profile.work_key_fields:
         if name == "primary_title":
-            parts.append(primary.ordering or primary.display)
+            parts[name] = primary.ordering or primary.display
         elif name == "director":
-            parts.append(director_names(production))
+            parts[name] = director_names(production)
         elif name == "date":
-            parts.append(
+            parts[name] = (
                 production.has_date
                 if production is not None and production.has_date
                 else ""
             )
         else:
             raise ValueError(f"Unknown work key field: {name}")
-    return make_key(*parts)
+    return work_key(parts, source_key, record_id=source_key)
 
 
 def director_names(production) -> str:
@@ -1395,30 +1423,13 @@ def add_duration(item, instantiation, profile, source_key):
     value = text_of(instantiation.instantiation_duration)
     if not value:
         return
-    has_value = mapped_duration(value, source_key, "instantiationDuration")
+    # PBCore states a duration in free text, so an unreadable one is
+    # to be expected; it costs the field, not the record.
+    has_value = mapped_duration(
+        value, record_id=source_key, source_field="instantiationDuration"
+    )
     if has_value:
         item.has_duration = efi.Duration(has_value=has_value)
-
-
-def mapped_duration(value, source_key, source_field):
-    """Return an ISODurationInHours, reporting what cannot be mapped."""
-    try:
-        return normalise_duration(
-            value,
-            record_id=source_key,
-            source_field=source_field,
-            target_field="has_duration.has_value",
-        )
-    except NormalisationError as e:
-        report_issue(
-            "error",
-            str(e),
-            record_id=source_key,
-            source_field=source_field,
-            target_field="has_duration.has_value",
-            raw_value=value,
-        )
-        raise
 
 
 def add_formats(item, instantiation, profile, source_key):
@@ -1683,7 +1694,9 @@ def add_essence_tracks(item, instantiation, profile, source_key):
         duration = text_of(track.essence_track_duration)
         if duration and item.has_duration is None:
             has_value = mapped_duration(
-                duration, source_key, "essenceTrackDuration"
+                duration,
+                record_id=source_key,
+                source_field="essenceTrackDuration",
             )
             if has_value:
                 item.has_duration = efi.Duration(has_value=has_value)

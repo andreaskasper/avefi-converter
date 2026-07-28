@@ -83,6 +83,14 @@ rather than for films, so the work and manifestation keys are
 configured in the profile and can be switched off with
 `work_key_fields=()` for an export that is genuinely item level.
 
+Grouping stops where the key stops identifying a film. When the
+director and the date are missing, the key comes down to the title
+alone, and two untitled or generically titled films would become one
+work with one identifier. Such a key does not group: the record keeps
+a work of its own and the decision is reported, because two works
+minted for one film can be merged afterwards, while one identifier
+registered for two films cannot be taken back.
+
 ## Structure
 
 | Module | Purpose |

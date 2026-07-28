@@ -73,6 +73,24 @@ class TestNormaliseDate:
     def test_decades_map_once_enabled(self, source, expected):
         assert normalise_date(source, map_decades=True) == expected
 
+    @pytest.mark.parametrize(
+        "source", ["1959-13", "1959-00", "1959-99", "1900-25"]
+    )
+    def test_refuses_an_implausible_abbreviated_interval(self, source):
+        """A mistyped month must not become a decades long interval."""
+        with pytest.raises(NormalisationError) as excinfo:
+            normalise_date(source)
+        assert "interval" in str(excinfo.value).lower()
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [("1959-60", "1959/1960"), ("1962-65", "1962/1965")],
+    )
+    def test_keeps_the_abbreviated_intervals_that_make_sense(
+        self, source, expected
+    ):
+        assert normalise_date(source) == expected
+
     def test_result_always_complies_with_iso_date(self):
         for source in ("1962-65", "ca. 1962", "15.03.1962"):
             assert ISO_DATE_PATTERN.match(normalise_date(source))
@@ -95,6 +113,27 @@ class TestNormaliseDuration:
     )
     def test_maps_known_notations(self, value, unit, expected):
         assert normalise_duration(value, unit) == expected
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            ("PT01H43M00S", "PT01H43M00S"),
+            ("PT1H43M", "PT01H43M00S"),
+            ("pt01h43m00s", "PT01H43M00S"),
+            ("PT103M", "PT01H43M00S"),
+            ("P0DT01H43M00S", "PT01H43M00S"),
+            ("PT6180S", "PT01H43M00S"),
+            ("PT1H43M0.4S", "PT01H43M00S"),
+        ],
+    )
+    def test_reads_the_iso_form_it_writes_itself(self, value, expected):
+        """EFG and PBCore state a duration in free text, ISO included."""
+        assert normalise_duration(value) == expected
+
+    @pytest.mark.parametrize("value", ["P", "PT", "P2Y", "PT1X"])
+    def test_rejects_an_iso_duration_without_a_running_time(self, value):
+        with pytest.raises(NormalisationError):
+            normalise_duration(value)
 
     @pytest.mark.parametrize("value", ["", None])
     def test_absent_duration_is_none(self, value):

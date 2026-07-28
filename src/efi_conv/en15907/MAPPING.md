@@ -66,3 +66,5 @@ Decisions the mapping takes that EN 15907 and the EFG schema do not determine, a
 - A carrier or gauge outside the profile vocabularies is reported rather than passed through as a free text `Format`, so that an unreviewed term cannot enter the data.
 - Decade expressions such as `50er Jahre` are reported as unconvertible unless `map_decades` is enabled in the profile.
 - The shipped issuer is a documented placeholder. It has to be replaced with the ISIL of the data provider before the records are used.
+- A work key that would be no more than the title does not group: the record keeps a work of its own, and the decision is reported. Two undated films of the same name are two films, and one AVefi identifier registered for both cannot be corrected afterwards, whereas two works minted for one film can be merged.
+- A running time that cannot be read leaves `has_duration` unset and is reported. Discarding the record over it would cost the work, every manifestation and every item derived from it.

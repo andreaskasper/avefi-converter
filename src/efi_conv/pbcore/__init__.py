@@ -26,6 +26,7 @@ from avefi_schema import model_pydantic_v2 as efi
 
 from .mapping import (
     MAPPING_RULES,
+    MappingContext,
     MappingRule,
     map_record,
     parse_pbcore,
@@ -33,6 +34,9 @@ from .mapping import (
 )
 from .mapping import (
     efi_import as pbcore_import,
+)
+from .mapping import (
+    new_context as pbcore_new_context,
 )
 from .profile import PbcoreProfile
 
@@ -61,25 +65,32 @@ __all__ = (
     "ISSUER_INFO",
     "MAPPING_RULES",
     "PROFILE",
+    "MappingContext",
     "MappingRule",
     "PbcoreProfile",
     "efi_import",
     "main",
     "map_record",
+    "new_context",
     "parse_pbcore",
     "render_mapping_markdown",
 )
 
 
 def efi_import(
-    input_file, continue_on_error: bool = False
+    input_file,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a PBCore 2.1 document into AVefi records."""
-    return pbcore_import(input_file, PROFILE, continue_on_error)
+    return pbcore_import(input_file, PROFILE, continue_on_error, context)
 
 
 def convert(
-    input_file, profile: PbcoreProfile, continue_on_error: bool = False
+    input_file,
+    profile: PbcoreProfile,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a PBCore 2.1 document using ``profile`` instead of the default.
 
@@ -87,7 +98,19 @@ def convert(
     profile loaded from a file.
 
     """
-    return pbcore_import(input_file, profile, continue_on_error)
+    return pbcore_import(input_file, profile, continue_on_error, context)
+
+
+def new_context(profile: PbcoreProfile | None = None) -> MappingContext:
+    """Return the grouping context for one conversion.
+
+    ``efi-conv from`` builds one per invocation and passes it to every
+    input file, so that assets describing one film in different files
+    share their work instead of being minted twice under the same
+    identifier.
+
+    """
+    return pbcore_new_context(profile or PROFILE)
 
 
 def main(argv=None):

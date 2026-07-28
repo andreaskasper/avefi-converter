@@ -30,11 +30,13 @@ from avefi_schema import model_pydantic_v2 as efi
 from .mapping import (
     ASSUMPTIONS,
     MAPPING_RULES,
+    MappingContext,
     MappingRule,
     map_record,
     render_mapping_markdown,
 )
 from .mapping import efi_import as marc21_import
+from .mapping import new_context as marc21_new_context
 from .marcxml import MarcRecord, iter_records
 from .profile import Marc21Profile
 
@@ -66,24 +68,31 @@ __all__ = (
     "PROFILE",
     "Marc21Profile",
     "MarcRecord",
+    "MappingContext",
     "MappingRule",
     "efi_import",
     "iter_records",
     "main",
     "map_record",
+    "new_context",
     "render_mapping_markdown",
 )
 
 
 def efi_import(
-    input_file, continue_on_error: bool = False
+    input_file,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a MARCXML export into AVefi records."""
-    return marc21_import(input_file, PROFILE, continue_on_error)
+    return marc21_import(input_file, PROFILE, continue_on_error, context)
 
 
 def convert(
-    input_file, profile: Marc21Profile, continue_on_error: bool = False
+    input_file,
+    profile: Marc21Profile,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert a MARCXML export using ``profile`` instead of the default.
 
@@ -91,7 +100,19 @@ def convert(
     profile loaded from a file.
 
     """
-    return marc21_import(input_file, profile, continue_on_error)
+    return marc21_import(input_file, profile, continue_on_error, context)
+
+
+def new_context(profile: Marc21Profile | None = None) -> MappingContext:
+    """Return the grouping context for one conversion.
+
+    ``efi-conv from`` builds one per invocation and passes it to every
+    input file, so that records describing one film in different files
+    share their work instead of being minted twice under the same
+    identifier.
+
+    """
+    return marc21_new_context(profile or PROFILE)
 
 
 def main(argv=None):

@@ -182,7 +182,22 @@ Commands:
 
 Output is deterministic: records are ordered by category, parents
 before children, then by identifier, so converting the same input twice
-yields byte identical results.
+yields byte identical results. The input files are converted in sorted
+order, so the output depends on which files were named rather than on
+the order they were named in or on how the shell expanded a glob.
+
+One invocation is one conversion, whatever the input happens to be
+split into. Records describing the same film are grouped into one work
+across all the files named on the command line, which is what the
+harvest workflow below depends on: `efi-conv harvest` writes one file
+per page, and a page boundary has nothing to do with which records
+describe the same film. Converting the files one at a time instead
+mints one work per file, and the resulting files cannot be used
+together, because the works then carry the same identifier twice.
+
+The run exits non-zero when it lost anything: a file that could not be
+read, and a record that could not be converted. A conversion that
+skipped records is not a success, however many records it did write.
 
 ### `efi-conv check`
 
@@ -344,7 +359,7 @@ $ uv run efi-conv from -f fmdu.lido -o efi_records.json \
 {
   "report_format_version": "1.0",
   "avefi_schema_version": { "sha256": "fcf4d251…", "metamodel_version": "1.7.0" },
-  "summary": { "info": 5, "warning": 1, "error": 0 },
+  "summary": { "info": 5, "warning": 1, "error": 0, "records_skipped": 0 },
   "entries": [
     {
       "severity": "warning",
@@ -358,6 +373,18 @@ $ uv run efi-conv from -f fmdu.lido -o efi_records.json \
   ]
 }
 ```
+
+`summary.records_skipped` counts the source records that could not be
+converted and were left out of the output. It is what the exit code of
+`efi-conv from` reflects, so that a pipeline does not have to read
+message text to tell a complete run from a lossy one.
+
+Severity is used consistently: `info` records a documented decision,
+`warning` says that information was not transferred, and `error` says
+that a value could not be converted at all. A running time nobody can
+read is therefore a warning — the field is left unset and the record
+is kept, because discarding the record would cost the work, every
+manifestation and every item derived from it.
 
 The AVefi schema is fetched from a branch rather than from a release,
 so the report records a hash of the document a conversion was checked
@@ -408,6 +435,7 @@ flowchart TD
     MOD --> ISSUER["ISSUER_INFO"]
     MOD -.optional.-> DESC["DESCRIPTION, INPUT_FORMAT<br/>shown by --list-formats"]
     MOD -.optional.-> CONT["continue_on_error<br/>contains an error to one record"]
+    MOD -.optional.-> CTX["new_context + context<br/>groups records across files"]
     IMP --> REC["list of AVefi records"]
     REC --> DUMP["core/avefi.py"]
 ```
@@ -421,7 +449,22 @@ What your module has to provide:
 | `DESCRIPTION` | no | One line shown by `--list-formats` |
 | `INPUT_FORMAT` | no | Expected input, shown by `--list-formats` |
 | `continue_on_error` parameter | no | Lets `from` skip a single bad record instead of the whole file |
+| `context` parameter and `new_context()` | no | Lets `from` group the records of all its input files into one conversion |
 | `PROFILE_CLASS` and `convert(input_file, profile, continue_on_error)` | no | Lets the converter be bound to a [profile](#profiles) |
+
+A converter that shares works between records opts into the second of
+these. `efi-conv from` calls `new_context()` once per invocation and
+hands the result to every input file, so that one film described in
+two files becomes one work rather than two carrying the same
+identifier. `efi_import(input_file)` without a context keeps
+converting the one file on its own, which is what
+`python -m efi_conv.NAME` and the direct API do.
+
+Register what a record contributes inside `context.attempt()`. A
+record that fails halfway would otherwise leave its work in the
+context but not in the output, and the next record with the same key
+would find the work known, emit nothing, and refer to a work nobody
+wrote.
 
 Before writing one, check what is already there. The shared layer in
 [`core`](./src/efi_conv/core) carries the parts every converter needs:
@@ -500,6 +543,26 @@ deliberately with `efi-conv check --update-schema`.
 that a broken export does not pass unnoticed. Use `--continue-on-error`
 to skip it, record it in the report and carry on; the command still
 exits non-zero at the end.
+
+**The run exits non-zero although records were written.** Something was
+lost: `summary.records_skipped` in the report counts the source records
+that could not be converted, and the entries say why. The output is
+usable, but it is not the whole export.
+
+**A document is refused because it declares XML entities.** An entity
+is expanded against the document type declaration, and a record is
+converted on its own, away from it — the reference and the rest of the
+text would silently disappear, which is worse than stopping. Resolve
+the entities first, for instance with `xmllint --noent export.xml >
+resolved.xml`, and check the result. External entities are never
+fetched, whatever the document points at.
+
+**Two records that are the same film got two works.** The grouping key
+is the primary title, the director and the production date, and a key
+that comes down to the title alone does not group: two undated films
+called `Werbefilm` would otherwise become one work with one identifier,
+which no later correction can undo. The report names every record this
+applies to. Two works minted for one film can be merged afterwards.
 
 **`efi-conv check` reports unresolvable references.** A manifestation
 or item points at a parent that is not in the same file. Convert the

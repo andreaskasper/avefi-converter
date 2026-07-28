@@ -468,3 +468,67 @@ def test_mapping_documentation_is_up_to_date():
         pathlib.Path(mapping.__file__).parent / "MAPPING.md"
     ).read_text(encoding="utf-8")
     assert committed == generated, "Regenerate MAPPING.md from MAPPING_RULES"
+
+
+class TestUnreadableDuration:
+    """One free text duration must not cost a whole asset.
+
+    instantiationDuration is free text, so an expression nobody can
+    parse is to be expected. Discarding the record would lose the
+    work, every manifestation and every item derived from it.
+
+    """
+
+    @pytest.fixture
+    def broken_duration(self, tmp_path, input_path):
+        source = input_path("sample_data.xml").read_text(encoding="utf-8")
+        target = tmp_path / "duration.xml"
+        target.write_text(
+            source.replace(
+                "<instantiationDuration>01:43:00",
+                "<instantiationDuration>ungefähr eine Stunde",
+            ),
+            encoding="utf-8",
+        )
+        return target
+
+    def test_the_other_fields_of_the_record_survive(
+        self, broken_duration, input_path
+    ):
+        intact = pbcore.efi_import(input_path("sample_data.xml"))
+        damaged = pbcore.efi_import(broken_duration)
+        assert [r.category for r in damaged] == [r.category for r in intact]
+
+    def test_the_duration_is_left_unset_and_reported(self, broken_duration):
+        report = ConversionReport()
+        with collecting(report):
+            records = pbcore.efi_import(broken_duration)
+        without = [
+            record
+            for record in records
+            if record.category == "avefi:Item" and record.has_duration is None
+        ]
+        assert without
+        assert [
+            entry
+            for entry in report.entries
+            if entry.severity == "warning"
+            and entry.target_field == "has_duration.has_value"
+        ]
+
+    def test_an_iso_duration_is_read(self, tmp_path, input_path):
+        source = input_path("sample_data.xml").read_text(encoding="utf-8")
+        target = tmp_path / "iso.xml"
+        target.write_text(
+            source.replace(
+                "<instantiationDuration>01:43:00",
+                "<instantiationDuration>PT01H43M00S",
+            ),
+            encoding="utf-8",
+        )
+        durations = {
+            record.has_duration.has_value
+            for record in pbcore.efi_import(target)
+            if record.category == "avefi:Item" and record.has_duration
+        }
+        assert "PT01H43M00S" in durations

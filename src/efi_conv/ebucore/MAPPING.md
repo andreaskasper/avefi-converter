@@ -47,3 +47,5 @@ Decisions the mapping takes that EBUCore does not determine, and that need confi
 - A timecode duration contributes hours, minutes and seconds. The frame count is reported, because ISODurationInHours cannot express it.
 - Decade expressions are reported as unconvertible unless map_decades is enabled, as in the other converters.
 - The vocabularies in the profile follow the EBU classification schemes plus the English and German spellings met in practice. They are provisional and are to be confirmed against the reference data of each provider.
+- A work key that would be no more than the title does not group: the record keeps a work of its own, and the decision is reported. Two undated films of the same name are two films, and one AVefi identifier registered for both cannot be corrected afterwards, whereas two works minted for one film can be merged.
+- A running time that cannot be read leaves `has_duration` unset and is reported. Discarding the record over it would cost the work, every manifestation and every item derived from it.

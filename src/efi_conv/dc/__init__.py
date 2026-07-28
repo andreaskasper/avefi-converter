@@ -10,6 +10,7 @@ from .mapping import (
     efi_import,
     main,
     map_record,
+    new_context,
     parse_dc,
     render_mapping_markdown,
 )
@@ -28,6 +29,7 @@ __all__ = (
     "efi_import",
     "main",
     "map_record",
+    "new_context",
     "parse_dc",
     "render_mapping_markdown",
 )

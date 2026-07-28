@@ -55,3 +55,5 @@ Decisions the mapping takes that PBCore does not determine, and that need confir
 - Decade expressions are reported as unconvertible. Enabling map_decades maps them to a closed ten year interval.
 - A running time given as a bare number without a unit is read as minutes, and clock notation with two components as minutes and seconds, following the shared normalisation rules.
 - The shipped profile carries a placeholder issuer. PBCore does not identify the data provider in a form that could become an ISIL, and the records are not usable until the holding institution is configured.
+- A work key that would be no more than the title does not group: the record keeps a work of its own, and the decision is reported. Two undated films of the same name are two films, and one AVefi identifier registered for both cannot be corrected afterwards, whereas two works minted for one film can be merged.
+- A running time that cannot be read leaves `has_duration` unset and is reported. Discarding the record over it would cost the work, every manifestation and every item derived from it.

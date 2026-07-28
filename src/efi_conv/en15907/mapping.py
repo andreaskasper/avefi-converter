@@ -23,8 +23,8 @@ from avefi_schema import model_pydantic_v2 as efi
 from ..core.normalise import (
     NormalisationError,
     language_code,
+    mapped_duration,
     normalise_date,
-    normalise_duration,
     normalise_title,
 )
 from ..core.records import (
@@ -34,8 +34,9 @@ from ..core.records import (
     attach_source_key,
     make_key,
     slug,
+    work_key,
 )
-from ..core.report import for_file, report_issue
+from ..core.report import for_file, report_issue, report_record_skipped
 from ..core.xmlrecords import first, parse_records, text_of
 from .generated.efg_3_2 import EfgEntity
 from .profile import EfgProfile
@@ -445,6 +446,14 @@ ASSUMPTIONS = (
     "The shipped issuer is a documented placeholder. It has to be"
     " replaced with the ISIL of the data provider before the records"
     " are used.",
+    "A work key that would be no more than the title does not group:"
+    " the record keeps a work of its own, and the decision is reported."
+    " Two undated films of the same name are two films, and one AVefi"
+    " identifier registered for both cannot be corrected afterwards,"
+    " whereas two works minted for one film can be merged.",
+    "A running time that cannot be read leaves `has_duration` unset"
+    " and is reported. Discarding the record over it would cost the"
+    " work, every manifestation and every item derived from it.",
 )
 
 
@@ -543,7 +552,10 @@ class MappingContext(GroupingContext):
 
 
 def efi_import(
-    input_file, profile: EfgProfile, continue_on_error: bool = False
+    input_file,
+    profile: EfgProfile,
+    continue_on_error: bool = False,
+    context: "MappingContext | None" = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert an EFG file into AVefi records using ``profile``.
 
@@ -556,6 +568,12 @@ def efi_import(
     continue_on_error : bool
         Report an entity that cannot be converted and carry on with
         the remaining ones, instead of aborting the whole file.
+    context : MappingContext, optional
+        Grouping context to add the records of this file to. One
+        conversion of several files passes the same context to each of
+        them, so that a film split over several files yields one work.
+        The events of each file are added to the registry the context
+        carries. Without a context the file is converted on its own.
 
     """
     if profile.work_description_target not in (
@@ -567,6 +585,8 @@ def efi_import(
             f" {profile.work_description_target!r}"
         )
     records = []
+    if context is None:
+        context = new_context(profile)
     with for_file(input_file):
         if profile.uses_placeholder_issuer():
             report_issue(
@@ -577,21 +597,32 @@ def efi_import(
                 target_field="described_by.has_issuer_id",
                 raw_value=profile.issuer_info.get("has_issuer_id"),
             )
-        context = MappingContext(
-            profile=profile, events=collect_events(input_file, profile)
-        )
+        # The events of every file of the run are registered
+        # together: a manifestation may refer to an event entity
+        # published in another file of the same delivery.
+        context.events.update(collect_events(input_file, profile))
         for entity in parse_efg(input_file):
             try:
-                records.extend(map_entity(entity, profile, context))
+                with context.attempt():
+                    records.extend(map_entity(entity, profile, context))
             except Exception as e:
                 if not continue_on_error:
                     raise
-                report_issue(
-                    "error",
-                    f"Record skipped: {e}",
-                    record_id=safe_entity_identifier(entity, profile),
+                report_record_skipped(
+                    e, record_id=safe_entity_identifier(entity, profile)
                 )
     return records
+
+
+def new_context(profile: EfgProfile) -> MappingContext:
+    """Return a grouping context for one conversion.
+
+    Handed to :func:`efi_import` once per run rather than once per
+    file, so that the works, manifestations and items of a conversion
+    are shared between the input files.
+
+    """
+    return MappingContext(profile=profile)
 
 
 def collect_events(input_file, profile: EfgProfile) -> dict:
@@ -1213,10 +1244,15 @@ def make_work_key(
             parts.append(values[name])
         return parts
 
-    parts = parts_for(profile.work_key_fields)
-    if not any(parts):
-        parts = parts_for(profile.work_key_fallback_fields)
-    return make_key(*parts)
+    names = profile.work_key_fields
+    if not any(parts_for(names)):
+        names = profile.work_key_fallback_fields
+    parts = {name: values[name] for name in names}
+    return work_key(
+        parts,
+        identifier or slug(make_key(*parts.values())),
+        record_id=identifier,
+    )
 
 
 def merge_named(target: list, names, factory):
@@ -1752,23 +1788,15 @@ def describe_copy(element, profile: EfgProfile, record_id) -> CopyDescription:
     if duration_element is not None:
         value = text_of(duration_element)
         if value:
-            try:
-                duration = normalise_duration(
-                    value,
-                    record_id=record_id,
-                    source_field="avManifestation/duration",
-                    target_field="has_duration.has_value",
-                )
-            except NormalisationError as e:
-                report_issue(
-                    "error",
-                    str(e),
-                    record_id=record_id,
-                    source_field="avManifestation/duration",
-                    target_field="has_duration.has_value",
-                    raw_value=value,
-                )
-                raise
+            # EFG states a duration in free text, so one that cannot
+            # be read is to be expected. It costs the field, not the
+            # work with every manifestation and item under it.
+            duration = mapped_duration(
+                value,
+                record_id=record_id,
+                source_field="avManifestation/duration",
+                target_field="has_duration.has_value",
+            )
         frame_rate = map_frame_rate(
             getattr(duration_element, "frame_rate", None), profile, record_id
         )

@@ -413,3 +413,52 @@ class TestDocumentShapes:
         source = tmp_path / "empty.xml"
         source.write_text(self.HEADER + "<somethingElse/>\n", encoding="utf-8")
         assert mapping.parse_lido(source) == []
+
+
+class TestUnreadableDuration:
+    """A running time nobody can read costs a field, not a record.
+
+    Discarding the record would cost the work, the manifestation and
+    the item derived from it, and with them everything the source said
+    about the film.
+
+    """
+
+    def test_the_record_survives(self, lido_page, lido_record):
+        source = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001", duration="ungefähr eine Stunde"),
+        )
+        records = fmdu_lido.efi_import(source)
+        assert [record.category for record in records] == [
+            "avefi:WorkVariant",
+            "avefi:Manifestation",
+            "avefi:Item",
+        ]
+
+    def test_the_duration_is_left_unset_and_reported(
+        self, lido_page, lido_record
+    ):
+        source = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001", duration="ungefähr eine Stunde"),
+        )
+        report = ConversionReport()
+        with collecting(report):
+            records = fmdu_lido.efi_import(source)
+        item = next(r for r in records if r.category == "avefi:Item")
+        assert item.has_duration is None
+        assert [
+            entry
+            for entry in report.entries
+            if entry.target_field == "has_duration.has_value"
+            and entry.severity == "warning"
+        ]
+
+    def test_an_iso_duration_is_read(self, lido_page, lido_record):
+        source = lido_page(
+            "export.xml", lido_record("FMDU-0001", duration="PT01H43M00S")
+        )
+        records = fmdu_lido.efi_import(source)
+        item = next(r for r in records if r.category == "avefi:Item")
+        assert item.has_duration.has_value == "PT01H43M00S"

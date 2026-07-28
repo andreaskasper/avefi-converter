@@ -36,6 +36,7 @@ from .mapping import (
     render_mapping_markdown,
 )
 from .mapping import efi_import as efg_import
+from .mapping import new_context as efg_new_context
 from .profile import PLACEHOLDER_ISSUER_INFO, EfgProfile
 
 DESCRIPTION = "EN 15907 metadata as published by the European Film Gateway"
@@ -53,14 +54,19 @@ PROFILE = EfgProfile(issuer_info=ISSUER_INFO, description=DESCRIPTION)
 
 
 def efi_import(
-    input_file, continue_on_error: bool = False
+    input_file,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert an EFG export into AVefi records."""
-    return efg_import(input_file, PROFILE, continue_on_error)
+    return efg_import(input_file, PROFILE, continue_on_error, context)
 
 
 def convert(
-    input_file, profile: EfgProfile, continue_on_error: bool = False
+    input_file,
+    profile: EfgProfile,
+    continue_on_error: bool = False,
+    context: MappingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert an EFG export using ``profile`` instead of the default.
 
@@ -68,7 +74,19 @@ def convert(
     profile loaded from a file.
 
     """
-    return efg_import(input_file, profile, continue_on_error)
+    return efg_import(input_file, profile, continue_on_error, context)
+
+
+def new_context(profile: EfgProfile | None = None) -> MappingContext:
+    """Return the grouping context for one conversion.
+
+    ``efi-conv from`` builds one per invocation and passes it to every
+    input file, so that entities describing one film in different
+    files share their work instead of being minted twice under the
+    same identifier.
+
+    """
+    return efg_new_context(profile or PROFILE)
 
 
 def main(argv=None):
@@ -113,6 +131,7 @@ __all__ = (
     "efi_import",
     "main",
     "map_entity",
+    "new_context",
     "parse_efg",
     "render_mapping_markdown",
 )

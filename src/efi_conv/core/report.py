@@ -74,11 +74,28 @@ class ReportEntry:
 
 @dataclass
 class ConversionReport:
-    """Collection of report entries for one conversion run."""
+    """Collection of report entries for one conversion run.
+
+    Attributes
+    ----------
+    entries : list
+        The issues reported so far.
+    source_file : str or None
+        Input file the issues reported now are attributed to.
+    avefi_schema_version : str or None
+        Fingerprint of the AVefi schema the run was checked against.
+    records_skipped : int
+        Source records that failed to convert and were left out.
+        Counted separately from the entries because losing a record is
+        what the exit code of ``efi-conv from`` has to reflect, and no
+        caller should have to recognise a loss from message text.
+
+    """
 
     entries: list[ReportEntry] = field(default_factory=list)
     source_file: str | None = None
     avefi_schema_version: str | None = None
+    records_skipped: int = 0
 
     def add(self, severity: str, message: str, **kwargs) -> ReportEntry:
         """Record an issue and log it at the matching level."""
@@ -104,6 +121,10 @@ class ConversionReport:
             for severity in SEVERITIES
         }
 
+    def summary(self) -> dict[str, int]:
+        """Return the entry counts and the number of records lost."""
+        return {**self.counts(), "records_skipped": self.records_skipped}
+
     def to_dict(self) -> dict:
         """Return the report as a JSON serialisable dictionary."""
         from .. import __version__
@@ -113,7 +134,7 @@ class ConversionReport:
             "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
             "efi_conv_version": __version__,
             "avefi_schema_version": self.avefi_schema_version,
-            "summary": self.counts(),
+            "summary": self.summary(),
             "entries": [asdict(entry) for entry in self.entries],
         }
 
@@ -185,6 +206,23 @@ def report_issue(severity: str, message: str, **kwargs):
         )
         return entry
     return report.add(severity, message, **kwargs)
+
+
+def report_record_skipped(reason, **kwargs) -> ReportEntry:
+    """Report a source record that could not be converted.
+
+    A skipped record is a loss of data rather than a detail of the
+    run. It is therefore counted, so that ``efi-conv from`` can exit
+    non-zero for a run that lost records as well as for one that lost
+    whole files, instead of telling a pipeline that a lossy conversion
+    succeeded.
+
+    """
+    entry = report_issue("error", f"Record skipped: {reason}", **kwargs)
+    report = current_report()
+    if report is not None:
+        report.records_skipped += 1
+    return entry
 
 
 @contextmanager

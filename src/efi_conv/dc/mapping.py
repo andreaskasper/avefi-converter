@@ -44,7 +44,7 @@ from ..core.records import (
     attach_source_key,
     make_key,
 )
-from ..core.report import for_file, report_issue
+from ..core.report import for_file, report_issue, report_record_skipped
 from ..core.xmlrecords import (
     LXML_SAFETY,
     iter_record_elements,
@@ -383,14 +383,31 @@ def parse_dc(input_file):
 
 
 def efi_import(
-    input_file, continue_on_error: bool = False
+    input_file,
+    continue_on_error: bool = False,
+    context: GroupingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert an oai_dc export into AVefi records."""
-    return convert(input_file, PROFILE, continue_on_error)
+    return convert(input_file, PROFILE, continue_on_error, context)
+
+
+def new_context(profile: DcProfile | None = None) -> GroupingContext:
+    """Return the grouping context for one conversion.
+
+    ``efi-conv from`` builds one per invocation and passes it to every
+    input file, so that a record delivered in two files, as the pages
+    of a harvest are, yields one set of AVefi records rather than two
+    carrying the same identifiers.
+
+    """
+    return GroupingContext()
 
 
 def convert(
-    input_file, profile: DcProfile, continue_on_error: bool = False
+    input_file,
+    profile: DcProfile,
+    continue_on_error: bool = False,
+    context: GroupingContext | None = None,
 ) -> list[efi.MovingImageRecord]:
     """Convert an oai_dc file into AVefi records using ``profile``.
 
@@ -403,23 +420,24 @@ def convert(
     continue_on_error : bool
         Report a record that cannot be converted and carry on with the
         remaining ones, instead of aborting the whole file.
+    context : GroupingContext, optional
+        Context the records of this file are added to. Without one the
+        file is converted on its own, as before.
 
     """
     records = []
-    context = GroupingContext()
+    if context is None:
+        context = new_context(profile)
     with for_file(input_file):
         report_placeholder_issuer(profile)
         for element in parse_dc(input_file):
             try:
-                records.extend(map_record(element, profile, context))
+                with context.attempt():
+                    records.extend(map_record(element, profile, context))
             except Exception as e:
                 if not continue_on_error:
                     raise
-                report_issue(
-                    "error",
-                    f"Record skipped: {e}",
-                    record_id=safe_source_key(element),
-                )
+                report_record_skipped(e, record_id=safe_source_key(element))
     return records
 
 

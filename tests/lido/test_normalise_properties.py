@@ -12,6 +12,7 @@ from hypothesis import assume, given
 from hypothesis import strategies as st
 import pytest
 
+from efi_conv.core.normalise import MAX_ABBREVIATED_INTERVAL_YEARS
 from efi_conv.lido.normalise import (
     ARTICLES,
     ISO_DATE_PATTERN,
@@ -39,13 +40,22 @@ def test_bare_year_is_preserved(year):
 
 
 @given(years, st.integers(min_value=13, max_value=99))
-def test_abbreviated_interval_never_ends_before_it_starts(year, end):
+def test_abbreviated_interval_stays_within_a_plausible_span(year, end):
     # Two trailing digits below 13 are read as an ISO month instead,
-    # which is covered by test_ambiguous_year_month_stays_iso.
-    result = normalise_date(f"{year}-{end:02d}")
+    # which is covered by test_ambiguous_year_month_stays_iso. An
+    # interval that would run for decades is refused rather than
+    # asserted as a fact about the production.
+    try:
+        result = normalise_date(f"{year}-{end:02d}")
+    except NormalisationError:
+        return
     start_text, separator, end_text = result.partition("/")
     assert separator == "/", result
-    assert int(end_text) >= int(start_text)
+    assert (
+        int(start_text)
+        <= int(end_text)
+        <= int(start_text) + MAX_ABBREVIATED_INTERVAL_YEARS
+    )
 
 
 @given(years, st.integers(min_value=1, max_value=12))

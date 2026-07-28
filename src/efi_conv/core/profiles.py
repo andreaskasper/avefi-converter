@@ -212,9 +212,27 @@ class ConfiguredImporter:
         """Return the issuer the profile names."""
         return dict(self.profile.issuer_info)
 
-    def efi_import(self, input_file, continue_on_error: bool = False):
+    def efi_import(
+        self, input_file, continue_on_error: bool = False, context=None
+    ):
         """Convert ``input_file`` using the configured profile."""
-        return self.module.convert(input_file, self.profile, continue_on_error)
+        return self.module.convert(
+            input_file, self.profile, continue_on_error, context
+        )
+
+    def new_context(self):
+        """Return a grouping context bound to the configured profile.
+
+        A configured conversion groups the records of its input files
+        exactly as an unconfigured one does; a profile decides what a
+        source term means, not whether two files describing one film
+        yield one work or two.
+
+        """
+        factory = getattr(self.module, "new_context", None)
+        if factory is None:
+            return None
+        return factory(self.profile)
 
 
 def configure(module: types.ModuleType, path) -> ConfiguredImporter:
