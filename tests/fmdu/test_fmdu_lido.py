@@ -599,3 +599,53 @@ class TestRunningTime:
             if r.category == "avefi:Item"
         )
         assert item.has_duration.has_value == "PT01H31M14S"
+
+
+class TestSourceKey:
+    """The two importers of one collection must agree on a key.
+
+    The LIDO export prefixes the identifier with the archive and the
+    museum; the CSV export of the same holdings carries the bare
+    number, and so does the rest of the institution's data. Taking the
+    whole string would give one copy two source keys depending on
+    which importer ran, and nothing could be matched between them —
+    not the two exports against each other, and not a delivery against
+    what AVefi already holds.
+
+    """
+
+    def key_of(self, lido_page, lido_record, record_id):
+        source = lido_page("export.xml", lido_record(record_id))
+        item = next(
+            r
+            for r in fmdu_lido.efi_import(source)
+            if r.category == "avefi:Item"
+        )
+        return item.described_by.has_source_key
+
+    def test_the_namespaces_are_dropped(self, lido_page, lido_record):
+        assert self.key_of(
+            lido_page, lido_record, "DE-MUS-042628:DE-MUS-432511:1059195"
+        ) == ["1059195"]
+
+    def test_a_bare_identifier_is_left_alone(self, lido_page, lido_record):
+        assert self.key_of(lido_page, lido_record, "1059195") == ["1059195"]
+
+    def test_the_report_names_the_record_the_provider_would(
+        self, lido_page, lido_record
+    ):
+        """A report entry has to be findable in the source system."""
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            fmdu_lido.efi_import(
+                lido_page(
+                    "export.xml",
+                    lido_record(
+                        "DE-MUS-042628:DE-MUS-432511:1059195",
+                        role="Absender*in",
+                    ),
+                )
+            )
+        assert {entry.record_id for entry in report.entries} == {"1059195"}

@@ -31,6 +31,12 @@ class LidoProfile:
         Short description shown by ``efi-conv from --list-formats``.
     default_language : str or None
         ISO 639-2/B code assumed when a title carries no xml:lang.
+    source_key_pattern : str or None
+        Regular expression selecting the local identifier out of
+        ``lido:lidoRecID``. The first group is taken, or the whole
+        match where there is none. Providers prefix the identifier
+        with their own namespaces, and the bare identifier is what the
+        rest of the institution's data uses, so the two have to agree.
     record_type_terms : frozenset
         Lower case ``lido:recordType`` terms denoting a record that is
         in scope. Where a provider states what each record is about,
@@ -130,6 +136,7 @@ class LidoProfile:
     issuer_info: dict
     description: str = "LIDO export"
     default_language: str | None = None
+    source_key_pattern: str | None = None
     record_type_terms: frozenset = frozenset()
     film_work_type_terms: frozenset = frozenset(
         {

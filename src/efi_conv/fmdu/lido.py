@@ -45,6 +45,16 @@ ISSUER_INFO = {
 #: objectWorkType holds a title fragment.
 RECORD_TYPE_TERMS = frozenset({"item"})
 
+#: The part of lido:lidoRecID that identifies the record.
+#:
+#: The export writes "DE-MUS-042628:DE-MUS-432511:1059195", where the
+#: first two segments name the archive and the museum. The identifier
+#: is the last one, and it is what the CSV export of the same holdings
+#: carries in its first column. Taking the whole string would give the
+#: same copy two different source keys depending on which of the two
+#: importers ran, and nothing could be matched between them.
+SOURCE_KEY_PATTERN = r"([^:]+)$"
+
 #: House vocabularies, kept in step with the CSV importer for the same
 #: institution so that both produce identical AVefi values.
 COLOUR_TYPE_MAP = {
@@ -208,6 +218,7 @@ PROFILE = LidoProfile(
     issuer_info=ISSUER_INFO,
     description=DESCRIPTION,
     default_language="ger",
+    source_key_pattern=SOURCE_KEY_PATTERN,
     record_type_terms=RECORD_TYPE_TERMS,
     # Switched off rather than left at the default: objectWorkType
     # answers a different question in this export, and two criteria

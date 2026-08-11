@@ -61,15 +61,16 @@ class MappingRule:
 #: not drift apart.
 MAPPING_RULES = (
     MappingRule(
-        "film_filter",
+        "scope",
         "Record",
-        "lido:objectClassificationWrap/lido:objectWorkTypeWrap"
-        "/lido:objectWorkType",
+        "lido:administrativeMetadata/lido:recordWrap/lido:recordType,"
+        " else lido:objectWorkType",
         "—",
-        "Profile vocabulary",
-        "Only holdings metadata about film is in scope. Records of"
-        " another work type are skipped and reported; a record without"
-        " a work type is skipped with a warning",
+        "Profile record_type_terms, else film_work_type_terms",
+        "Where a provider states what a record describes, that decides"
+        " and the work type is not consulted. Records out of scope are"
+        " skipped and reported; a record stating neither is skipped"
+        " with a warning",
     ),
     MappingRule(
         "work_grouping",
@@ -95,8 +96,11 @@ MAPPING_RULES = (
         "lido:lidoRecID, else lido:administrativeMetadata"
         "/lido:recordWrap/lido:recordID",
         "has_identifier, described_by.has_source_key",
+        "Profile source_key_pattern",
         notes="Local identifier; also used to derive the work and"
-        " manifestation ids",
+        " manifestation ids. The pattern selects the identifier out of"
+        " the namespaces a provider prefixes it with, so that the key"
+        " matches the one the rest of its data uses",
     ),
     MappingRule(
         "primary_title",
@@ -462,7 +466,7 @@ def efi_import(
                 if not continue_on_error:
                     raise
                 report_record_skipped(
-                    e, record_id=safe_record_identifier(lido_record)
+                    e, record_id=safe_record_identifier(lido_record, profile)
                 )
     return records
 
@@ -501,7 +505,7 @@ def map_record(
     """Return the AVefi records derived from one LIDO record."""
     if context is None:
         context = MappingContext(profile=profile)
-    source_key = record_identifier(lido_record)
+    source_key = record_identifier(lido_record, profile)
     descriptive = first(lido_record.descriptive_metadata)
     if descriptive is None:
         raise ValueError(
@@ -723,10 +727,10 @@ def make_manifestation_key(work_key: str, item) -> str:
     return make_key(*parts)
 
 
-def safe_record_identifier(lido_record) -> str | None:
+def safe_record_identifier(lido_record, profile=None) -> str | None:
     """Return the record identifier, or None if there is none."""
     try:
-        return record_identifier(lido_record)
+        return record_identifier(lido_record, profile)
     except ValueError:
         return None
 
@@ -1213,12 +1217,23 @@ def term_text(term) -> str | None:
     return text_of(term)
 
 
-def record_identifier(lido_record: Lido) -> str:
-    """Return the local identifier of a LIDO record."""
+def record_identifier(lido_record: Lido, profile=None) -> str:
+    """Return the local identifier of a LIDO record.
+
+    A provider commonly prefixes the identifier with namespaces of its
+    own — ``DE-MUS-042628:DE-MUS-432511:1059195`` — while the rest of
+    its data, and the export the other importer for the same
+    institution reads, uses the bare ``1059195``. The two have to
+    agree, or the same copy carries two different source keys
+    depending on which importer ran, and nothing can be matched
+    between them. ``source_key_pattern`` in the profile says which
+    part is the identifier.
+
+    """
     for candidate in lido_record.lido_rec_id or []:
         text = text_of(candidate)
         if text:
-            return text
+            return local_source_key(text, profile)
     for administrative in lido_record.administrative_metadata or []:
         record_wrap = administrative.record_wrap
         if record_wrap is None:
@@ -1226,8 +1241,19 @@ def record_identifier(lido_record: Lido) -> str:
         for candidate in record_wrap.record_id or []:
             text = text_of(candidate)
             if text:
-                return text
+                return local_source_key(text, profile)
     raise ValueError("LIDO record without lidoRecID or recordID")
+
+
+def local_source_key(text: str, profile=None) -> str:
+    """Return the part of a record identifier that identifies it."""
+    pattern = getattr(profile, "source_key_pattern", None)
+    if not pattern:
+        return text
+    match = re.search(pattern, text)
+    if not match:
+        return text
+    return match.group(1) if match.groups() else match.group(0)
 
 
 def collect_titles(descriptive, profile, source_key) -> list[SourceTitle]:
