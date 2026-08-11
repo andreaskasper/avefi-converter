@@ -188,6 +188,13 @@ def normalise_date(
     if value is None:
         return None
     text = re.sub(r"\s+", " ", str(value)).strip()
+    if text and set(text) <= {"?", " "}:
+        # A single question mark already stands for "no date given".
+        # Cataloguing systems produce runs of them, up to fifty six in
+        # one field of the reference data, where a fixed width column
+        # was filled with the same placeholder. That is the same
+        # statement typed repeatedly, not a different one.
+        text = "?"
     if text.lower() in EMPTY_DATE_VALUES:
         if text:
             report_issue(
@@ -216,17 +223,13 @@ def normalise_date(
     result = _map_date_expression(text, record_id=record_id)
     if result is None and DECADE_PATTERN.match(text):
         if not map_decades:
-            report_issue(
-                "error",
-                "Decade expression is not convertible without an agreed"
-                " representation",
-                record_id=record_id,
-                source_field=source_field,
-                target_field=target_field,
-                raw_value=value,
-            )
+            # Reported by the caller, which knows whether the value is
+            # being dropped or the whole record; saying it twice with
+            # two severities would only make the report harder to read.
             raise NormalisationError(
-                f"Decade expression needs an agreed representation: {value!r}"
+                f"Decade expression needs an agreed representation:"
+                f" {value!r}. Enable map_decades in the profile to read"
+                f" it as a closed interval"
             )
         result = decade_to_period(text)
         report_issue(
@@ -482,6 +485,50 @@ def mapped_duration(
         report_issue(
             "warning",
             f"{e}; the running time is not transferred",
+            record_id=record_id,
+            source_field=source_field,
+            target_field=target_field,
+            raw_value=value,
+        )
+        return None
+
+
+def mapped_date(
+    value: str | None,
+    *,
+    record_id: str | None = None,
+    source_field: str = "eventDate",
+    target_field: str = "has_event.has_date",
+    map_decades: bool = False,
+) -> str | None:
+    """Return the date of an event, or None if it cannot be read.
+
+    The counterpart of :func:`mapped_duration`, and for the same
+    reason. A date expression nobody can read is a fact about one
+    field, not about the record it sits in: the title, the carrier,
+    the identifiers and the copy itself are all still there and all
+    still true. Discarding the record over it would cost the work,
+    every manifestation and every item derived from it.
+
+    ``has_date`` is optional in the AVefi schema, so a film without a
+    production date is a valid record rather than a broken one. The
+    value is therefore dropped and reported, and the record is kept.
+    What must not happen is that it disappears quietly, which is why
+    this reports before returning.
+
+    """
+    try:
+        return normalise_date(
+            value,
+            record_id=record_id,
+            source_field=source_field,
+            target_field=target_field,
+            map_decades=map_decades,
+        )
+    except NormalisationError as e:
+        report_issue(
+            "warning",
+            f"{e}; the date is not transferred",
             record_id=record_id,
             source_field=source_field,
             target_field=target_field,

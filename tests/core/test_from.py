@@ -123,10 +123,17 @@ class TestOneContextPerInvocation:
 class TestRecordsLost:
     @pytest.fixture
     def export_with_one_bad_record(self, lido_page, lido_record):
+        """One record that converts, one that cannot be converted.
+
+        A record without a title has nothing left to be about, so it
+        is the honest example of a loss. An unreadable date is not:
+        that costs the field and leaves the record standing.
+
+        """
         return lido_page(
             "export.xml",
             lido_record("FMDU-0001"),
-            lido_record("FMDU-0002", title="Rheinbrücke", date="50er Jahre"),
+            lido_record("FMDU-0002", title=""),
         )
 
     def test_a_skipped_record_makes_the_run_exit_non_zero(

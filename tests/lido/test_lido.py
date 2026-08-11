@@ -6,7 +6,6 @@ from efi_conv.core import avefi, check, from_
 from efi_conv.core.report import ConversionReport, collecting
 from efi_conv.fmdu import lido as fmdu_lido
 from efi_conv.lido import mapping
-from efi_conv.lido.normalise import NormalisationError
 
 
 def test_map_to_efi(input_path, expected_output):
@@ -143,57 +142,102 @@ def test_a_skipped_record_is_reported(input_path):
     assert "not a film" in skipped[0].message
 
 
+def with_date(tmp_path, input_path, expression, name="dated.xml"):
+    """Return the sample with one production date replaced."""
+    source = input_path("sample_data.xml").read_text(encoding="utf-8")
+    target = tmp_path / name
+    target.write_text(
+        source.replace(
+            "<lido:displayDate>1962-65", f"<lido:displayDate>{expression}"
+        ),
+        encoding="utf-8",
+    )
+    return target
+
+
 def test_decades_are_reported_as_unconvertible(tmp_path, input_path):
     """The contract reserves the decade mapping for after agreement."""
-    source = input_path("sample_data.xml").read_text(encoding="utf-8")
-    broken = tmp_path / "decade.xml"
-    broken.write_text(
-        source.replace(
-            "<lido:displayDate>1962-65", "<lido:displayDate>50er Jahre"
-        ),
-        encoding="utf-8",
-    )
-    report = ConversionReport()
-    with collecting(report), pytest.raises(NormalisationError):
-        fmdu_lido.efi_import(broken)
-    assert any(
-        entry.severity == "error" and "Decade" in entry.message
-        for entry in report.entries
-    )
-
-
-def test_one_bad_record_does_not_cost_the_whole_file(tmp_path, input_path):
-    """File level containment would lose every record of an export."""
-    source = input_path("sample_data.xml").read_text(encoding="utf-8")
-    broken = tmp_path / "partly_broken.xml"
-    broken.write_text(
-        source.replace(
-            "<lido:displayDate>1962-65", "<lido:displayDate>irgendwann"
-        ),
-        encoding="utf-8",
-    )
     report = ConversionReport()
     with collecting(report):
-        records = fmdu_lido.efi_import(broken, continue_on_error=True)
-    assert records, "The remaining records must survive"
+        records = fmdu_lido.efi_import(
+            with_date(tmp_path, input_path, "50er Jahre")
+        )
+    assert records, "The record survives a date it cannot state"
     assert any(
-        entry.severity == "error" and entry.record_id == "FMDU-0002"
+        "Decade" in entry.message and "map_decades" in entry.message
         for entry in report.entries
     )
 
 
-def test_unmappable_date_raises(tmp_path, input_path):
-    """A date that cannot be mapped must not be silently dropped."""
-    source = input_path("sample_data.xml").read_text(encoding="utf-8")
-    broken = tmp_path / "broken.xml"
-    broken.write_text(
-        source.replace(
-            "<lido:displayDate>1962-65", "<lido:displayDate>irgendwann"
-        ),
-        encoding="utf-8",
-    )
-    with pytest.raises(NormalisationError):
-        fmdu_lido.efi_import(broken)
+class TestAnUnreadableDate:
+    """A date nobody can read costs the field, not the record.
+
+    Everything else the source says about the copy — its title, its
+    carrier, its identifiers, the handle it was registered under — is
+    still there and still true. Discarding the record over one field
+    would cost the work, every manifestation and every item derived
+    from it, and `has_date` is optional in the schema, so what remains
+    is a valid record rather than a broken one.
+
+    """
+
+    def test_the_record_survives(self, tmp_path, input_path):
+        records = fmdu_lido.efi_import(
+            with_date(tmp_path, input_path, "irgendwann")
+        )
+        assert [r for r in records if r.category == "avefi:WorkVariant"]
+
+    def test_the_date_is_left_unset_and_reported(self, tmp_path, input_path):
+        report = ConversionReport()
+        with collecting(report):
+            records = fmdu_lido.efi_import(
+                with_date(tmp_path, input_path, "irgendwann")
+            )
+        work = next(
+            r
+            for r in records
+            if r.category == "avefi:WorkVariant"
+            and r.has_primary_title.has_name == "Ohne Titel, Werbefilm"
+        )
+        assert not [event for event in work.has_event if event.has_date], (
+            "the work keeps its identity, only the date is gone"
+        )
+        assert [
+            entry
+            for entry in report.entries
+            if entry.target_field == "has_event.has_date"
+            and entry.severity == "warning"
+            and "irgendwann" in str(entry.raw_value)
+        ]
+
+    def test_a_run_of_question_marks_states_that_no_date_is_known(
+        self, tmp_path, input_path
+    ):
+        """A placeholder repeated is the same placeholder.
+
+        Cataloguing systems fill a fixed width field with question
+        marks; the reference data holds one of fifty six. A single one
+        already means "no date given", so a run of them does too, and
+        it is not a failure to report.
+
+        """
+        report = ConversionReport()
+        with collecting(report):
+            records = fmdu_lido.efi_import(
+                with_date(tmp_path, input_path, "?" * 56)
+            )
+        assert records
+        assert not [
+            entry
+            for entry in report.entries
+            if entry.target_field == "has_event.has_date"
+            and entry.severity in ("warning", "error")
+        ], "a placeholder is not a conversion failure"
+        assert [
+            entry
+            for entry in report.entries
+            if entry.message == "Source states that no date is known"
+        ], "but it is worth noting that the source said nothing"
 
 
 class TestMappingDocumentation:

@@ -16,10 +16,9 @@ import logging
 from avefi_schema import model_pydantic_v2 as efi
 
 from ..core.normalise import (
-    NormalisationError,
     language_code,
+    mapped_date,
     mapped_duration,
-    normalise_date,
     normalise_title,
 )
 from ..core.records import (
@@ -573,22 +572,11 @@ def build_production_event(descriptive, profile, source_key):
     event = efi.ProductionEvent()
 
     date_value = event_date_value(lido_event)
-    try:
-        has_date = normalise_date(
-            date_value,
-            record_id=source_key,
-            map_decades=profile.map_decades,
-        )
-    except NormalisationError as e:
-        report_issue(
-            "error",
-            str(e),
-            record_id=source_key,
-            source_field="eventDate",
-            target_field="has_event.has_date",
-            raw_value=date_value,
-        )
-        raise
+    has_date = mapped_date(
+        date_value,
+        record_id=source_key,
+        map_decades=profile.map_decades,
+    )
     if has_date:
         event.has_date = has_date
 
@@ -651,24 +639,13 @@ def build_publication_event(descriptive, profile, source_key):
         type=efi.PublicationEventTypeEnum("ReleaseEvent")
     )
     date_value = event_date_value(lido_event)
-    try:
-        has_date = normalise_date(
-            date_value,
-            record_id=source_key,
-            source_field="event[publication]/eventDate",
-            target_field="has_event.has_date",
-            map_decades=profile.map_decades,
-        )
-    except NormalisationError as e:
-        report_issue(
-            "error",
-            str(e),
-            record_id=source_key,
-            source_field="event[publication]/eventDate",
-            target_field="has_event.has_date",
-            raw_value=date_value,
-        )
-        raise
+    has_date = mapped_date(
+        date_value,
+        record_id=source_key,
+        source_field="event[publication]/eventDate",
+        target_field="has_event.has_date",
+        map_decades=profile.map_decades,
+    )
     if has_date:
         event.has_date = has_date
     for place in lido_event.event_place or []:
