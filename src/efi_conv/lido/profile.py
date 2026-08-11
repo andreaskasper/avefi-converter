@@ -67,6 +67,13 @@ class LidoProfile:
         Source term (lower case) to AVefi FormatFilmTypeEnum value.
     unknown_agent_names : frozenset
         Lower case placeholder names that do not denote an agent.
+    avefi_handle_prefix : str or None
+        Handle prefix under which AVefi identifiers are registered. A
+        provider that has had identifiers minted for its holdings gets
+        them back in its own system and exports them again, so a
+        published identifier carrying this prefix is the copy's own
+        AVefi identifier and is transferred as one. Set to None to
+        ignore published identifiers.
 
     """
 
@@ -108,3 +115,4 @@ class LidoProfile:
     unknown_agent_names: frozenset = frozenset(
         {"unbekannt", "unknown", "verschiedene", "n.n.", "nn"}
     )
+    avefi_handle_prefix: str | None = "21.11155"

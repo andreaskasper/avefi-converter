@@ -61,6 +61,7 @@ _VALIDATOR = None
 LIDO_RECORD = """\
   <lido:lido>
     <lido:lidoRecID lido:type="local">{record_id}</lido:lidoRecID>
+{published}\
     <lido:descriptiveMetadata xml:lang="de">
       <lido:objectClassificationWrap>
         <lido:objectWorkTypeWrap>
@@ -119,6 +120,11 @@ LIDO_RECORD = """\
   </lido:lido>
 """
 
+LIDO_PUBLISHED_ID = """\
+    <lido:objectPublishedID lido:type="http://terminology.lido-schema.org/lido00099"
+      lido:source="www.av-efi.net">{handle}</lido:objectPublishedID>
+"""
+
 LIDO_GENRE = """\
           <lido:classification lido:type="genre">
             <lido:term xml:lang="de">{genre}</lido:term>
@@ -156,11 +162,13 @@ def make_lido_record(
     duration="103",
     genre="",
     work_type="Filmrolle",
+    handle="",
 ):
     """Return the LIDO serialisation of one film holding."""
     return LIDO_RECORD.format(
         record_id=record_id,
         work_type=work_type,
+        published=(LIDO_PUBLISHED_ID.format(handle=handle) if handle else ""),
         title=title,
         colour=colour,
         date=date,

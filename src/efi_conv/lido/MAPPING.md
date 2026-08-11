@@ -21,6 +21,7 @@ do not edit by hand.
 | `colour_type` | Item | `lido:classification[@lido:type in profile classification_types['colour']]` | `has_colour_type` | Profile vocabulary | — |
 | `format` | Item | `lido:classification[@lido:type in profile classification_types['format']]` | `has_format (Film)` | Profile vocabulary | — |
 | `access_status` | Item | `lido:classification[@lido:type in profile classification_types['access']]` | `has_access_status` | Profile vocabulary | — |
+| `avefi_identifier` | Item | `lido:objectPublishedID carrying the AVefi handle prefix` | `has_identifier (AVefiResource)` | Profile avefi_handle_prefix | A copy registered in AVefi carries its handle back into the provider's export; transferring it makes a re-import an update instead of a second identifier for one copy |
 | `webresource` | Item | `lido:administrativeMetadata/lido:resourceWrap//lido:linkResource` | `has_webresource` | — | — |
 | `issuer` | Work, Manifestation, Item | `profile issuer_info` | `described_by.has_issuer_id, described_by.has_issuer_name` | — | Taken from the profile, not from lido:recordSource, so that the issuer is unambiguous |
 

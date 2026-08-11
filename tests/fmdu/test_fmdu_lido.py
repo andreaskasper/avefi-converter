@@ -80,3 +80,80 @@ class TestFilteringInPractice:
             "export.xml", lido_record("FMDU-0003", work_type="Festplatte")
         )
         assert fmdu_lido.efi_import(source)
+
+
+class TestAnIdentifierAlreadyRegistered:
+    """A handle the provider carries back is not minted a second time.
+
+    Once holdings have been registered, the identifiers go back into
+    the provider's own system and come out again with the next export.
+    A handle cannot be withdrawn, so a conversion that ignores the one
+    in front of it turns every later delivery into a second identity
+    for a copy that already has one. In the reference export 3712 of
+    5562 records carry theirs.
+
+    """
+
+    HANDLE = "21.11155/F68FEFE5-205A-4090-8A31-60C6F87875BB"
+
+    def item(self, lido_page, lido_record, **kwargs):
+        source = lido_page("export.xml", lido_record("FMDU-0001", **kwargs))
+        records = fmdu_lido.efi_import(source)
+        return next(r for r in records if r.category == "avefi:Item")
+
+    def test_the_handle_becomes_an_avefi_identifier(
+        self, lido_page, lido_record
+    ):
+        item = self.item(lido_page, lido_record, handle=self.HANDLE)
+        assert self.HANDLE in [
+            i.id
+            for i in item.has_identifier
+            if i.category == "avefi:AVefiResource"
+        ]
+
+    def test_it_is_read_out_of_a_resolver_url(self, lido_page, lido_record):
+        item = self.item(
+            lido_page,
+            lido_record,
+            handle=f"https://hdl.handle.net/{self.HANDLE}",
+        )
+        assert [
+            i.id
+            for i in item.has_identifier
+            if i.category == "avefi:AVefiResource"
+        ] == [self.HANDLE]
+
+    def test_the_local_identifier_stays(self, lido_page, lido_record):
+        """Both are needed: one identifies, the other groups."""
+        item = self.item(lido_page, lido_record, handle=self.HANDLE)
+        assert [i.category for i in item.has_identifier].count(
+            "avefi:LocalResource"
+        ) == 1
+
+    def test_a_record_without_one_gets_none(self, lido_page, lido_record):
+        item = self.item(lido_page, lido_record)
+        assert not [
+            i
+            for i in item.has_identifier
+            if i.category == "avefi:AVefiResource"
+        ]
+
+    def test_only_the_copy_carries_it(self, lido_page, lido_record):
+        """No LIDO record states a work or manifestation identifier.
+
+        A record describes one object and the object is the copy, so
+        putting the handle anywhere else would be an assertion the
+        source never made.
+
+        """
+        source = lido_page(
+            "export.xml", lido_record("FMDU-0001", handle=self.HANDLE)
+        )
+        for record in fmdu_lido.efi_import(source):
+            if record.category == "avefi:Item":
+                continue
+            assert not [
+                i
+                for i in record.has_identifier
+                if i.category == "avefi:AVefiResource"
+            ]

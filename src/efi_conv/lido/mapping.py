@@ -12,6 +12,7 @@ the structure the CSV importer produces for the same institution.
 
 from dataclasses import dataclass
 import logging
+import re
 
 from avefi_schema import model_pydantic_v2 as efi
 
@@ -192,6 +193,16 @@ MAPPING_RULES = (
         " classification_types['access']]",
         "has_access_status",
         "Profile vocabulary",
+    ),
+    MappingRule(
+        "avefi_identifier",
+        "Item",
+        "lido:objectPublishedID carrying the AVefi handle prefix",
+        "has_identifier (AVefiResource)",
+        "Profile avefi_handle_prefix",
+        "A copy registered in AVefi carries its handle back into the"
+        " provider's export; transferring it makes a re-import an"
+        " update instead of a second identifier for one copy",
     ),
     MappingRule(
         "webresource",
@@ -714,9 +725,53 @@ def build_item(lido_record, descriptive, primary, profile, source_key):
         item.has_format.append(
             efi.Film(type=efi.FormatFilmTypeEnum(film_format))
         )
+    for identifier in avefi_identifiers(lido_record, profile, source_key):
+        item.has_identifier.append(identifier)
     for link in web_resources(lido_record):
         item.has_webresource.append(link)
     return item
+
+
+def avefi_identifiers(lido_record, profile, source_key):
+    """Yield the AVefi identifiers a record already carries.
+
+    A provider whose holdings have been registered gets the handles
+    back into its own system, and exports them again the next time.
+    Ignoring them means the next conversion mints a second identifier
+    for a copy that has one, and a handle cannot be withdrawn once it
+    is out. Reading them turns a re-import into an update.
+
+    They are only ever found on the copy. Work and manifestation
+    identifiers exist too, but no LIDO record states them: a record
+    describes one object, and the object is the copy.
+
+    """
+    prefix = profile.avefi_handle_prefix
+    if not prefix:
+        return
+    pattern = re.compile(rf"\b({re.escape(prefix)}/[^\s\"'<>]+)")
+    seen = set()
+    for published in lido_record.object_published_id or []:
+        text = text_of(published)
+        if not text:
+            continue
+        match = pattern.search(text)
+        if not match:
+            continue
+        handle = match.group(1)
+        if handle in seen:
+            continue
+        seen.add(handle)
+        report_issue(
+            "info",
+            "Copy already carries an AVefi identifier; transferred"
+            " rather than minted again",
+            record_id=source_key,
+            source_field="objectPublishedID",
+            target_field="has_identifier",
+            raw_value=handle,
+        )
+        yield efi.AVefiResource(id=handle)
 
 
 # --- LIDO traversal helpers -------------------------------------------
