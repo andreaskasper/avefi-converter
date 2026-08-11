@@ -111,6 +111,7 @@ LIDO_RECORD = """\
           </lido:event>
         </lido:eventSet>
       </lido:eventWrap>
+{related}\
     </lido:descriptiveMetadata>
     <lido:administrativeMetadata xml:lang="de">
       <lido:recordWrap>
@@ -142,6 +143,30 @@ LIDO_PLACE = """\
 LIDO_PLACE_ID = """\
                 <lido:placeID lido:type="http://terminology.lido-schema.org/lido00100"
                   lido:source="TGN">{tgn}</lido:placeID>
+"""
+
+#: The film a copy is of, as this provider states it: an identifier
+#: of the work's own and its title. A copy can name several.
+LIDO_RELATED_WORK = """\
+      <lido:objectRelationWrap>
+        <lido:relatedWorksWrap>
+{sets}\
+        </lido:relatedWorksWrap>
+      </lido:objectRelationWrap>
+"""
+
+LIDO_RELATED_WORK_SET = """\
+          <lido:relatedWorkSet>
+            <lido:relatedWork>
+              <lido:displayObject>{title}</lido:displayObject>
+              <lido:object>
+                <lido:objectID lido:type="local">{work_id}</lido:objectID>
+              </lido:object>
+            </lido:relatedWork>
+            <lido:relatedWorkRelType>
+              <lido:term xml:lang="de">{rel}</lido:term>
+            </lido:relatedWorkRelType>
+          </lido:relatedWorkSet>
 """
 
 LIDO_GENRE = """\
@@ -241,6 +266,8 @@ def make_lido_record(
     places=(),
     measurement="Laufzeit",
     record_type="Item",
+    related=(),
+    related_rel="Film",
 ):
     """Return the LIDO serialisation of one film holding."""
     return LIDO_RECORD.format(
@@ -248,6 +275,18 @@ def make_lido_record(
         work_type=work_type,
         measurement=measurement,
         record_type=record_type,
+        related=(
+            LIDO_RELATED_WORK.format(
+                sets="".join(
+                    LIDO_RELATED_WORK_SET.format(
+                        work_id=work_id, title=work_title, rel=related_rel
+                    )
+                    for work_id, work_title in related
+                )
+            )
+            if related
+            else ""
+        ),
         published=(LIDO_PUBLISHED_ID.format(handle=handle) if handle else ""),
         title=title,
         colour=colour,

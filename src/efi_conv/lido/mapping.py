@@ -73,14 +73,25 @@ MAPPING_RULES = (
         " with a warning",
     ),
     MappingRule(
+        "work_identity",
+        "Work",
+        "lido:objectRelationWrap/lido:relatedWorksWrap"
+        "/lido:relatedWorkSet[relType in profile terms]",
+        "has_identifier (work), has_primary_title, is_manifestation_of",
+        "Profile related_work_rel_terms",
+        "Where the provider states which films a copy is of, that"
+        " decides: the work keeps its own identifier and title, and a"
+        " copy naming several belongs to several works",
+    ),
+    MappingRule(
         "work_grouping",
         "Work",
         "primary title, director, production date",
         "has_identifier (work)",
         "Profile work_key_fields",
-        "Several copies of one film share one WorkVariant, as in"
-        " fmdu/csv.py; set work_key_fields to () for one work per"
-        " record",
+        "Fallback where no related work is stated. Several copies of"
+        " one film share one WorkVariant, as in fmdu/csv.py; set"
+        " work_key_fields to () for one work per record",
     ),
     MappingRule(
         "manifestation_grouping",
@@ -278,6 +289,12 @@ MAPPING_RULES_BY_ID = {rule.id: rule for rule in MAPPING_RULES}
 ASSUMPTIONS = (
     "A record without a recognised `lido:objectWorkType` is skipped"
     " rather than imported as a film.",
+    "Where a copy states several films, the record's production"
+    " event, genres and alternative titles are not attributed to any"
+    " of them. A date read off a compilation reel is the date of the"
+    " reel; its genres belong to no one film on it. The works are"
+    " created with the identifiers and titles the provider gives them"
+    " and the rest is reported.",
     "Every record yields one item. Works and manifestations are shared"
     " between records according to the profile key, so several copies"
     " of one film do not produce several works.",
@@ -497,6 +514,67 @@ def new_context(profile: LidoProfile) -> MappingContext:
     return MappingContext(profile=profile)
 
 
+def related_works(lido_record, descriptive, profile, source_key):
+    """Yield the works a copy belongs to, as the provider states them.
+
+    A related work carries an identifier of its own and a title, which
+    is a better basis for a work than a key derived from the copy: the
+    provider decides what is one film and what is two, and says so.
+    In the reference export that identifies 3717 works, including the
+    six copies that hold more than one film — a reel of two shorts is
+    two works and one manifestation, and reconstructing that from a
+    concatenated title is what the manual revision of the CSV output
+    had to do by hand.
+
+    """
+    if not profile.related_work_rel_terms:
+        return
+    wrap = getattr(
+        descriptive.object_relation_wrap, "related_works_wrap", None
+    )
+    if wrap is None:
+        return
+    seen = set()
+    for related_set in wrap.related_work_set or []:
+        term = term_text(getattr(related_set, "related_work_rel_type", None))
+        if not term or term.lower() not in profile.related_work_rel_terms:
+            continue
+        related = getattr(related_set, "related_work", None)
+        if related is None:
+            continue
+        identifier = related_work_identifier(related, profile)
+        title = text_of(first(getattr(related, "display_object", None)))
+        if not identifier:
+            report_issue(
+                "warning",
+                "Related work states no identifier, so the copy cannot"
+                " be attached to it",
+                record_id=source_key,
+                source_field="relatedWorkSet/relatedWork",
+                target_field="is_manifestation_of",
+                raw_value=title,
+            )
+            continue
+        if identifier in seen:
+            continue
+        seen.add(identifier)
+        yield identifier, (title or "").strip()
+
+
+def related_work_identifier(related, profile) -> str | None:
+    """Return the local identifier of a related work."""
+    # xsdata renames the lido:object element, because "object" is
+    # taken; the LIDO path is relatedWork/object/objectID.
+    obj = getattr(related, "object_value", None) or getattr(
+        related, "object", None
+    )
+    for candidate in getattr(obj, "object_id", None) or []:
+        text = text_of(candidate)
+        if text:
+            return local_source_key(text.strip(), profile)
+    return None
+
+
 def map_record(
     lido_record: Lido,
     profile: LidoProfile,
@@ -532,29 +610,38 @@ def map_record(
     publication = build_publication_event(descriptive, profile, source_key)
 
     new_records = []
-    work_key = make_work_key(profile, source_key, primary, production)
-
-    def new_work():
-        work = build_work(
-            descriptive, primary, alternatives, profile, source_key
+    stated = list(related_works(lido_record, descriptive, profile, source_key))
+    if stated:
+        works, work_key = works_as_stated(
+            stated,
+            descriptive,
+            primary,
+            alternatives,
+            production,
+            profile,
+            source_key,
+            context,
+            new_records,
         )
-        if production is not None:
-            work.has_event.append(production)
-        return work
-
-    work, is_new = context.work_for(work_key, new_work)
-    if is_new:
-        new_records.append(work)
     else:
-        merge_alternative_titles(work, alternatives)
-    work_id = work.has_identifier[0]
+        works, work_key = work_from_the_copy(
+            descriptive,
+            primary,
+            alternatives,
+            production,
+            profile,
+            source_key,
+            context,
+            new_records,
+        )
+    work_ids = [work.has_identifier[0] for work in works]
 
     item = build_item(lido_record, descriptive, primary, profile, source_key)
     manifestation_key = make_manifestation_key(work_key, item)
 
     def new_manifestation():
         manifestation = efi.Manifestation(
-            is_manifestation_of=[work_id],
+            is_manifestation_of=list(work_ids),
             has_primary_title=as_title(primary, "TitleProper"),
         )
         if publication is not None:
@@ -573,9 +660,111 @@ def map_record(
     new_records.append(item)
 
     attach_source_key(
-        (work, manifestation, item), profile.issuer_info, source_key
+        (*works, manifestation, item), profile.issuer_info, source_key
     )
     return new_records
+
+
+def work_from_the_copy(
+    descriptive,
+    primary,
+    alternatives,
+    production,
+    profile,
+    source_key,
+    context,
+    new_records,
+):
+    """Return the single work derived from the copy's own data."""
+    work_key = make_work_key(profile, source_key, primary, production)
+
+    def new_work():
+        work = build_work(
+            descriptive, primary, alternatives, profile, source_key
+        )
+        if production is not None:
+            work.has_event.append(production)
+        return work
+
+    work, is_new = context.work_for(work_key, new_work)
+    if is_new:
+        new_records.append(work)
+    else:
+        merge_alternative_titles(work, alternatives)
+    return [work], work_key
+
+
+def works_as_stated(
+    stated,
+    descriptive,
+    primary,
+    alternatives,
+    production,
+    profile,
+    source_key,
+    context,
+    new_records,
+):
+    """Return the works the provider states this copy belongs to.
+
+    Where a copy holds one film, everything the record says about it
+    describes that film, and the record's own titles and production
+    event go to the work as before.
+
+    Where it holds several, they do not. A production date read off a
+    compilation reel is the date of the reel, not of each film on it,
+    and its genres and alternative titles belong to no one film in
+    particular. Attaching them to all of them would state something
+    about each film that the source does not, so the works are created
+    with the titles and identifiers the provider gives them, and the
+    rest is reported as not attributable.
+
+    """
+    single = len(stated) == 1
+    if not single:
+        report_issue(
+            "info",
+            f"Copy belongs to {len(stated)} works, so what the record"
+            " says about production, genre and alternative titles"
+            " cannot be attributed to one of them and is not"
+            " transferred",
+            record_id=source_key,
+            source_field="relatedWorkSet",
+            target_field="has_event, has_genre, has_alternative_title",
+            raw_value=[identifier for identifier, _ in stated],
+        )
+    works = []
+    for identifier, title in stated:
+
+        def new_work(title=title, identifier=identifier):
+            if single:
+                work = build_work(
+                    descriptive, primary, alternatives, profile, source_key
+                )
+                if production is not None:
+                    work.has_event.append(production)
+                if title and title != primary.display:
+                    # The record's own title is the carrier's; the
+                    # related work is what the film is called.
+                    work.has_primary_title = as_title(
+                        SourceTitle(title, None, False), "PreferredTitle"
+                    )
+                return work
+            return efi.WorkVariant(
+                type=efi.WorkVariantTypeEnum("Monographic"),
+                has_primary_title=as_title(
+                    SourceTitle(title or identifier, None, False),
+                    "PreferredTitle",
+                ),
+            )
+
+        work, is_new = context.work_for(identifier, new_work)
+        if is_new:
+            new_records.append(work)
+        elif single:
+            merge_alternative_titles(work, alternatives)
+        works.append(work)
+    return works, make_key(*(identifier for identifier, _ in stated))
 
 
 def in_scope(lido_record, descriptive, profile, source_key) -> bool:

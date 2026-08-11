@@ -649,3 +649,128 @@ class TestSourceKey:
                 )
             )
         assert {entry.record_id for entry in report.entries} == {"1059195"}
+
+
+class TestWorksAsTheProviderStatesThem:
+    """The provider decides what is one film and what is two.
+
+    Each relatedWorkSet carries the work's own identifier and title,
+    which is a better basis than a key derived from the copy: it does
+    not depend on a title being spelled the same way twice, and it
+    handles the case a derived key cannot express at all — a reel
+    holding two films is two works and one manifestation. Three such
+    copies had to be taken apart by hand in the revised CSV output.
+
+    """
+
+    def records_for(self, lido_page, lido_record, *related, **kwargs):
+        source = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001", related=related, **kwargs),
+        )
+        return fmdu_lido.efi_import(source)
+
+    def works_of(self, records):
+        return [r for r in records if r.category == "avefi:WorkVariant"]
+
+    def test_one_related_work_is_one_work(self, lido_page, lido_record):
+        records = self.records_for(
+            lido_page, lido_record, ("W-1", "Die Brücke")
+        )
+        assert len(self.works_of(records)) == 1
+
+    def test_the_work_is_identified_by_what_the_provider_says(
+        self, lido_page, lido_record
+    ):
+        records = self.records_for(
+            lido_page, lido_record, ("W-1", "Die Brücke")
+        )
+        assert self.works_of(records)[0].has_identifier[0].id == "W-1_work"
+
+    def test_two_related_works_are_two_works_and_one_manifestation(
+        self, lido_page, lido_record
+    ):
+        records = self.records_for(
+            lido_page,
+            lido_record,
+            ("W-1", "Sammeltage: Teil 1"),
+            ("W-2", "Sammeltage: Teil 2"),
+        )
+        assert len(self.works_of(records)) == 2
+        manifestations = [
+            r for r in records if r.category == "avefi:Manifestation"
+        ]
+        assert len(manifestations) == 1
+        assert len(manifestations[0].is_manifestation_of) == 2
+
+    def test_each_gets_the_title_the_provider_gives_it(
+        self, lido_page, lido_record
+    ):
+        records = self.records_for(
+            lido_page,
+            lido_record,
+            ("W-1", "Sammeltage: Teil 1"),
+            ("W-2", "Sammeltage: Teil 2"),
+        )
+        assert sorted(
+            w.has_primary_title.has_name for w in self.works_of(records)
+        ) == ["Sammeltage: Teil 1", "Sammeltage: Teil 2"]
+
+    def test_what_belongs_to_no_one_film_is_not_attributed(
+        self, lido_page, lido_record
+    ):
+        """A date read off a compilation reel is the reel's date.
+
+        Attaching the record's production event to each film on it
+        would state a production year for films that never had it.
+
+        """
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            records = self.records_for(
+                lido_page,
+                lido_record,
+                ("W-1", "Teil 1"),
+                ("W-2", "Teil 2"),
+            )
+        assert all(not w.has_event for w in self.works_of(records))
+        assert [
+            entry
+            for entry in report.entries
+            if entry.source_field == "relatedWorkSet"
+        ]
+
+    def test_a_single_work_keeps_everything_the_record_says(
+        self, lido_page, lido_record
+    ):
+        """With one film, the record is about that film."""
+        records = self.records_for(
+            lido_page, lido_record, ("W-1", "Die Brücke")
+        )
+        work = self.works_of(records)[0]
+        assert work.has_event and work.has_event[0].has_date == "1959"
+
+    def test_copies_of_one_film_still_share_it(self, lido_page, lido_record):
+        source = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001", related=(("W-1", "Die Brücke"),)),
+            lido_record(
+                "FMDU-0002", related=(("W-1", "Die Brücke"),), colour="farbe"
+            ),
+        )
+        records = fmdu_lido.efi_import(source)
+        assert len(self.works_of(records)) == 1
+
+    def test_another_relation_is_not_a_work(self, lido_page, lido_record):
+        """Only the relation the profile names denotes the film."""
+        records = self.records_for(
+            lido_page,
+            lido_record,
+            ("W-1", "Ein Plakat dazu"),
+            related_rel="Plakat",
+        )
+        works = self.works_of(records)
+        assert len(works) == 1
+        assert works[0].has_identifier[0].id != "W-1_work"

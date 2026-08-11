@@ -6,7 +6,8 @@ do not edit by hand.
 | Rule | Level | LIDO source | AVefi target | Normalisation | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `scope` | Record | `lido:administrativeMetadata/lido:recordWrap/lido:recordType, else lido:objectWorkType` | `—` | Profile record_type_terms, else film_work_type_terms | Where a provider states what a record describes, that decides and the work type is not consulted. Records out of scope are skipped and reported; a record stating neither is skipped with a warning |
-| `work_grouping` | Work | `primary title, director, production date` | `has_identifier (work)` | Profile work_key_fields | Several copies of one film share one WorkVariant, as in fmdu/csv.py; set work_key_fields to () for one work per record |
+| `work_identity` | Work | `lido:objectRelationWrap/lido:relatedWorksWrap/lido:relatedWorkSet[relType in profile terms]` | `has_identifier (work), has_primary_title, is_manifestation_of` | Profile related_work_rel_terms | Where the provider states which films a copy is of, that decides: the work keeps its own identifier and title, and a copy naming several belongs to several works |
+| `work_grouping` | Work | `primary title, director, production date` | `has_identifier (work)` | Profile work_key_fields | Fallback where no related work is stated. Several copies of one film share one WorkVariant, as in fmdu/csv.py; set work_key_fields to () for one work per record |
 | `manifestation_grouping` | Manifestation | `work key plus colour type, format and languages of the copy` | `has_identifier (manifestation)` | — | Copies agreeing on the carrier characteristics share a manifestation |
 | `record_id` | Item | `lido:lidoRecID, else lido:administrativeMetadata/lido:recordWrap/lido:recordID` | `has_identifier, described_by.has_source_key` | Profile source_key_pattern | Local identifier; also used to derive the work and manifestation ids. The pattern selects the identifier out of the namespaces a provider prefixes it with, so that the key matches the one the rest of its data uses |
 | `primary_title` | Work, Manifestation, Item | `lido:titleWrap/lido:titleSet[@lido:type='preferred']/lido:appellationValue` | `has_primary_title.has_name, has_primary_title.has_ordering_name` | Article handling in both directions | First title set is used when none is marked preferred; bracketed titles become SuppliedDevisedTitle |
@@ -34,6 +35,7 @@ do not edit by hand.
 Decisions the mapping takes that LIDO does not determine, and that need confirming against the reference data:
 
 - A record without a recognised `lido:objectWorkType` is skipped rather than imported as a film.
+- Where a copy states several films, the record's production event, genres and alternative titles are not attributed to any of them. A date read off a compilation reel is the date of the reel; its genres belong to no one film on it. The works are created with the identifiers and titles the provider gives them and the rest is reported.
 - Every record yields one item. Works and manifestations are shared between records according to the profile key, so several copies of one film do not produce several works.
 - `WorkVariant.type` is always `Monographic`; serial and analytic works are not derived from LIDO.
 - Actors are read from the production event and from an event of creation, because a provider may record the people separately from the making of the copy. The activities are production activities either way and are attached to the production event.

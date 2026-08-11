@@ -37,6 +37,13 @@ class LidoProfile:
         match where there is none. Providers prefix the identifier
         with their own namespaces, and the bare identifier is what the
         rest of the institution's data uses, so the two have to agree.
+    related_work_rel_terms : frozenset
+        Lower case ``lido:relatedWorkRelType`` terms marking a related
+        work as the film a copy is of. Where a provider states this,
+        the work is identified by what the provider says rather than
+        by a key derived from the copy, and one copy can belong to
+        several works — a reel holding two films is two works and one
+        manifestation. An empty set falls back to ``work_key_fields``.
     record_type_terms : frozenset
         Lower case ``lido:recordType`` terms denoting a record that is
         in scope. Where a provider states what each record is about,
@@ -137,6 +144,7 @@ class LidoProfile:
     description: str = "LIDO export"
     default_language: str | None = None
     source_key_pattern: str | None = None
+    related_work_rel_terms: frozenset = frozenset()
     record_type_terms: frozenset = frozenset()
     film_work_type_terms: frozenset = frozenset(
         {

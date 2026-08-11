@@ -55,6 +55,16 @@ RECORD_TYPE_TERMS = frozenset({"item"})
 #: importers ran, and nothing could be matched between them.
 SOURCE_KEY_PATTERN = r"([^:]+)$"
 
+#: The relatedWorkSet relation naming the film a copy is of.
+#:
+#: Each one carries the work's own identifier and title, so the
+#: provider decides what is one film and what is two rather than the
+#: converter inferring it from title, director and year. Six copies of
+#: the reference export hold more than one film; reconstructing that
+#: from a concatenated title is what the manual revision of the CSV
+#: output had to do by hand.
+RELATED_WORK_REL_TERMS = frozenset({"film"})
+
 #: House vocabularies, kept in step with the CSV importer for the same
 #: institution so that both produce identical AVefi values.
 COLOUR_TYPE_MAP = {
@@ -219,6 +229,7 @@ PROFILE = LidoProfile(
     description=DESCRIPTION,
     default_language="ger",
     source_key_pattern=SOURCE_KEY_PATTERN,
+    related_work_rel_terms=RELATED_WORK_REL_TERMS,
     record_type_terms=RECORD_TYPE_TERMS,
     # Switched off rather than left at the default: objectWorkType
     # answers a different question in this export, and two criteria
