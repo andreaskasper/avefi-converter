@@ -21,22 +21,43 @@ down because the next provider with a system of this age will have
 some of the same, and because a profile that omits any of it silently
 produces less than it should.
 
-### `objectWorkType` names the carrier, not the work type
+### The record says what it is; the object does not
 
-LIDO intends the type of work there. This provider records what the
-copy is wound on: `Filmrolle`, `Festplatte`, `VHS`, `Raid`, `Datei`.
-The generic default holds work types, so the two vocabularies meet in
-exactly one value, `Video`. An export of 5562 records converted to 67.
+`lido:recordType` is `Item` on all 5562 records, which is the agreed
+criterion for a copy, and `record_type_terms` in the profile names it.
 
-`FILM_WORK_TYPE_TERMS` in `lido.py` therefore lists the carriers, and
-it is derived rather than invented: every value occurring in the
-records of the agreed CSV export, which is what defines the holdings of
-this institution. Digital carriers are in it because they are in that
-export. Six records carry a title fragment instead of a carrier and are
-left out, so that the data entry error stays visible.
+The filter used to be on `lido:objectWorkType`, which is meant for the
+type of work and holds the carrier here — `Filmrolle`, `Festplatte`,
+`VHS`. The generic default lists work types, so the two vocabularies
+met in exactly one value and an export of 5562 records converted to 67.
+Collecting the carrier terms fixed the count, but it was still
+inferring an answer the record gives outright, and it dropped six
+copies whose `objectWorkType` holds a title fragment. The work type
+filter is switched off for this provider rather than left at a default
+that would never be reached.
 
-**A profile written for this converter must repeat that list.** A
-profile replaces the vocabularies rather than adding to them.
+### The identifier is the last segment of `lidoRecID`
+
+`DE-MUS-042628:DE-MUS-432511:1059195` — the first two segments name the
+archive and the museum. The identifier is `1059195`, which is what the
+CSV export of the same holdings carries in its first column, so
+`source_key_pattern` selects it. Taking the whole string gave one copy
+two source keys depending on which importer ran, and nothing could be
+matched between them.
+
+### The provider states which films a copy is of
+
+Every record carries `relatedWorkSet` entries with `relType` `Film`,
+each with the work's own identifier and title. That identifies 3717
+works, and it expresses the case a derived key cannot: six copies hold
+more than one film, and a reel of two shorts is two works and one
+manifestation. Three such copies had to be taken apart by hand in the
+revised CSV output; all three now come out of the conversion the same
+way with no manual step.
+
+Where a copy names several films, the record's production event,
+genres and alternative titles are not attributed to any of them. A date
+read off a compilation reel is the date of the reel.
 
 ### The copies carry their AVefi identifiers back
 
@@ -53,6 +74,20 @@ Director, composer and writer hang off an event of type `Geistige
 Schöpfung`, not off the production event. 1228 records name a director
 and none of them used to arrive. The actors are well described — GND
 identifier, `lido:type`, preferred name — and all three are read.
+
+### Form, genre and subject
+
+`classificationWrap` answers two questions in one list — what kind of
+thing the film is and what it is like — and the schema asks them
+separately. `work_form_map` names the terms that are forms;
+Dokumentarfilm, Spielfilm, Amateurfilm, Kurzfilm, Werbefilm, Lehrfilm
+and Wochenschau become `has_form` and not also a genre.
+
+There is no `subjectWrap` in this export. The subject of a film is
+recorded as an actor with a role of its own, `Behandelte Person`, in
+the same element as the credits, so `subject_role_terms` is what tells
+them apart. Without it, 130 subjects were reported as unmappable
+credits.
 
 ### Colour, format, element type and sound share one field
 
@@ -109,11 +144,19 @@ line.
 1084 records write the empty column as `0E-10`. A running time of zero
 is read as none given.
 
-### `Länge` is not usable
+### `Länge` is transferred, and checked against the running time
 
 `measurementType = "Länge"` with unit `m` is inconsistent within one
 file: of 1947 comparable 35 mm records, 1334 are in centimetres and 613
-in metres. The field is not mapped until the provider has settled it.
+in metres. The value is transferred as stated all the same — omitting
+what the provider recorded tells nobody anything.
+
+What the conversion adds is the observation that it cannot be right.
+With the format known, length and running time predict each other, and
+where they disagree by more than an order of magnitude that is
+reported: 2347 records of the export do, all by a clean factor of a
+hundred. Neither value is corrected, because which of the two carries
+the wrong unit is not decidable from the record.
 
 ## Open questions
 
@@ -121,9 +164,9 @@ in metres. The field is not mapped until the provider has settled it.
 | --- | ---: |
 | `Festplatte` has no format in the schema | 91 |
 | `Negativ` — image or sound negative? | 57 |
-| `Behandelte Person` / `Institution` — the subject of a film, recorded as a credit | 130 |
 | `Coloriert` has no counterpart in `ColourTypeEnum` | 2 |
 | `Amateurfilm`, `bewegtes Bild-Werk` under an invalid `conceptID` | 27 |
 | Title fragments in `objectWorkType` | 6 |
+| Length and running time disagreeing by a factor of a hundred | 2347 |
 | Decade expressions, pending an agreed representation | 85 |
 | The unit of `Länge` | 1947 |

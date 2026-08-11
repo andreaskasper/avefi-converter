@@ -12,28 +12,44 @@ $ uv run efi-conv from -f fmdu.lido -o ergebnis.json --report bericht.json expor
 $ uv run efi-conv check ergebnis.json
 ```
 
-## `objectWorkType` nennt den Träger, nicht die Werkart
+## Der Datensatz sagt selbst, was er ist
 
-LIDO sieht in `objectWorkType` die Art des Werkes vor — „Film",
-„Dokumentarfilm". Dieses Haus trägt dort ein, worauf die Kopie gewickelt ist:
-**Filmrolle**, Festplatte, VHS, Raid, Datei.
+`lido:recordType` steht bei allen 5562 Datensätzen auf `Item` — das ist
+das vereinbarte Kriterium für ein Exemplar, und das Profil nennt es in
+`record_type_terms`.
 
-Die allgemeine Voreinstellung des Konverters kennt Werkarten. Beide Listen
-überschneiden sich in genau einem Wert, „Video". Ein Export mit 5562
-Datensätzen ergab deshalb 67 Exemplare, und die anderen 5495 — darunter alle
-5074 Filmrollen — wurden als Begleitmaterial übersprungen. Mit Erfolgsmeldung.
+Vorher wurde über `lido:objectWorkType` gefiltert. Das Feld ist im
+Standard für die Werkart gedacht; dieses Haus trägt dort den Träger ein
+(`Filmrolle`, `Festplatte`, `VHS`). Die allgemeine Voreinstellung kennt
+Werkarten, beide Listen überschnitten sich in genau einem Wert, und aus
+5562 Datensätzen wurden 67. Die Träger einzusammeln hat die Zahl
+repariert, war aber weiterhin eine Schlussfolgerung auf eine Frage, die
+der Datensatz direkt beantwortet — und sie verwarf sechs Exemplare, bei
+denen in `objectWorkType` ein Titelbestandteil steht.
 
-Die Liste im Profil ist deshalb aus dem abgestimmten CSV-Export abgeleitet:
-Jede Objektbezeichnung, die dort vorkommt, gilt als Bestand. Digitale Träger
-sind dabei, weil sie im CSV-Export dabei sind.
+## Der Identifier ist das letzte Segment von `lidoRecID`
 
-> **Wenn Sie ein eigenes Profil für diesen Konverter schreiben, übernehmen
-> Sie `film_work_type_terms`.** Ein Profil ersetzt die Vokabulare, es ergänzt
-> sie nicht. → [Kapitel 3](03-profile.md#die-eine-falle-die-sie-kennen-sollten)
+`DE-MUS-042628:DE-MUS-432511:1059195` — die ersten beiden Segmente
+nennen Archiv und Museum. Der Identifier ist `1059195`, und genau das
+steht im CSV-Export in der ersten Spalte. Nähme man die ganze
+Zeichenkette, hätte dasselbe Exemplar je nach Importer zwei
+verschiedene Schlüssel und nichts ließe sich zuordnen.
 
-Sechs Datensätze tragen dort einen Titelbestandteil statt eines Trägers
-(„Teil 1", „Teil 2: Das Bündnis der Viererbande"). Sie werden nicht
-übernommen und gemeldet — ein Erfassungsfehler, der sich beheben lässt.
+## Das Haus sagt, zu welchen Werken ein Exemplar gehört
+
+Jeder Datensatz trägt `relatedWorkSet`-Einträge mit `relType` `Film`,
+jeder mit einer eigenen Werk-ID und einem Werktitel. Das ergibt 3717
+Werke — und es drückt einen Fall aus, den ein abgeleiteter Schlüssel
+nicht ausdrücken kann: Sechs Exemplare enthalten mehr als einen Film,
+und eine Rolle mit zwei Kurzfilmen ist **zwei Werke und eine
+Manifestation**. Drei solche Fälle mussten im revidierten CSV-Ergebnis
+von Hand aufgetrennt werden; alle drei kommen jetzt ohne Handarbeit so
+aus der Konvertierung.
+
+Enthält ein Exemplar mehrere Filme, werden Produktionsereignis, Genres
+und Alternativtitel des Datensatzes **keinem** davon zugeordnet und das
+wird gemeldet. Ein Datum, das auf einer Kompilationsrolle steht, ist
+das Datum der Rolle.
 
 ## Die PID kommt zurück
 
@@ -69,6 +85,20 @@ Namen erraten; wo die Quelle schweigt, bleibt er leer.
 
 „Absender*in" wird nicht abgebildet. Das ist ein Provenienzvermerk, keine
 filmografische Rolle.
+
+## Form, Genre und Sachschlagwort
+
+Der `classificationWrap` beantwortet zwei Fragen in einer Liste — was
+für ein Ding der Film ist und wie er ist —, das Schema fragt sie
+getrennt. Dokumentarfilm, Spielfilm, Amateurfilm, Kurzfilm, Werbefilm,
+Lehrfilm und Wochenschau werden zu `has_form` und **nicht zusätzlich**
+zum Genre.
+
+Einen `subjectWrap` gibt es in diesem Export nicht. Wovon ein Film
+handelt, steht als Person mit der Rolle „Behandelte Person" — also dort,
+wo auch die Mitwirkenden stehen. Nur die Rolle unterscheidet die
+beiden; ohne sie wurden 130 Sachschlagworte als nicht abbildbare
+Mitwirkende gemeldet.
 
 ## Farbe, Format und Elementtyp stehen in `termMaterialsTech`
 
@@ -148,13 +178,20 @@ denselben Fall hat, setzen Sie `duration_units` in Ihrem Profil.
 Ergänzend: 1084 Datensätze schreiben die leere Spalte als `0E-10`. Eine
 Laufzeit von null ist keine Laufzeit, also bleibt das Feld leer.
 
-## Die Länge ist nicht verwendbar
+## Die Länge wird übernommen — und gegengerechnet
 
-`measurementType = "Länge"` mit Einheit „m" ist **innerhalb derselben Datei
-uneinheitlich**: Von 1947 vergleichbaren 35-mm-Datensätzen stehen 1334 in
-Zentimetern und 613 in Metern. Das Feld wird deshalb nicht übernommen. Es
-wäre wertvoll — aus Länge und Bildrate ließe sich die Laufzeit gegenrechnen —
-aber erst, wenn die Einheit geklärt ist.
+`measurementType = "Länge"` mit Einheit „m" ist **innerhalb derselben
+Datei uneinheitlich**: Von 1947 vergleichbaren 35-mm-Datensätzen stehen
+1334 in Zentimetern und 613 in Metern. Der Wert wird trotzdem
+übernommen, so wie er dasteht — etwas wegzulassen, das das Haus erfasst
+hat, hilft niemandem.
+
+Neu ist, dass die Konvertierung merkt, wenn er nicht stimmen kann. Bei
+bekanntem Format sagen Länge und Laufzeit einander voraus; wo beide um
+mehr als eine Größenordnung auseinanderliegen, steht das im Bericht —
+bei 2347 Datensätzen, durchweg mit dem Faktor 100. Korrigiert wird
+nichts: Welcher der beiden Werte die falsche Einheit trägt, geht aus
+dem Datensatz nicht hervor.
 
 ## Offene Fragen an das Haus
 
@@ -167,4 +204,4 @@ aber erst, wenn die Einheit geklärt ist.
 | „Amateurfilm", „bewegtes Bild-Werk" unter einer ungültigen `conceptID` | 27 |
 | Sechs Datensätze mit Titelbestandteilen in `objectWorkType` | 6 |
 | Uneindeutige Datumsangaben, überwiegend Jahrzehnte | 85 |
-| Einheit der Längenangabe | 1947 |
+| Einheit der Längenangabe — Länge und Laufzeit widersprechen sich | 2347 |
