@@ -87,6 +87,17 @@ class LidoProfile:
         format and element type together, because the values of those
         vocabularies are unique across the schema and the source does
         not separate them either.
+    keyword_classification_types : frozenset
+        Lower case ``lido:type`` values whose terms are routed by what
+        the term says rather than by what the classification is
+        called. A provider may collect language, access status and
+        working notes under one keyword heading; the type then says
+        nothing about the target and only the term does.
+    language_name_map : dict
+        Lower case language name to ISO 639-2/B code. Providers name
+        languages in their own language.
+    no_dialogue_terms : frozenset
+        Lower case terms stating that a copy carries no dialogue.
     empty_terms : frozenset
         Lower case terms standing for "nothing recorded" rather than
         for a value, such as a cataloguing system's "(not assigned)".
@@ -148,6 +159,11 @@ class LidoProfile:
     format_map: dict = field(default_factory=dict)
     element_type_map: dict = field(default_factory=dict)
     materials_tech_map: dict = field(default_factory=dict)
+    keyword_classification_types: frozenset = frozenset()
+    language_name_map: dict = field(default_factory=dict)
+    no_dialogue_terms: frozenset = frozenset(
+        {"ohne sprache", "stumm", "no dialogue", "silent"}
+    )
     empty_terms: frozenset = frozenset(
         {"(not assigned)", "not assigned", "n/a", "-", "—", "unbekannt"}
     )

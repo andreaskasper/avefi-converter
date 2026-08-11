@@ -236,6 +236,17 @@ MAPPING_RULES = (
         " event types found here are recognised but not acted on",
     ),
     MappingRule(
+        "keyword_classification",
+        "Item",
+        "lido:classification[@lido:type in profile"
+        " keyword_classification_types]",
+        "in_language, has_access_status",
+        "Profile language_name_map and access_status_map",
+        "Routed by the term rather than by the type, because a"
+        " provider may file language, access status and working notes"
+        " under one heading; a term matching neither is reported",
+    ),
+    MappingRule(
         "webresource",
         "Item",
         "lido:administrativeMetadata/lido:resourceWrap//lido:linkResource",
@@ -318,6 +329,15 @@ ASSUMPTIONS = (
     " technical description are reported rather than turned into"
     " events. A note about the material of a copy does not state that"
     " the film was distributed or restored.",
+    "A language recorded without a usage is read as the spoken"
+    " language, which is the common case and what the CSV importer"
+    " for the same institution records. The assumption is reported"
+    " per occurrence rather than left implied.",
+    "`Removed` is set only for a copy that carries an AVefi"
+    " identifier. It states that something registered is gone, which"
+    " says nothing about a copy that was never registered; such a"
+    " record is kept without an access status and reported, because"
+    " whether it belongs in a delivery is the provider's decision.",
     "LIDO does not prescribe the `lido:type` values marking a colour,"
     " format or access status classification. The profile names them,"
     " and a classification of any other type becomes a genre.",
@@ -1055,8 +1075,11 @@ def build_item(lido_record, descriptive, primary, profile, source_key):
             efi.Film(type=efi.FormatFilmTypeEnum(film_format))
         )
     apply_technical_description(item, descriptive, profile, source_key)
+    # Before the keywords, because one of them can only be stated
+    # about a copy that carries an identifier.
     for identifier in avefi_identifiers(lido_record, profile, source_key):
         item.has_identifier.append(identifier)
+    apply_keyword_classifications(item, descriptive, profile, source_key)
     for link in web_resources(lido_record):
         item.has_webresource.append(link)
     return item
@@ -1212,7 +1235,7 @@ def consumed_classification_types(profile) -> set:
         value
         for target in profile.classification_types
         for value in classification_type_values(profile, target)
-    }
+    } | {str(value).lower() for value in profile.keyword_classification_types}
 
 
 def classification_terms(descriptive, profile):
@@ -1258,6 +1281,119 @@ def mapped_classification(
             return None
         return mapped
     return None
+
+
+def apply_keyword_classifications(item, descriptive, profile, source_key):
+    """Route the terms of a keyword classification by what they say.
+
+    A provider may file the language of a copy, its access status and
+    its working notes under one heading. The heading then says nothing
+    about where a term belongs and the term has to say it: this
+    provider writes "Deutsch", "Archivkopie" and "angedacht" into the
+    same classification, and the first of them was arriving as a genre
+    of the film.
+
+    The language is recorded without stating how it is used. It is
+    read as the spoken language, which is the common case and what
+    the CSV importer for the same institution records, and the
+    assumption is reported so that it is visible rather than implied.
+
+    """
+    wanted = {
+        str(value).lower() for value in profile.keyword_classification_types
+    }
+    if not wanted:
+        return
+    for classification in classifications(descriptive):
+        type_value = str(
+            getattr(classification, "type_value", "") or ""
+        ).lower()
+        if type_value not in wanted:
+            continue
+        for term in classification.term or []:
+            text = text_of(term)
+            if not text:
+                continue
+            text = text.strip()
+            if text.lower() in profile.empty_terms:
+                continue
+            if apply_keyword_term(item, text, profile, source_key):
+                continue
+            report_issue(
+                "warning",
+                "No AVefi field for this keyword",
+                record_id=source_key,
+                source_field=f"classification[@type='{type_value}']",
+                target_field="—",
+                raw_value=text,
+            )
+
+
+def apply_keyword_term(item, text: str, profile, source_key) -> bool:
+    """Place one keyword, returning True if it found a field."""
+    key = text.lower()
+    if key in profile.no_dialogue_terms:
+        add_language(item, "zxx", "NoDialogue")
+        return True
+    code = profile.language_name_map.get(key)
+    if code:
+        report_issue(
+            "info",
+            "Language recorded without a usage; read as the spoken language",
+            record_id=source_key,
+            source_field="classification/term",
+            target_field="in_language.usage",
+            raw_value=text,
+        )
+        add_language(item, code, "SpokenLanguage")
+        return True
+    access = profile.access_status_map.get(key)
+    if access:
+        if access == "Removed" and not has_avefi_identifier(item):
+            # Removed says that something registered is gone. About a
+            # copy that was never registered it says nothing, and
+            # efi-conv check rejects the combination. Whether such a
+            # copy belongs in a delivery at all is the provider's
+            # decision, so the record is kept and the fact reported.
+            report_issue(
+                "warning",
+                "Copy is marked as deaccessioned but carries no AVefi"
+                " identifier, so no access status is set; whether it"
+                " belongs in the delivery is for the data provider to"
+                " decide",
+                record_id=source_key,
+                source_field="classification/term",
+                target_field="has_access_status",
+                raw_value=text,
+            )
+            return True
+        if item.has_access_status is None:
+            item.has_access_status = efi.ItemAccessStatusEnum(access)
+        return True
+    return False
+
+
+def has_avefi_identifier(item) -> bool:
+    """Return True if the copy carries a registered AVefi identifier."""
+    return any(
+        identifier.category == "avefi:AVefiResource"
+        for identifier in item.has_identifier
+    )
+
+
+def add_language(item, code: str, usage: str) -> None:
+    """Add a language to a copy, without repeating one it has."""
+    for existing in item.in_language:
+        if existing.code == code:
+            if usage not in (existing.usage or []):
+                existing.usage.append(efi.LanguageUsageEnum(usage))
+            return
+    item.in_language.append(
+        efi.Language(
+            code=efi.LanguageCodeEnum(code),
+            usage=[efi.LanguageUsageEnum(usage)],
+        )
+    )
 
 
 def duration_measurement(descriptive, profile):

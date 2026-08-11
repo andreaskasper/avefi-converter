@@ -74,6 +74,7 @@ LIDO_RECORD = """\
             <lido:term xml:lang="de">{colour}</lido:term>
           </lido:classification>
 {genre}\
+{keywords}\
         </lido:classificationWrap>
       </lido:objectClassificationWrap>
       <lido:objectIdentificationWrap>
@@ -129,6 +130,14 @@ LIDO_PUBLISHED_ID = """\
 LIDO_GENRE = """\
           <lido:classification lido:type="genre">
             <lido:term xml:lang="de">{genre}</lido:term>
+          </lido:classification>
+"""
+
+#: A classification collecting language, access status and working
+#: notes under one heading, as this provider keeps them.
+LIDO_KEYWORDS = """\
+          <lido:classification lido:type="Schlagwort">
+{terms}\
           </lido:classification>
 """
 
@@ -211,6 +220,7 @@ def make_lido_record(
     gnd="",
     gnd_source="GND",
     materials=(),
+    keywords=(),
 ):
     """Return the LIDO serialisation of one film holding."""
     return LIDO_RECORD.format(
@@ -222,6 +232,17 @@ def make_lido_record(
         date=date,
         duration=duration,
         genre=LIDO_GENRE.format(genre=genre) if genre else "",
+        keywords=(
+            LIDO_KEYWORDS.format(
+                terms="".join(
+                    f'            <lido:term xml:lang="de">{term}'
+                    f"</lido:term>\n"
+                    for term in keywords
+                )
+            )
+            if keywords
+            else ""
+        ),
         materials=(
             LIDO_MATERIALS_TECH.format(
                 terms="".join(

@@ -389,3 +389,110 @@ class TestTechnicalDescription:
             for entry in report.entries
             if entry.raw_value == "Festplatte" and entry.severity == "warning"
         ]
+
+
+class TestKeywordsCarryMoreThanKeywords:
+    """One classification holds language, access status and notes.
+
+    The heading says "Schlagwort" and says nothing more, so the term
+    has to say where it belongs. Until it did, the language of a copy
+    was arriving as a genre of the film: "Deutsch" 1922 times.
+
+    """
+
+    def records_with(self, lido_page, lido_record, *keywords, handle=""):
+        source = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001", keywords=keywords, handle=handle),
+        )
+        return fmdu_lido.efi_import(source)
+
+    def item_with(self, lido_page, lido_record, *keywords, handle=""):
+        records = self.records_with(
+            lido_page, lido_record, *keywords, handle=handle
+        )
+        return next(r for r in records if r.category == "avefi:Item")
+
+    def test_a_language_becomes_a_language(self, lido_page, lido_record):
+        item = self.item_with(lido_page, lido_record, "Deutsch")
+        assert [(lang.code, lang.usage) for lang in item.in_language] == [
+            ("ger", ["SpokenLanguage"])
+        ]
+
+    def test_it_is_no_longer_a_genre(self, lido_page, lido_record):
+        records = self.records_with(lido_page, lido_record, "Deutsch")
+        work = next(r for r in records if r.category == "avefi:WorkVariant")
+        assert "Deutsch" not in [genre.has_name for genre in work.has_genre]
+
+    def test_no_dialogue_is_a_usage_not_a_language(
+        self, lido_page, lido_record
+    ):
+        item = self.item_with(lido_page, lido_record, "Ohne Sprache")
+        assert [(lang.code, lang.usage) for lang in item.in_language] == [
+            ("zxx", ["NoDialogue"])
+        ]
+
+    def test_an_access_status_becomes_one(self, lido_page, lido_record):
+        item = self.item_with(lido_page, lido_record, "Archivkopie")
+        assert item.has_access_status == "Archive"
+
+    def test_a_working_note_is_reported(self, lido_page, lido_record):
+        """A working note is about the cataloguing, not the film."""
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            self.item_with(lido_page, lido_record, "angedacht")
+        assert [
+            entry
+            for entry in report.entries
+            if entry.raw_value == "angedacht" and entry.severity == "warning"
+        ]
+
+
+class TestDeaccession:
+    """Removed says a registered copy is gone.
+
+    About a copy that was never registered it says nothing, and
+    efi-conv check refuses the combination — a rule of the target
+    system that is easy to miss and expensive to find out late.
+
+    """
+
+    HANDLE = "21.11155/F68FEFE5-205A-4090-8A31-60C6F87875BB"
+
+    def item_with(self, lido_page, lido_record, handle):
+        source = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001", keywords=("Deakzession",), handle=handle),
+        )
+        return next(
+            r
+            for r in fmdu_lido.efi_import(source)
+            if r.category == "avefi:Item"
+        )
+
+    def test_a_registered_copy_is_marked_removed(self, lido_page, lido_record):
+        item = self.item_with(lido_page, lido_record, self.HANDLE)
+        assert item.has_access_status == "Removed"
+
+    def test_an_unregistered_one_is_not(self, lido_page, lido_record):
+        item = self.item_with(lido_page, lido_record, "")
+        assert item.has_access_status is None
+
+    def test_and_the_record_survives_with_a_warning(
+        self, lido_page, lido_record
+    ):
+        """Dropping it is the provider's call, not the converter's."""
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            item = self.item_with(lido_page, lido_record, "")
+        assert item is not None
+        assert [
+            entry
+            for entry in report.entries
+            if entry.target_field == "has_access_status"
+            and entry.severity == "warning"
+        ]

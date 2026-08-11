@@ -92,6 +92,58 @@ COLOUR_TYPE_MAP = {
 ACCESS_STATUS_MAP = {
     "archivkopie": "Archive",
     "verleihkopie": "Distribution",
+    "master": "Master",
+    # A deaccessioned copy is not a copy that has to be left out. The
+    # schema has a status for it, and a holdings record saying the
+    # item is gone is worth more than no record at all.
+    "deakzession": "Removed",
+    "deakzessioniert": "Removed",
+}
+
+#: Languages as this provider names them. It writes them into the
+#: same classification as the access status and a few working notes,
+#: so the term has to say where it belongs — before this, "Deutsch"
+#: was arriving as a genre of the film, 1922 times.
+LANGUAGE_NAME_MAP = {
+    "deutsch": "ger",
+    "englisch": "eng",
+    "französisch": "fre",
+    "franzoesisch": "fre",
+    "spanisch": "spa",
+    "italienisch": "ita",
+    "japanisch": "jpn",
+    "niederländisch": "dut",
+    "niederlaendisch": "dut",
+    "russisch": "rus",
+    "türkisch": "tur",
+    "tuerkisch": "tur",
+    "persisch": "per",
+    "polnisch": "pol",
+    "portugiesisch": "por",
+    "hindi": "hin",
+    "griechisch": "gre",
+    "koreanisch": "kor",
+    "mandarin": "chi",
+    "kantonesisch": "chi",
+    # A misspelling in sixteen records, kept so that the copies are
+    # not left without a language over a typing slip.
+    "kantonesich": "chi",
+    "chinesisch": "chi",
+    "dänisch": "dan",
+    "daenisch": "dan",
+    "schwedisch": "swe",
+    "norwegisch": "nor",
+    "tschechisch": "cze",
+    "ungarisch": "hun",
+    "arabisch": "ara",
+    "hebräisch": "heb",
+    "hebraeisch": "heb",
+    "latein": "lat",
+    "lateinisch": "lat",
+    # "Verschiedene" is a statement that there are several and which
+    # ones was not recorded; mul says exactly that.
+    "verschiedene": "mul",
+    "mehrsprachig": "mul",
 }
 FORMAT_MAP = {
     "8mm": "8mmFilm",
@@ -171,6 +223,8 @@ PROFILE = LidoProfile(
     default_language="ger",
     film_work_type_terms=FILM_WORK_TYPE_TERMS,
     role_activity_map=ROLE_ACTIVITY_MAP,
+    keyword_classification_types=frozenset({"schlagwort"}),
+    language_name_map=LANGUAGE_NAME_MAP,
     materials_tech_map=MATERIALS_TECH_MAP,
     colour_type_map=COLOUR_TYPE_MAP,
     access_status_map=ACCESS_STATUS_MAP,
