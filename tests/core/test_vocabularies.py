@@ -21,6 +21,7 @@ VOCABULARIES = {
     "access_status_map": efi.ItemAccessStatusEnum,
     "format_map": efi.FormatFilmTypeEnum,
     "element_type_map": efi.ItemElementTypeEnum,
+    "work_form_map": efi.WorkFormEnum,
 }
 
 

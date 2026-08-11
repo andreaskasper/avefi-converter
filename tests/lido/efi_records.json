@@ -53,10 +53,8 @@
       "has_ordering_name": "Brücke, Die",
       "type": "PreferredTitle"
     },
-    "has_genre": [
-      {
-        "has_name": "Dokumentarfilm"
-      }
+    "has_form": [
+      "Documentary"
     ],
     "type": "Monographic"
   },
@@ -154,10 +152,8 @@
       "has_name": "Ohne Titel, Werbefilm",
       "type": "SuppliedDevisedTitle"
     },
-    "has_genre": [
-      {
-        "has_name": "Spielfilm"
-      }
+    "has_form": [
+      "Fiction"
     ],
     "type": "Monographic"
   },

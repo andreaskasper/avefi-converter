@@ -131,14 +131,26 @@ MAPPING_RULES = (
         "Article handling in both directions",
     ),
     MappingRule(
-        "genre",
+        "form_and_genre",
         "Work",
         "lido:objectClassificationWrap/lido:classificationWrap"
         "/lido:classification",
-        "has_genre.has_name",
-        notes="Classifications whose lido:type is named in the"
-        " profile as carrying colour, format or access status are"
-        " consumed by those rules instead",
+        "has_form, has_genre.has_name",
+        "Profile work_form_map",
+        "A term naming the kind of thing a film is becomes a form and"
+        " not also a genre; the rest become genres. Classifications"
+        " whose lido:type is named in the profile as carrying colour,"
+        " format, access status or keywords are consumed by those"
+        " rules instead",
+    ),
+    MappingRule(
+        "subject",
+        "Work",
+        "lido:eventActor/lido:actorInRole[role in subject terms]",
+        "has_subject.has_name, has_subject.same_as",
+        "Profile subject_role_terms",
+        "What the film is about, which this provider files where the"
+        " credits are; only the role tells the two apart",
     ),
     MappingRule(
         "production_date",
@@ -933,8 +945,51 @@ def build_work(descriptive, primary, alternatives, profile, source_key):
     for title in alternatives:
         work.has_alternative_title.append(as_title(title, "AlternativeTitle"))
     for term in classification_terms(descriptive, profile):
+        form = profile.work_form_map.get(term.lower())
+        if form:
+            if form not in (work.has_form or []):
+                work.has_form.append(efi.WorkFormEnum(form))
+            continue
         work.has_genre.append(efi.Genre(has_name=term))
+    for subject in collect_subjects(descriptive, profile, source_key):
+        work.has_subject.append(subject)
     return work
+
+
+def collect_subjects(descriptive, profile, source_key):
+    """Yield what a record says the film is about.
+
+    Providers record the subject of a film as an actor with a role of
+    its own — "Behandelte Person" — which puts a person the film is
+    about in the same place as the people who made it. Reading the
+    role is what tells the two apart; without it the subject either
+    becomes a director or is reported as an unmappable credit, and
+    130 of them were.
+
+    """
+    if not profile.subject_role_terms:
+        return
+    seen = set()
+    for lido_event in actor_events(descriptive, profile):
+        for actor_wrap in lido_event.event_actor or []:
+            in_role = actor_wrap.actor_in_role
+            if in_role is None:
+                continue
+            role = term_text(first(in_role.role_actor))
+            if not role or role.strip().lower() not in (
+                profile.subject_role_terms
+            ):
+                continue
+            name = actor_name(in_role)
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            subject = efi.Subject(has_name=name)
+            for authority in authority_resources(
+                getattr(in_role, "actor", None)
+            ):
+                subject.same_as.append(authority)
+            yield subject
 
 
 def build_production_event(descriptive, profile, source_key):
@@ -1024,6 +1079,9 @@ def collect_activities(descriptive, profile, source_key):
                     target_field="has_event.has_activity",
                     raw_value=name,
                 )
+                continue
+            if role and role.strip().lower() in profile.subject_role_terms:
+                # Not a credit at all; build_work reads these.
                 continue
             activity_type = role_activity_type(role, profile)
             activity_class = ACTIVITY_CLASS_BY_TYPE.get(activity_type)

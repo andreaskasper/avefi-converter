@@ -774,3 +774,66 @@ class TestWorksAsTheProviderStatesThem:
         works = self.works_of(records)
         assert len(works) == 1
         assert works[0].has_identifier[0].id != "W-1_work"
+
+
+class TestFormGenreAndSubject:
+    """Three questions the provider answers in two places.
+
+    What kind of thing a film is, what it is like, and what it is
+    about. The first two share one classification list and the third
+    is filed as if it were a credit.
+
+    """
+
+    def work_with(self, lido_page, lido_record, **kwargs):
+        source = lido_page("export.xml", lido_record("FMDU-0001", **kwargs))
+        return next(
+            r
+            for r in fmdu_lido.efi_import(source)
+            if r.category == "avefi:WorkVariant"
+        )
+
+    def test_a_form_becomes_a_form(self, lido_page, lido_record):
+        work = self.work_with(lido_page, lido_record, genre="Dokumentarfilm")
+        assert work.has_form == ["Documentary"]
+
+    def test_and_not_also_a_genre(self, lido_page, lido_record):
+        """It is one statement, not two."""
+        work = self.work_with(lido_page, lido_record, genre="Dokumentarfilm")
+        assert work.has_genre == []
+
+    def test_a_genre_stays_a_genre(self, lido_page, lido_record):
+        work = self.work_with(lido_page, lido_record, genre="Filmkomödie")
+        assert [g.has_name for g in work.has_genre] == ["Filmkomödie"]
+        assert not work.has_form
+
+    def test_a_subject_is_not_a_credit(self, lido_page, lido_record):
+        """A subject role names who the film is about.
+
+        It sits where the credits sit, so only the role tells them
+        apart; without that the person is either taken for a director
+        or reported as an unmappable credit.
+
+        """
+        work = self.work_with(
+            lido_page,
+            lido_record,
+            director="Kratz, Max",
+            role="Behandelte Person",
+        )
+        assert [s.has_name for s in work.has_subject] == ["Kratz, Max"]
+        assert not [a for event in work.has_event for a in event.has_activity]
+
+    def test_a_subject_keeps_its_authority_identifier(
+        self, lido_page, lido_record
+    ):
+        work = self.work_with(
+            lido_page,
+            lido_record,
+            director="Kratz, Max",
+            role="Behandelte Person",
+            gnd="118715585",
+        )
+        assert [(a.category, a.id) for a in work.has_subject[0].same_as] == [
+            ("avefi:GNDResource", "118715585")
+        ]

@@ -184,6 +184,48 @@ ROLE_ACTIVITY_MAP = {
     "sprecher*in": "Narrator",
 }
 
+#: Classification terms naming the form of a work rather than its
+#: genre. The provider keeps both in one list, which is reasonable of
+#: it — they are both answers to "what sort of film is this" — but the
+#: schema asks them separately: has_form is what kind of thing the
+#: film is, has_genre what it is like. A term listed here becomes a
+#: form and not also a genre.
+WORK_FORM_MAP = {
+    "dokumentarfilm": "Documentary",
+    "dokumentation": "Documentary",
+    "spielfilm": "Fiction",
+    "amateurfilm": "AmateurFilm",
+    "experimentalfilm": "ExperimentalFilm",
+    "kurzfilm": "Short",
+    "werbefilm": "Commercial",
+    "werbung": "Commercial",
+    "lehrfilm": "EducationalFilm",
+    "monatsschau": "Newsreel",
+    "wochenschau": "Newsreel",
+    "kompilationsfilm": "Compilation",
+    "filmcollage": "Compilation",
+    "essayfilm": "EssayFilm",
+    "industriefilm": "IndustrialFilm",
+    "videoclip": "MusicVideo",
+    "tv-serie": "Series",
+    "serienfilm": "Series",
+    "fernsehen - filmserie": "Series",
+}
+
+#: Roles marking an actor as what the film is about. This provider
+#: records the subject of a film in the same place as its credits, so
+#: without these terms a person the film is about is either taken for
+#: somebody who made it or reported as an unmappable credit — 130 of
+#: them were.
+SUBJECT_ROLE_TERMS = frozenset(
+    {
+        "behandelte person",
+        "behandelte institution",
+        "behandelter ort",
+        "dargestellte person",
+    }
+)
+
 #: House spellings in the technical description, and the AVefi value
 #: each one means. Everything else this provider writes there is
 #: already an AVefi value and needs no entry.
@@ -236,6 +278,8 @@ PROFILE = LidoProfile(
     # for one decision is one too many.
     film_work_type_terms=frozenset(),
     role_activity_map=ROLE_ACTIVITY_MAP,
+    work_form_map=WORK_FORM_MAP,
+    subject_role_terms=SUBJECT_ROLE_TERMS,
     duration_measurement_terms=DURATION_MEASUREMENT_TERMS,
     duration_units=DURATION_UNITS,
     keyword_classification_types=frozenset({"schlagwort"}),

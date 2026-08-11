@@ -100,6 +100,14 @@ class LidoProfile:
         lower case ``lido:type`` values marking a classification as
         carrying it. Classifications of any of these types are consumed
         by the vocabulary rules; the remaining ones become genres.
+    work_form_map : dict
+        Lower case classification term to the AVefi WorkFormEnum value
+        it denotes. Form and genre are different questions about a
+        film — what kind of thing it is, and what it is like — and a
+        provider commonly answers both in one list.
+    subject_role_terms : frozenset
+        Lower case roleActor terms marking an actor as what the film
+        is about rather than as somebody who made it.
     colour_type_map : dict
         Source term (lower case) to AVefi ColourTypeEnum value.
     access_status_map : dict
@@ -185,6 +193,8 @@ class LidoProfile:
     classification_types: dict = field(
         default_factory=lambda: dict(DEFAULT_CLASSIFICATION_TYPES)
     )
+    work_form_map: dict = field(default_factory=dict)
+    subject_role_terms: frozenset = frozenset()
     colour_type_map: dict = field(default_factory=dict)
     access_status_map: dict = field(default_factory=dict)
     format_map: dict = field(default_factory=dict)
