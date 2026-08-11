@@ -32,7 +32,10 @@ ISSUER_INFO = {
 #: House vocabularies, kept in step with the CSV importer for the same
 #: institution so that both produce identical AVefi values.
 COLOUR_TYPE_MAP = {
-    "coloriert": "Colourized",
+    # "coloriert" has no AVefi equivalent and is deliberately absent:
+    # hand and stencil colouring is neither Colour nor Tinted, and
+    # guessing one of them would put a value into the data that the
+    # provider never stated. The term is reported as unmapped instead.
     "farbe": "Colour",
     "farbe, sw": "ColourBlackAndWhite",
     "schwarz-weiß": "BlackAndWhite",
