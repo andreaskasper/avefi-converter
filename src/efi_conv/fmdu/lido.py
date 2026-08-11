@@ -29,6 +29,51 @@ ISSUER_INFO = {
     "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
 }
 
+#: The lido:objectWorkType values that denote holdings in scope.
+#:
+#: The generic default lists work types — "film", "spielfilm",
+#: "dokumentarfilm". This provider does not put a work type there. It
+#: puts the carrier: "Filmrolle", "Festplatte", "VHS". The two lists
+#: overlap in exactly one value, "Video", so the default accepted 67
+#: of 5562 records of a real export and skipped the other 5495,
+#: including all 5074 film reels, as accompanying material.
+#:
+#: The list below is not invented. It is every value occurring in the
+#: records of the CSV export agreed with the provider, which is the
+#: definition of what counts as holdings for this institution. Six
+#: records carry a title fragment instead of a carrier — "Teil 1",
+#: "Teil 2: Das Bündnis der Viererbande" — and are deliberately not
+#: listed: they are a data entry error at the provider, and accepting
+#: them here would hide it.
+FILM_WORK_TYPE_TERMS = frozenset(
+    {
+        "analog video",
+        "arbeitskopie",
+        "bild-negativ",
+        "bluray",
+        "datei",
+        "dcp",
+        "disc",
+        "dvd",
+        "festplatte",
+        "filmrolle",
+        # A misspelling of "Filmrolle" in a single record. Listed
+        # because the copy it describes is a film reel whatever the
+        # cataloguer typed, and reported to the provider separately.
+        "fimrolle",
+        "laserdisc",
+        "lto",
+        "lto-band",
+        "negativ",
+        "optisch",
+        "raid",
+        "ton-negativ",
+        "tonband",
+        "vhs",
+        "video",
+    }
+)
+
 #: House vocabularies, kept in step with the CSV importer for the same
 #: institution so that both produce identical AVefi values.
 COLOUR_TYPE_MAP = {
@@ -64,6 +109,7 @@ PROFILE = LidoProfile(
     issuer_info=ISSUER_INFO,
     description=DESCRIPTION,
     default_language="ger",
+    film_work_type_terms=FILM_WORK_TYPE_TERMS,
     colour_type_map=COLOUR_TYPE_MAP,
     access_status_map=ACCESS_STATUS_MAP,
     format_map=FORMAT_MAP,

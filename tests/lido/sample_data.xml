@@ -11,7 +11,7 @@
       <lido:objectClassificationWrap>
         <lido:objectWorkTypeWrap>
           <lido:objectWorkType>
-            <lido:term xml:lang="de">Film</lido:term>
+            <lido:term xml:lang="de">Filmrolle</lido:term>
           </lido:objectWorkType>
         </lido:objectWorkTypeWrap>
         <lido:classificationWrap>
@@ -101,7 +101,7 @@
       <lido:objectClassificationWrap>
         <lido:objectWorkTypeWrap>
           <lido:objectWorkType>
-            <lido:term xml:lang="de">Film</lido:term>
+            <lido:term xml:lang="de">Filmrolle</lido:term>
           </lido:objectWorkType>
         </lido:objectWorkTypeWrap>
         <lido:classificationWrap>
@@ -188,7 +188,7 @@
     <lido:descriptiveMetadata xml:lang="de">
       <lido:objectClassificationWrap>
         <lido:objectWorkTypeWrap>
-          <lido:objectWorkType><lido:term xml:lang="de">Film</lido:term></lido:objectWorkType>
+          <lido:objectWorkType><lido:term xml:lang="de">Filmrolle</lido:term></lido:objectWorkType>
         </lido:objectWorkTypeWrap>
         <lido:classificationWrap>
           <lido:classification lido:type="colour">

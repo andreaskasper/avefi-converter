@@ -274,7 +274,12 @@ class TestConfiguredImporterGroupsAcrossFiles:
             for name, colour in (("a.xml", "sw"), ("b.xml", "farbe"))
             for record in from_.import_file(
                 importer,
-                lido_page(name, lido_record(f"REC-{name}", colour=colour)),
+                lido_page(
+                    name,
+                    lido_record(
+                        f"REC-{name}", colour=colour, work_type="Film"
+                    ),
+                ),
                 context=context,
             )
         ]

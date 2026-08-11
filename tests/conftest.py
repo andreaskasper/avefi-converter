@@ -65,7 +65,7 @@ LIDO_RECORD = """\
       <lido:objectClassificationWrap>
         <lido:objectWorkTypeWrap>
           <lido:objectWorkType>
-            <lido:term xml:lang="de">Film</lido:term>
+            <lido:term xml:lang="de">{work_type}</lido:term>
           </lido:objectWorkType>
         </lido:objectWorkTypeWrap>
         <lido:classificationWrap>
@@ -155,10 +155,12 @@ def make_lido_record(
     colour="sw",
     duration="103",
     genre="",
+    work_type="Filmrolle",
 ):
     """Return the LIDO serialisation of one film holding."""
     return LIDO_RECORD.format(
         record_id=record_id,
+        work_type=work_type,
         title=title,
         colour=colour,
         date=date,

@@ -394,7 +394,16 @@ class TestErrorsAreReportedAsErrors:
     def test_the_mismatch_can_be_allowed_deliberately(self, runner, tmp_path):
         profile = tmp_path / "profile.json"
         profile.write_text(
-            json.dumps({"format": "en15907", "issuer": ISSUER}),
+            json.dumps(
+                {
+                    "format": "en15907",
+                    "issuer": ISSUER,
+                    # A profile replaces the vocabularies the converter
+                    # ships, so a profile that names none accepts none
+                    # of this provider's carrier terms.
+                    "settings": {"film_work_type_terms": ["filmrolle"]},
+                }
+            ),
             encoding="utf-8",
         )
         target = tmp_path / "out.json"

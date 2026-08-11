@@ -8,12 +8,27 @@
   },
   "settings": {
     "default_language": "ger",
-    "film_work_type_terms": ["film", "filmwerk", "schmalfilm"],
-    "work_key_fields": ["primary_title", "director", "date"],
+    "film_work_type_terms": [
+      "film",
+      "filmwerk",
+      "schmalfilm",
+      "filmrolle"
+    ],
+    "work_key_fields": [
+      "primary_title",
+      "director",
+      "date"
+    ],
     "classification_types": {
-      "colour": ["Farbigkeit"],
-      "format": ["Traegerformat"],
-      "access": ["Benutzung"]
+      "colour": [
+        "Farbigkeit"
+      ],
+      "format": [
+        "Traegerformat"
+      ],
+      "access": [
+        "Benutzung"
+      ]
     },
     "colour_type_map": {
       "s/w": "BlackAndWhite",
