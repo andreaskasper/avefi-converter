@@ -225,9 +225,25 @@ ASSUMPTIONS = (
     " works are not derived from LIDO.",
     "Decade expressions such as `50er Jahre` are reported as"
     " unconvertible. Enabling `map_decades` maps them to a closed ten"
-    " year interval and reads two digit decades as twentieth century.",
-    "`ca.` and `um` become the ISODate approximation qualifier `~`, a"
-    " trailing question mark becomes `?`.",
+    " year interval and reads two digit decades as twentieth century."
+    " EDTF conformance level 0, which is what ISODate allows, has no"
+    " decade syntax, so the interval is the only available form.",
+    "`ca.`, `c.`, `um` and the combined `ca./ c.` become the ISODate"
+    " approximation qualifier `~`; a trailing question mark and one in"
+    " brackets, `1960 (?)`, become the uncertainty qualifier `?`. On"
+    " an interval the qualifier is written on both ends, because"
+    " ISODate carries it per date rather than per interval.",
+    "Square brackets around a date mark one the cataloguer supplied"
+    " rather than read off the object. That states where the date came"
+    " from, not how certain it is, so the brackets are dropped, the"
+    " date is taken as given, and the fact is reported.",
+    "Words joining an interval — `zwischen 1940 und 1945`, `1970 bis"
+    " 1977` — are read as the interval they spell out. An open one,"
+    " `nach 1989`, is reported instead: level 0 cannot express it, and"
+    " reading it as 1989 would state a year the source refuses to give.",
+    "Month names are read in German and English, full and abbreviated."
+    " `8/1988` is read as a month and year rather than an interval,"
+    " because the left hand side cannot be a year.",
     "A running time given as a bare number without a unit is read as minutes.",
     "Clock notation with two components, such as `1:43`, is read as"
     " minutes and seconds, not as hours and minutes.",

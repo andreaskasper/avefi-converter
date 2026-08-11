@@ -71,6 +71,7 @@ EMPTY_DATE_VALUES = frozenset(
 #: Prefixes marking an approximate date.
 CIRCA_PREFIXES = ("ca.", "ca", "circa", "um", "about", "approx.", "etwa")
 
+
 #: Leading articles per ISO 639-2/B language code.
 ARTICLES = {
     "ger": ("der", "die", "das", "ein", "eine", "einer", "eines", "einem"),
@@ -128,6 +129,72 @@ def language_code(tag: str | None) -> str | None:
 #: Expressions naming a decade, e.g. "50er Jahre" or "1950er".
 DECADE_PATTERN = re.compile(r"^(\d{2}|\d{4})\s*er(\s+Jahre)?$", re.I)
 
+#: A span from a year to the end of a decade, e.g. "1940-1950er Jahre".
+DECADE_SPAN_PATTERN = re.compile(
+    r"^(\d{4})\s*[-/]\s*(\d{2}|\d{4})\s*er(\s+Jahre)?$", re.I
+)
+
+#: A circa marker in front of a date. Providers write these in German,
+#: in English, and in both at once: "ca./ c. 1982" occurs forty times
+#: in one export, and used to be unconvertible because the check was
+#: for a single prefix followed by a space.
+CIRCA_PATTERN = re.compile(
+    # "c." only with its full stop: a bare "c" would swallow the
+    # first letter of anything.
+    r"^(?:ca\.?|c\.|circa|um|about|approx\.?|etwa)"
+    r"(?:\s*[/,]\s*(?:c\.?|ca\.?|circa|about|etwa))?"
+    r"[\s.]+",
+    re.I,
+)
+
+#: A question mark in brackets behind a date, "1960 (?)". The bare
+#: trailing question mark was already read as the uncertainty
+#: qualifier; this is the same statement with different punctuation,
+#: and the more common one in the reference data.
+BRACKETED_QUERY_PATTERN = re.compile(r"\s*\(\s*\?\s*\)$")
+
+#: Month names as cataloguers write them, mapped to their number.
+#: German and English, full and abbreviated, because a holdings
+#: database collects both over the decades.
+MONTH_NAMES = {
+    "januar": 1,
+    "jan": 1,
+    "january": 1,
+    "februar": 2,
+    "feb": 2,
+    "february": 2,
+    "maerz": 3,
+    "märz": 3,
+    "mrz": 3,
+    "mar": 3,
+    "march": 3,
+    "april": 4,
+    "apr": 4,
+    "mai": 5,
+    "may": 5,
+    "juni": 6,
+    "jun": 6,
+    "june": 6,
+    "juli": 7,
+    "jul": 7,
+    "july": 7,
+    "august": 8,
+    "aug": 8,
+    "september": 9,
+    "sep": 9,
+    "sept": 9,
+    "oktober": 10,
+    "okt": 10,
+    "oct": 10,
+    "october": 10,
+    "november": 11,
+    "nov": 11,
+    "dezember": 12,
+    "dez": 12,
+    "dec": 12,
+    "december": 12,
+}
+
 
 def decade_to_period(text: str) -> str | None:
     """Return the closed interval a decade expression denotes.
@@ -138,14 +205,32 @@ def decade_to_period(text: str) -> str | None:
     ``map_decades`` in the converter profile.
 
     """
-    match = DECADE_PATTERN.match(text.strip())
+    text = text.strip()
+    span = DECADE_SPAN_PATTERN.match(text)
+    if span:
+        # "1940-1950er Jahre": from a stated year to the end of a
+        # stated decade. Reading the second half as a plain year would
+        # end the interval nine years too early.
+        start = int(span.group(1))
+        end = _decade_start(span.group(2)) + 9
+        if end < start:
+            return None
+        return f"{start:04d}/{end:04d}"
+    match = DECADE_PATTERN.match(text)
     if not match:
         return None
-    digits = match.group(1)
-    # Two digit decades are read as twentieth century, which is an
-    # assumption that needs confirming against the reference data.
-    start = int(digits) if len(digits) == 4 else 1900 + int(digits)
+    start = _decade_start(match.group(1))
     return f"{start:04d}/{start + 9:04d}"
+
+
+def _decade_start(digits: str) -> int:
+    """Return the first year of a decade written with two or four digits.
+
+    Two digit decades are read as twentieth century, which is an
+    assumption that needs confirming against the reference data.
+
+    """
+    return int(digits) if len(digits) == 4 else 1900 + int(digits)
 
 
 def normalise_date(
@@ -207,21 +292,39 @@ def normalise_date(
             )
         return None
 
-    approximate = False
-    lowered = text.lower()
-    for prefix in CIRCA_PREFIXES:
-        if lowered.startswith(f"{prefix} "):
-            approximate = True
-            text = text[len(prefix) :].strip()
-            break
-    if text.endswith("?"):
+    if text.startswith("[") and text.endswith("]"):
+        # Square brackets mark a date the cataloguer supplied rather
+        # than read off the object. That says where the date came
+        # from, not how sure anybody is of it, so the brackets are
+        # dropped and the date is taken as stated.
+        text = text[1:-1].strip()
+        report_issue(
+            "info",
+            "Date was supplied by the cataloguer; brackets dropped",
+            record_id=record_id,
+            source_field=source_field,
+            target_field=target_field,
+            raw_value=value,
+        )
+
+    stripped = CIRCA_PATTERN.sub("", text, count=1)
+    approximate = stripped != text
+    text = stripped.strip()
+
+    text_without_query = BRACKETED_QUERY_PATTERN.sub("", text)
+    if text_without_query != text:
+        text = text_without_query.strip()
+        suffix = "?"
+    elif text.endswith("?"):
         text = text[:-1].strip()
         suffix = "?"
     else:
         suffix = "~" if approximate else ""
 
     result = _map_date_expression(text, record_id=record_id)
-    if result is None and DECADE_PATTERN.match(text):
+    if result is None and (
+        DECADE_PATTERN.match(text) or DECADE_SPAN_PATTERN.match(text)
+    ):
         if not map_decades:
             # Reported by the caller, which knows whether the value is
             # being dropped or the whole record; saying it twice with
@@ -259,10 +362,21 @@ def normalise_date(
 AMBIGUOUS_PATTERN = re.compile(r"^(\d{2})\d{2}-(0[1-9]|1[0-2])$")
 
 
+#: Words that join the two ends of an interval, "1970 bis 1977" or
+#: "zwischen 1940 und 1945". Wording, not interpretation: the value is
+#: the same interval a hyphen would have written.
+INTERVAL_WORDS_PATTERN = re.compile(r"(?<=\d)\s+(?:bis|und|to)\s+(?=\d)", re.I)
+INTERVAL_OPENER_PATTERN = re.compile(
+    r"^(?:zwischen|between|von|from)\s+(?=\d)", re.I
+)
+
+
 def _map_date_expression(
     text: str, record_id: str | None = None
 ) -> str | None:
     """Return the ISODate body for ``text`` without any qualifier."""
+    text = INTERVAL_OPENER_PATTERN.sub("", text)
+    text = INTERVAL_WORDS_PATTERN.sub("/", text)
     # Already an ISO date or period
     if ISO_DATE_PATTERN.match(text):
         if AMBIGUOUS_PATTERN.match(text):
@@ -303,6 +417,25 @@ def _map_date_expression(
         if int(end) < int(start):
             return None
         return f"{start}/{end}"
+
+    # Month by name: "Juni 1980", "Jan 1979", "1980 Juni"
+    match = re.match(r"^([^\W\d_]+)\.?\s+(\d{4})$", text, re.UNICODE)
+    if match:
+        month = MONTH_NAMES.get(match.group(1).lower())
+        if month:
+            return f"{match.group(2)}-{month:02d}"
+    match = re.match(r"^(\d{4})\s+([^\W\d_]+)\.?$", text, re.UNICODE)
+    if match:
+        month = MONTH_NAMES.get(match.group(2).lower())
+        if month:
+            return f"{match.group(1)}-{month:02d}"
+
+    # Month and year with a slash: "8/1988". The slash is the interval
+    # separator in ISODate, so this is only read as a month where the
+    # left hand side cannot be a year and the right hand side is one.
+    match = re.match(r"^(0?[1-9]|1[0-2])\s*/\s*(\d{4})$", text)
+    if match:
+        return f"{match.group(2)}-{int(match.group(1)):02d}"
 
     # German day and month: "15.03.1962", "03.1962"
     match = re.match(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})$", text)

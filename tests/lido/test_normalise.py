@@ -96,6 +96,93 @@ class TestNormaliseDate:
             assert ISO_DATE_PATTERN.match(normalise_date(source))
 
 
+class TestNotationsRatherThanGuesses:
+    """The same date, written the way a cataloguer wrote it.
+
+    Everything here is a different spelling of a date the source
+    already states, not a heuristic reading of one it does not. The
+    result is the value the provider gave, punctuation removed.
+
+    """
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            # A question mark in brackets is the commoner form of the
+            # trailing one in this data, a hundred occurrences to two.
+            ("1960 (?)", "1960?"),
+            ("1960(?)", "1960?"),
+            ("1950-1970 ?", "1950?/1970?"),
+            # A circa marker written in two languages at once. Forty
+            # occurrences in one export, none of them convertible
+            # while the check was for a prefix and a space.
+            ("ca./ c. 1982", "1982~"),
+            ("ca. / c. 1982", "1982~"),
+            ("c. 1982", "1982~"),
+            # Month by name, German and English, full and short
+            ("Juni 1980", "1980-06"),
+            ("Jan 1979", "1979-01"),
+            ("Oktober 1981", "1981-10"),
+            ("March 1962", "1962-03"),
+            ("1980 Juni", "1980-06"),
+            # Month and year separated by the interval character
+            ("8/1988", "1988-08"),
+            ("08/1988", "1988-08"),
+            # Brackets mark a date the cataloguer supplied
+            ("[1965 - 1975]", "1965/1975"),
+            ("[1965]", "1965"),
+            # An interval spelled out in words
+            ("zwischen 1940 und 1945", "1940/1945"),
+            ("1970 bis 1977", "1970/1977"),
+            ("ca. 1970 bis 1977", "1970~/1977~"),
+        ],
+    )
+    def test_reads_the_notation(self, source, expected):
+        assert normalise_date(source) == expected
+
+    @pytest.mark.parametrize("source", ["?", "??", "?" * 56, "?? ??"])
+    def test_a_run_of_question_marks_is_no_date_at_all(self, source):
+        """A single one already means that. Repeating it changes nothing."""
+        assert normalise_date(source) is None
+
+    @pytest.mark.parametrize("source", ["nach 1989", "vor 1950", "seit 1970"])
+    def test_open_intervals_stay_unconvertible(self, source):
+        """EDTF level 0 has no open end, and the schema allows no more.
+
+        Reading "nach 1989" as 1989 would state a production year the
+        source explicitly refuses to give.
+
+        """
+        with pytest.raises(NormalisationError):
+            normalise_date(source)
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            ("1980er?", "1980?/1989?"),
+            ("ca. 1970er Jahre", "1970~/1979~"),
+            ("1940-1950er Jahre", "1940/1959"),
+            ("ca. 1940-1950er Jahre", "1940~/1959~"),
+        ],
+    )
+    def test_qualified_decades_once_enabled(self, source, expected):
+        """A decade is an interval; the qualifier applies to both ends.
+
+        EDTF level 0 has no decade syntax — 197X would be level 2 —
+        so the closed interval is the only form the schema allows.
+
+        """
+        assert normalise_date(source, map_decades=True) == expected
+
+    @pytest.mark.parametrize(
+        "source", ["1940-1950er Jahre", "1980er?", "ca. 1960er"]
+    )
+    def test_decade_spans_still_need_the_agreement(self, source):
+        with pytest.raises(NormalisationError) as excinfo:
+            normalise_date(source)
+        assert "map_decades" in str(excinfo.value)
+
+
 class TestNormaliseDuration:
     @pytest.mark.parametrize(
         ("value", "unit", "expected"),
