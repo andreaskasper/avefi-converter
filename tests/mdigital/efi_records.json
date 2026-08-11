@@ -27,8 +27,7 @@
             "has_agent": [
               {
                 "category": "avefi:Agent",
-                "has_name": "Schmidt, Karl",
-                "type": "Person"
+                "has_name": "Schmidt, Karl"
               }
             ],
             "type": "Director"

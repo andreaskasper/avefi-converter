@@ -134,16 +134,36 @@ LIDO_GENRE = """\
 LIDO_ACTOR = """\
             <lido:eventActor>
               <lido:actorInRole>
-                <lido:actor>
+                <lido:actor{actor_type}>
+{authority}\
                   <lido:nameActorSet>
                     <lido:appellationValue>{director}</lido:appellationValue>
                   </lido:nameActorSet>
                 </lido:actor>
                 <lido:roleActor>
-                  <lido:term xml:lang="de">Regie</lido:term>
+                  <lido:term xml:lang="de">{role}</lido:term>
                 </lido:roleActor>
               </lido:actorInRole>
             </lido:eventActor>
+"""
+
+LIDO_ACTOR_ID = """\
+                  <lido:actorID lido:type="http://terminology.lido-schema.org/lido00099"
+                    lido:source="{source}">{value}</lido:actorID>
+"""
+
+#: An event that records the people rather than the making of a copy.
+#: Providers that model it this way put director, composer and writer
+#: here, which is where they were previously not looked for.
+LIDO_CREATION_EVENT = """\
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term xml:lang="de">Geistige Schöpfung</lido:term>
+            </lido:eventType>
+{actors}\
+          </lido:event>
+        </lido:eventSet>
 """
 
 LIDO_DOCUMENT = """\
@@ -163,6 +183,10 @@ def make_lido_record(
     genre="",
     work_type="Filmrolle",
     handle="",
+    role="Regie",
+    actor_type="",
+    gnd="",
+    gnd_source="GND",
 ):
     """Return the LIDO serialisation of one film holding."""
     return LIDO_RECORD.format(
@@ -174,7 +198,22 @@ def make_lido_record(
         date=date,
         duration=duration,
         genre=LIDO_GENRE.format(genre=genre) if genre else "",
-        actor=LIDO_ACTOR.format(director=director) if director else "",
+        actor=(
+            LIDO_ACTOR.format(
+                director=director,
+                role=role,
+                actor_type=(
+                    f' lido:type="{actor_type}"' if actor_type else ""
+                ),
+                authority=(
+                    LIDO_ACTOR_ID.format(source=gnd_source, value=gnd)
+                    if gnd
+                    else ""
+                ),
+            )
+            if director
+            else ""
+        ),
     )
 
 

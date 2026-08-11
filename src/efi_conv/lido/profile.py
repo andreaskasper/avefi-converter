@@ -51,7 +51,21 @@ class LidoProfile:
     publication_event_terms : frozenset
         Lower case eventType terms denoting a publication event.
     director_role_terms : frozenset
-        Lower case roleActor terms denoting a directing activity.
+        Lower case roleActor terms denoting a directing activity. Kept
+        for profiles that only ever mapped the director; a term listed
+        here means the same as mapping it to ``Director``.
+    role_activity_map : dict
+        Lower case roleActor term to the AVefi activity type it
+        denotes, e.g. ``{"musik": "Composer"}``. The activity class
+        follows from the type: the sixteen activity vocabularies of
+        the schema share no value, so naming the role is enough and a
+        profile does not have to know the class names.
+    creation_event_terms : frozenset
+        Lower case eventType terms denoting an act of creation whose
+        actors belong to the production. Providers that model the
+        people separately from the making of the copy put them in an
+        event of their own; the activities are still production
+        activities and are mapped onto the production event.
     duration_measurement_terms : frozenset
         Lower case measurementType terms denoting a running time.
     classification_types : dict
@@ -102,6 +116,15 @@ class LidoProfile:
     )
     director_role_terms: frozenset = frozenset(
         {"regie", "director", "regisseur", "regisseurin"}
+    )
+    role_activity_map: dict = field(default_factory=dict)
+    creation_event_terms: frozenset = frozenset(
+        {
+            "geistige schöpfung",
+            "geistige schoepfung",
+            "creation",
+            "intellectual creation",
+        }
     )
     duration_measurement_terms: frozenset = frozenset(
         {"laufzeit", "dauer", "spieldauer", "running time", "duration"}

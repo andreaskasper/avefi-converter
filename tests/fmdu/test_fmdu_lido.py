@@ -157,3 +157,108 @@ class TestAnIdentifierAlreadyRegistered:
                 for i in record.has_identifier
                 if i.category == "avefi:AVefiResource"
             ]
+
+
+class TestPeopleAndTheirRoles:
+    """The credits sit in an event of their own in this export.
+
+    Director, composer and writer are recorded under "Geistige
+    Schöpfung" rather than on the event that produced the copy, and
+    the mapping only ever looked at the latter. 1228 records name a
+    director; none of them arrived.
+
+    """
+
+    def work_of(self, lido_page, lido_record, **kwargs):
+        source = lido_page("export.xml", lido_record("FMDU-0001", **kwargs))
+        records = fmdu_lido.efi_import(source)
+        return next(r for r in records if r.category == "avefi:WorkVariant")
+
+    def activities(self, work):
+        return [a for event in work.has_event for a in event.has_activity]
+
+    def test_the_director_arrives(self, lido_page, lido_record):
+        work = self.work_of(lido_page, lido_record, role="Regie")
+        activity = self.activities(work)[0]
+        assert activity.category == "avefi:DirectingActivity"
+        assert activity.type == "Director"
+
+    def test_a_composer_becomes_a_music_activity(self, lido_page, lido_record):
+        """The role decides the class, and the schema decides the role.
+
+        No value is shared between the sixteen activity vocabularies,
+        so a profile names the role and the class follows.
+
+        """
+        work = self.work_of(lido_page, lido_record, role="Musik")
+        activity = self.activities(work)[0]
+        assert activity.category == "avefi:MusicActivity"
+        assert activity.type == "Composer"
+
+    def test_a_writer_becomes_a_writing_activity(self, lido_page, lido_record):
+        work = self.work_of(lido_page, lido_record, role="Drehbuch")
+        assert self.activities(work)[0].category == "avefi:WritingActivity"
+
+    def test_a_role_with_no_activity_transfers_nobody(
+        self, lido_page, lido_record
+    ):
+        """Absender*in records provenance, not a credit."""
+        work = self.work_of(lido_page, lido_record, role="Absender*in")
+        assert self.activities(work) == []
+
+
+class TestAgentIdentity:
+    def agent_of(self, lido_page, lido_record, **kwargs):
+        source = lido_page("export.xml", lido_record("FMDU-0001", **kwargs))
+        work = next(
+            r
+            for r in fmdu_lido.efi_import(source)
+            if r.category == "avefi:WorkVariant"
+        )
+        return work.has_event[0].has_activity[0].has_agent[0]
+
+    def test_the_person_type_comes_from_the_source(
+        self, lido_page, lido_record
+    ):
+        agent = self.agent_of(lido_page, lido_record, actor_type="person")
+        assert agent.type == "Person"
+
+    def test_so_does_the_corporate_body(self, lido_page, lido_record):
+        agent = self.agent_of(
+            lido_page,
+            lido_record,
+            director="Gruppe 5 Filmproduktion GmbH",
+            actor_type="corporateBody",
+        )
+        assert agent.type == "CorporateBody"
+
+    def test_an_unstated_type_stays_unstated(self, lido_page, lido_record):
+        """Deriving it from the name is out of scope, and it was wrong.
+
+        Every director used to be typed Person outright. The reference
+        data holds a production company that was typed that way and
+        had to be corrected by hand afterwards.
+
+        """
+        agent = self.agent_of(lido_page, lido_record, actor_type="")
+        assert agent.type is None
+
+    def test_a_gnd_identifier_is_transferred(self, lido_page, lido_record):
+        agent = self.agent_of(
+            lido_page, lido_record, gnd="http://d-nb.info/gnd/123867967"
+        )
+        assert [(a.category, a.id) for a in agent.same_as] == [
+            ("avefi:GNDResource", "123867967")
+        ]
+
+    def test_a_bare_identifier_works_too(self, lido_page, lido_record):
+        agent = self.agent_of(lido_page, lido_record, gnd="123867967")
+        assert agent.same_as[0].id == "123867967"
+
+    def test_an_unknown_authority_is_not_invented(
+        self, lido_page, lido_record
+    ):
+        agent = self.agent_of(
+            lido_page, lido_record, gnd="4711", gnd_source="Hauskartei"
+        )
+        assert agent.same_as == []

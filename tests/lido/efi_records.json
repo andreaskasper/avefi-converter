@@ -27,8 +27,7 @@
             "has_agent": [
               {
                 "category": "avefi:Agent",
-                "has_name": "Wicki, Bernhard",
-                "type": "Person"
+                "has_name": "Wicki, Bernhard"
               }
             ],
             "type": "Director"
@@ -130,13 +129,25 @@
     "has_event": [
       {
         "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:CinematographyActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Meyer, Hans"
+              }
+            ],
+            "type": "Cinematographer"
+          }
+        ],
         "has_date": "1962/1965"
       }
     ],
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Ohne_Titel_Werbefilm____1962_1965~b5ce53dc_work"
+        "id": "Ohne_Titel_Werbefilm__Meyer_Hans__1962_1965~c69b16e6_work"
       }
     ],
     "has_primary_title": {
@@ -162,7 +173,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Ohne_Titel_Werbefilm____1962_1965__BlackAndWhite__35mmFilm~6f5e9b85_manifestation"
+        "id": "Ohne_Titel_Werbefilm__Meyer_Hans__1962_1965__BlackAndWhite__35mmFilm~47fb0736_manifestation"
       }
     ],
     "has_primary_title": {
@@ -172,7 +183,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Ohne_Titel_Werbefilm____1962_1965~b5ce53dc_work"
+        "id": "Ohne_Titel_Werbefilm__Meyer_Hans__1962_1965~c69b16e6_work"
       }
     ]
   },
@@ -208,7 +219,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Ohne_Titel_Werbefilm____1962_1965__BlackAndWhite__35mmFilm~6f5e9b85_manifestation"
+      "id": "Ohne_Titel_Werbefilm__Meyer_Hans__1962_1965__BlackAndWhite__35mmFilm~47fb0736_manifestation"
     }
   },
   {

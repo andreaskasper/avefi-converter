@@ -102,6 +102,34 @@ FORMAT_MAP = {
     "super 8": "Super8mmFilm",
 }
 
+#: The roles this provider records, and the AVefi activity each one
+#: denotes. They sit in an event of their own, "Geistige Schöpfung",
+#: rather than on the production event, so none of them used to be
+#: found: 1796 directing credits, 607 for music and 492 for writing.
+#:
+#: "Absender*in" is deliberately absent. It is a provenance note about
+#: who sent the material in, not a filmographic role, and there is no
+#: activity in the schema that would be true of it.
+ROLE_ACTIVITY_MAP = {
+    "regie": "Director",
+    "regieassistenz": "AssistantDirector",
+    "musik": "Composer",
+    "drehbuch": "Writer",
+    "autor*in": "Writer",
+    "autor": "Writer",
+    "autorin": "Writer",
+    "kamera": "Cinematographer",
+    "schnitt": "FilmEditor",
+    "kostüm": "CostumeDesigner",
+    "kostuem": "CostumeDesigner",
+    "choreograph*in": "Choreographer",
+    "choreographie": "Choreographer",
+    "interviewer*in": "Interviewer",
+    "produktionsfirma": "ProductionCompany",
+    "produktion": "Producer",
+    "ton": "SoundEngineer",
+}
+
 #: Profile class a profile file is read into.
 PROFILE_CLASS = LidoProfile
 
@@ -110,6 +138,7 @@ PROFILE = LidoProfile(
     description=DESCRIPTION,
     default_language="ger",
     film_work_type_terms=FILM_WORK_TYPE_TERMS,
+    role_activity_map=ROLE_ACTIVITY_MAP,
     colour_type_map=COLOUR_TYPE_MAP,
     access_status_map=ACCESS_STATUS_MAP,
     format_map=FORMAT_MAP,

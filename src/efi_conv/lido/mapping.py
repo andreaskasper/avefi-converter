@@ -141,18 +141,36 @@ MAPPING_RULES = (
         "has_event.located_in.has_name",
     ),
     MappingRule(
-        "director",
+        "activity",
         "Work",
-        "lido:event[production]/lido:eventActor/lido:actorInRole"
-        "[role in director terms]",
-        "has_event.has_activity (DirectingActivity)",
-        notes="Placeholder names such as 'unbekannt' are skipped and reported",
+        "lido:event[production or creation]/lido:eventActor/lido:actorInRole",
+        "has_event.has_activity",
+        "Profile role_activity_map and director_role_terms",
+        "The role decides the activity class, since no value is"
+        " shared between the sixteen activity vocabularies. Agents of"
+        " one role share one activity. Placeholder names such as"
+        " 'unbekannt' are skipped and reported",
+    ),
+    MappingRule(
+        "agent_type",
+        "Work",
+        "lido:actor/@lido:type",
+        "has_event.has_activity.has_agent.type",
+        notes="Person or CorporateBody as the source states it; it is"
+        " not derived from the name",
+    ),
+    MappingRule(
+        "agent_authority",
+        "Work",
+        "lido:actor/lido:actorID[@lido:source in GND, VIAF, Wikidata]",
+        "has_event.has_activity.has_agent.same_as",
+        notes="Transferred where the source carries it; nothing is"
+        " looked up and nothing is added",
     ),
     MappingRule(
         "other_agent",
         "Work",
-        "lido:event[production]/lido:eventActor/lido:actorInRole"
-        " (remaining roles)",
+        "lido:eventActor/lido:actorInRole (roles with no activity)",
         "—",
         notes="Reported as unmapped rather than dropped silently",
     ),
@@ -234,6 +252,15 @@ ASSUMPTIONS = (
     " of one film do not produce several works.",
     "`WorkVariant.type` is always `Monographic`; serial and analytic"
     " works are not derived from LIDO.",
+    "Actors are read from the production event and from an event of"
+    " creation, because a provider may record the people separately"
+    " from the making of the copy. The activities are production"
+    " activities either way and are attached to the production event.",
+    "Whether an agent is a `Person` or a `CorporateBody` is taken from"
+    " `lido:type` and left unset where the source does not say."
+    " Deriving it from the name is out of scope, and the earlier"
+    " default of `Person` for every director was that derivation in"
+    " all but name.",
     "Decade expressions such as `50er Jahre` are reported as"
     " unconvertible. Enabling `map_decades` maps them to a closed ten"
     " year interval and reads two digit decades as twentieth century."
@@ -307,6 +334,17 @@ def render_mapping_markdown(rules=MAPPING_RULES) -> str:
     ]
     lines += [f"- {assumption}" for assumption in ASSUMPTIONS]
     return "\n".join(lines) + "\n"
+
+
+#: AVefi activity type value to the class that carries it. The sixteen
+#: activity vocabularies of the schema share no value between them, so
+#: a profile can name the role and leave the class to be looked up.
+ACTIVITY_CLASS_BY_TYPE = {
+    member.value: getattr(efi, name[: -len("TypeEnum")])
+    for name in dir(efi)
+    if name.endswith("ActivityTypeEnum")
+    for member in getattr(efi, name)
+}
 
 
 def parse_lido(input_file) -> list[Lido]:
@@ -612,49 +650,179 @@ def build_production_event(descriptive, profile, source_key):
         if name:
             event.located_in.append(efi.GeographicName(has_name=name))
 
-    directors = []
-    for actor_wrap in lido_event.event_actor or []:
-        in_role = actor_wrap.actor_in_role
-        if in_role is None:
-            continue
-        name = actor_name(in_role)
-        role = term_text(first(in_role.role_actor))
-        if not name:
-            continue
-        if name.lower() in profile.unknown_agent_names:
-            report_issue(
-                "info",
-                "Placeholder actor name skipped",
-                record_id=source_key,
-                source_field="eventActor",
-                target_field="has_event.has_activity",
-                raw_value=name,
-            )
-            continue
-        if role and role.lower() in profile.director_role_terms:
-            directors.append(
-                efi.Agent(type=efi.AgentTypeEnum("Person"), has_name=name)
-            )
-        else:
-            report_issue(
-                "warning",
-                "No AVefi activity mapped for this role, agent not"
-                " transferred",
-                record_id=source_key,
-                source_field="eventActor/roleActor",
-                target_field="has_event.has_activity",
-                raw_value=role or name,
-            )
-    if directors:
-        event.has_activity.append(
-            efi.DirectingActivity(
-                type=efi.DirectingActivityTypeEnum("Director"),
-                has_agent=directors,
-            )
-        )
+    for activity in collect_activities(descriptive, profile, source_key):
+        event.has_activity.append(activity)
     if not (event.has_date or event.located_in or event.has_activity):
         return None
     return event
+
+
+def role_activity_type(role: str | None, profile) -> str | None:
+    """Return the AVefi activity type a source role denotes."""
+    if not role:
+        return None
+    key = role.strip().lower()
+    if key in profile.director_role_terms:
+        return "Director"
+    return profile.role_activity_map.get(key)
+
+
+def actor_events(descriptive, profile):
+    """Yield the events whose actors take part in the production.
+
+    The people who made a film are not always recorded on the event
+    that made the copy. A provider may model the intellectual creation
+    as an event of its own and put director, composer and writer
+    there, which is a statement about how the source is organised
+    rather than about the film: the activities are production
+    activities either way, and land on the production event.
+
+    """
+    wrap = descriptive.event_wrap
+    if wrap is None:
+        return
+    terms = set(profile.production_event_terms) | set(
+        profile.creation_event_terms
+    )
+    for event_set in wrap.event_set or []:
+        event = event_set.event
+        if event is None:
+            continue
+        text = term_text(event.event_type)
+        if text and text.lower() in terms:
+            yield event
+
+
+def collect_activities(descriptive, profile, source_key):
+    """Yield the activities of one record, one per role.
+
+    Agents sharing a role share an activity, mirroring the shape the
+    CSV importer produces, and the order of both follows the source.
+
+    """
+    by_role = {}
+    for lido_event in actor_events(descriptive, profile):
+        for actor_wrap in lido_event.event_actor or []:
+            in_role = actor_wrap.actor_in_role
+            if in_role is None:
+                continue
+            name = actor_name(in_role)
+            if not name:
+                continue
+            role = term_text(first(in_role.role_actor))
+            if name.lower() in profile.unknown_agent_names:
+                report_issue(
+                    "info",
+                    "Placeholder actor name skipped",
+                    record_id=source_key,
+                    source_field="eventActor",
+                    target_field="has_event.has_activity",
+                    raw_value=name,
+                )
+                continue
+            activity_type = role_activity_type(role, profile)
+            activity_class = ACTIVITY_CLASS_BY_TYPE.get(activity_type)
+            if activity_class is None:
+                report_issue(
+                    "warning",
+                    "No AVefi activity mapped for this role, agent not"
+                    " transferred",
+                    record_id=source_key,
+                    source_field="eventActor/roleActor",
+                    target_field="has_event.has_activity",
+                    raw_value=role or name,
+                )
+                continue
+            agent = build_agent(in_role, name)
+            activity = by_role.get(activity_type)
+            if activity is None:
+                # has_agent is required, so the activity cannot exist
+                # before the first agent that justifies it.
+                by_role[activity_type] = activity_class(
+                    type=activity_type, has_agent=[agent]
+                )
+            elif not any(
+                existing.has_name == agent.has_name
+                for existing in activity.has_agent
+            ):
+                activity.has_agent.append(agent)
+    yield from by_role.values()
+
+
+def build_agent(in_role, name: str):
+    """Return the Agent for an actorInRole element.
+
+    Whether the actor is a person or an organisation is read off
+    ``lido:type`` rather than guessed from the name. Guessing is a
+    documented non-goal, and it is also unnecessary here: the source
+    states it.
+
+    """
+    actor = getattr(in_role, "actor", None)
+    agent = efi.Agent(has_name=name)
+    agent_type = agent_type_of(actor)
+    if agent_type:
+        agent.type = efi.AgentTypeEnum(agent_type)
+    for authority in authority_resources(actor):
+        agent.same_as.append(authority)
+    return agent
+
+
+def agent_type_of(actor) -> str | None:
+    """Return Person or CorporateBody as stated by lido:type."""
+    stated = str(getattr(actor, "type_value", "") or "").strip().lower()
+    if stated in ("person", "personal"):
+        return "Person"
+    if stated in (
+        "corporatebody",
+        "corporate body",
+        "koerperschaft",
+        "körperschaft",
+        "organisation",
+        "organization",
+        "group",
+    ):
+        return "CorporateBody"
+    return None
+
+
+#: Authority file to the AVefi resource class carrying its identifiers,
+#: keyed by the lido:source a provider names it with.
+AUTHORITY_RESOURCES = {
+    "gnd": efi.GNDResource,
+    "viaf": efi.VIAFResource,
+    "wikidata": efi.WikidataResource,
+}
+
+#: An authority identifier is written either bare or as the URI that
+#: resolves it. Only the identifier goes into the record.
+AUTHORITY_ID_PATTERN = re.compile(r"([^/#\s]+)\s*$")
+
+
+def authority_resources(actor):
+    """Yield the authority file identifiers stated for an actor.
+
+    Reading an identifier the source already carries is mapping, not
+    the authority file enrichment the commission puts out of scope:
+    nothing is looked up and nothing is added that the provider did
+    not write down.
+
+    """
+    seen = set()
+    for candidate in getattr(actor, "actor_id", None) or []:
+        source = str(getattr(candidate, "source", "") or "").strip().lower()
+        resource = AUTHORITY_RESOURCES.get(source)
+        text = text_of(candidate)
+        if resource is None or not text:
+            continue
+        match = AUTHORITY_ID_PATTERN.search(text.strip())
+        if not match:
+            continue
+        identifier = match.group(1)
+        if (source, identifier) in seen:
+            continue
+        seen.add((source, identifier))
+        yield resource(id=identifier)
 
 
 def build_publication_event(descriptive, profile, source_key):

@@ -26,8 +26,7 @@
             "has_agent": [
               {
                 "category": "avefi:Agent",
-                "has_name": "Ruttmann, Walter",
-                "type": "Person"
+                "has_name": "Ruttmann, Walter"
               }
             ],
             "type": "Director"

@@ -159,8 +159,23 @@ class TestReport:
         }
         assert content["entries"]
 
-    def test_unmapped_role_appears_in_the_report(self, runner, tmp_path):
+    def test_unmapped_role_appears_in_the_report(
+        self, runner, tmp_path, lido_page, lido_record
+    ):
+        """A role with no AVefi activity costs the agent, so say so.
+
+        "Absender*in" records who sent the material in. It is a note
+        on provenance rather than a filmographic credit, and no
+        activity in the schema would be true of it, so the agent is
+        not transferred — which has to be visible in the report
+        rather than inferred from an agent that is not there.
+
+        """
         report = tmp_path / "report.json"
+        source = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001", role="Absender*in"),
+        )
         runner.invoke(
             cli_main,
             [
@@ -171,12 +186,12 @@ class TestReport:
                 str(tmp_path / "out.json"),
                 "--report",
                 str(report),
-                SAMPLE_LIDO,
+                str(source),
             ],
         )
         content = json.loads(report.read_text(encoding="utf-8"))
         values = [entry["raw_value"] for entry in content["entries"]]
-        assert "Kamera" in values, (
+        assert "Absender*in" in values, (
             "An agent that cannot be mapped must be reported, not dropped"
         )
 

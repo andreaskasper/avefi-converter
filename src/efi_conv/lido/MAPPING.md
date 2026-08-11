@@ -14,8 +14,10 @@ do not edit by hand.
 | `genre` | Work | `lido:objectClassificationWrap/lido:classificationWrap/lido:classification` | `has_genre.has_name` | — | Classifications whose lido:type is named in the profile as carrying colour, format or access status are consumed by those rules instead |
 | `production_date` | Work | `lido:eventWrap/lido:eventSet/lido:event[production]/lido:eventDate` | `has_event.has_date` | ISODate; abbreviated intervals expanded | lido:earliestDate and lido:latestDate take precedence over lido:displayDate |
 | `production_place` | Work | `lido:eventWrap/lido:eventSet/lido:event[production]/lido:eventPlace` | `has_event.located_in.has_name` | — | — |
-| `director` | Work | `lido:event[production]/lido:eventActor/lido:actorInRole[role in director terms]` | `has_event.has_activity (DirectingActivity)` | — | Placeholder names such as 'unbekannt' are skipped and reported |
-| `other_agent` | Work | `lido:event[production]/lido:eventActor/lido:actorInRole (remaining roles)` | `—` | — | Reported as unmapped rather than dropped silently |
+| `activity` | Work | `lido:event[production or creation]/lido:eventActor/lido:actorInRole` | `has_event.has_activity` | Profile role_activity_map and director_role_terms | The role decides the activity class, since no value is shared between the sixteen activity vocabularies. Agents of one role share one activity. Placeholder names such as 'unbekannt' are skipped and reported |
+| `agent_type` | Work | `lido:actor/@lido:type` | `has_event.has_activity.has_agent.type` | — | Person or CorporateBody as the source states it; it is not derived from the name |
+| `agent_authority` | Work | `lido:actor/lido:actorID[@lido:source in GND, VIAF, Wikidata]` | `has_event.has_activity.has_agent.same_as` | — | Transferred where the source carries it; nothing is looked up and nothing is added |
+| `other_agent` | Work | `lido:eventActor/lido:actorInRole (roles with no activity)` | `—` | — | Reported as unmapped rather than dropped silently |
 | `publication_date` | Manifestation | `lido:event[publication]/lido:eventDate and lido:eventPlace` | `has_event (PublicationEvent, ReleaseEvent)` | ISODate | — |
 | `duration` | Item | `lido:objectMeasurementsWrap//lido:measurementsSet[running time]` | `has_duration.has_value` | ISODurationInHours | — |
 | `colour_type` | Item | `lido:classification[@lido:type in profile classification_types['colour']]` | `has_colour_type` | Profile vocabulary | — |
@@ -32,6 +34,8 @@ Decisions the mapping takes that LIDO does not determine, and that need confirmi
 - A record without a recognised `lido:objectWorkType` is skipped rather than imported as a film.
 - Every record yields one item. Works and manifestations are shared between records according to the profile key, so several copies of one film do not produce several works.
 - `WorkVariant.type` is always `Monographic`; serial and analytic works are not derived from LIDO.
+- Actors are read from the production event and from an event of creation, because a provider may record the people separately from the making of the copy. The activities are production activities either way and are attached to the production event.
+- Whether an agent is a `Person` or a `CorporateBody` is taken from `lido:type` and left unset where the source does not say. Deriving it from the name is out of scope, and the earlier default of `Person` for every director was that derivation in all but name.
 - Decade expressions such as `50er Jahre` are reported as unconvertible. Enabling `map_decades` maps them to a closed ten year interval and reads two digit decades as twentieth century. EDTF conformance level 0, which is what ISODate allows, has no decade syntax, so the interval is the only available form.
 - `ca.`, `c.`, `um` and the combined `ca./ c.` become the ISODate approximation qualifier `~`; a trailing question mark and one in brackets, `1960 (?)`, become the uncertainty qualifier `?`. On an interval the qualifier is written on both ends, because ISODate carries it per date rather than per interval.
 - Square brackets around a date mark one the cataloguer supplied rather than read off the object. That states where the date came from, not how certain it is, so the brackets are dropped, the date is taken as given, and the fact is reported.
