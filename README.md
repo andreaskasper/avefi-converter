@@ -21,6 +21,11 @@ get in touch and let us jointly work on your mapping.
 [AVefi project]: https://projects.tib.eu/av-efi/
 [AVefi schema]: https://av-efi.github.io/av-efi-schema/
 
+> **Neu hier und auf der Suche nach einer Anleitung?** Das
+> [Handbuch](./handbuch/) führt auf Deutsch durch Installation,
+> Konvertierung, Profile und die Eigenheiten einzelner Bestände. Diese
+> README ist die technische Referenz.
+
 **Contents** · [What it does](#what-it-does) · [Quick start](#quick-start) ·
 [Commands](#commands) · [Converters](#available-converters) ·
 [Profiles](#profiles) · [Harvesting](#harvesting-from-an-endpoint) ·
@@ -323,8 +328,8 @@ stands:
 | Format | Institution | Input |
 | --- | --- | --- |
 | `avportal` | TIB AV-Portal | XML, in-house NTM metadata schema 2.5 |
-| `fmdu` | Filmmuseum der Landeshauptstadt Düsseldorf | CSV, semicolon separated |
-| `fmdu.lido` | Filmmuseum der Landeshauptstadt Düsseldorf | XML, [LIDO 1.1](./src/efi_conv/lido/README.md) |
+| [`fmdu`](./src/efi_conv/fmdu/README.md) | Filmmuseum der Landeshauptstadt Düsseldorf | CSV, semicolon separated |
+| [`fmdu.lido`](./src/efi_conv/fmdu/README.md) | Filmmuseum der Landeshauptstadt Düsseldorf | XML, [LIDO 1.1](./src/efi_conv/lido/README.md) |
 | `mdigital.lido` | [museum-digital](./src/efi_conv/mdigital/README.md) | XML, LIDO 1.1 |
 | `ddb.lido` | [Deutsche Digitale Bibliothek](./src/efi_conv/ddb/README.md) | XML, LIDO 1.1 |
 
@@ -369,77 +374,40 @@ $ uv run efi-conv from -f en15907 \
     -o efi_records.json export.xml
 ```
 
-The document is JSON or TOML; see
-[`examples/profiles/`](./examples/profiles) for both:
+The document is JSON or TOML; `examples/profiles/` holds both. Anything
+under `settings` names a field of that converter's profile class, and a
+name the class does not have is an error rather than something to
+ignore — a misspelt vocabulary would otherwise look like a working
+profile and quietly lose every value it was meant to map.
 
-```json
-{
-  "profile_format_version": "1.0",
-  "format": "fmdu.lido",
-  "issuer": {
-    "has_issuer_id": "https://w3id.org/isil/DE-MUS-000000",
-    "has_issuer_name": "Filmarchiv Musterstadt"
-  },
-  "settings": {
-    "default_language": "ger",
-    "colour_type_map": { "s/w": "BlackAndWhite", "farbe": "Colour" }
-  }
-}
-```
+One thing to know before writing one: **a profile replaces the
+vocabularies a converter ships with, it does not add to them.** A
+profile that changes only the issuer and omits, say,
+`film_work_type_terms` falls back to the class defaults, which know
+nothing of one institution's carrier vocabulary.
 
-Anything under `settings` names a field of that converter's profile
-class. A name the class does not have is an error rather than
-something to ignore: a misspelt vocabulary would otherwise look like a
-working profile and quietly lose every value it was meant to map.
-Configuring a run leaves the converter's own defaults alone, so one
-conversion cannot change what the next one does.
+→ [Handbuch, Kapitel 3](./handbuch/03-profile.md) walks through writing
+one, with the settings listed and that trap spelled out.
 
----
 
 ## Harvesting from an endpoint
 
-Most institutions that can deliver metadata at all already serve it
-over OAI-PMH or SRU, so the usual first step — asking somebody to
-produce an export and send it — can be skipped:
+Where a provider offers OAI-PMH or SRU, records can be fetched into a
+directory and converted from there, so that a better mapping can be run
+again over the same material without asking the endpoint twice:
 
 ```console
-$ uv run efi-conv harvest -u https://example.org/oai -m lido -o harvest/
-$ uv run efi-conv from -f mdigital.lido -o efi_records.json harvest/*.xml
+$ uv run efi-conv harvest --protocol oai-pmh \
+    --endpoint https://example.org/oai --metadata-prefix oai_dc -o harvested/
+$ uv run efi-conv from -f dc --profile provider.toml -o efi_records.json harvested/*.xml
 ```
 
-What is written is the payload exactly as the provider publishes it;
-nothing is converted. Harvesting is a separate command on purpose. It
-is slow, it should not be repeated against somebody else's server while
-a mapping is being worked out, and the harvest is worth keeping as
-evidence of what the provider actually sent on the day.
+The harvester follows resumption tokens and waits between requests: an
+OAI endpoint usually belongs to an institution that has other things to
+do with it. `--set` and `--from` restrict what is fetched.
 
-Each page holds one `record` element per record, wrapping the payload
-together with the OAI-PMH record header the provider sent with it, and
-carries the request it came from in its `source` attribute. The header
-is what makes the harvest evidence rather than a heap of files: it
-carries the identifier, the datestamp and the sets, so a later
-incremental harvest can be resumed from it. The converters find their
-records by element name whatever wraps them, so neither the wrapper
-nor the header changes what `efi-conv from` reads.
+→ [Handbuch, Kapitel 6](./handbuch/06-ernten.md)
 
-A 503 with `Retry-After` is waited out rather than hammered, a
-resumption token replaces the other arguments as the protocol requires,
-a repeated token is refused instead of harvesting for ever, and deleted
-records are counted and reported rather than silently ignored. An SRU
-endpoint that reports a total and then answers one page with nothing
-has a gap, not an end: the gap is logged and skipped, and only a run of
-empty pages ends the harvest, as an error, so that a truncated harvest
-cannot pass for a complete one.
-
-Being someone else's guest is the point of the rest. Requests identify
-themselves as `efi-conv` with the address of this repository, `--contact`
-adds an address whoever runs the endpoint can write to instead of
-blocking the harvester, and `--delay` sets the pause between two
-requests, one second by default. A server asking to be left alone for
-longer than `--max-retry-after` is left alone: the harvest stops and
-says so rather than sleeping for a day.
-
----
 
 ## Conversion report
 
@@ -453,48 +421,31 @@ $ uv run efi-conv from -f fmdu.lido -o efi_records.json \
     --report report.json tests/lido/sample_data.xml
 ```
 
-```json
-{
-  "report_format_version": "1.0",
-  "avefi_schema_version": { "sha256": "fcf4d251…", "metamodel_version": "1.7.0" },
-  "summary": { "info": 5, "warning": 1, "error": 0, "records_skipped": 0, "files_unrecognised": 0 },
-  "entries": [
-    {
-      "severity": "warning",
-      "message": "No AVefi activity mapped for this role, agent not transferred",
-      "source_file": "tests/lido/sample_data.xml",
-      "record_id": "FMDU-0002",
-      "source_field": "eventActor/roleActor",
-      "target_field": "has_event.has_activity",
-      "raw_value": "Kamera"
-    }
-  ]
-}
-```
+Each entry carries a severity, the message, the source file, the record
+id, the source and target field and the raw value, so that anything
+reported can be found again in the system it came from.
 
-`summary.records_skipped` counts the source records that could not be
-converted and were left out of the output, and
-`summary.files_unrecognised` the input files that held no record the
-converter recognises. Both are what the exit code of `efi-conv from`
-reflects, so that a pipeline does not have to read message text to
-tell a complete run from a lossy one. A file counted in
-`files_unrecognised` is reported by the reader that went looking for
-the records, so the entry names the file, the converter and the
-element it expected to find.
-
-Severity is used consistently: `info` records a documented decision,
+Severity is used consistently. `info` records a documented decision,
 `warning` says that information was not transferred, and `error` says
-that a value could not be converted at all. A running time nobody can
-read is therefore a warning — the field is left unset and the record
-is kept, because discarding the record would cost the work, every
-manifestation and every item derived from it.
+that a record failed. A value nobody can read is therefore a warning
+rather than an error: the field is left unset and the record is kept,
+because discarding it would cost the work, every manifestation and
+every item derived from it.
+
+`summary.records_skipped` counts the source records left out of the
+output and `summary.files_unrecognised` the input files holding no
+record the converter recognises. Both are what the exit code of
+`efi-conv from` reflects, so a pipeline does not have to read message
+text to tell a complete run from a lossy one.
 
 The AVefi schema is fetched from a branch rather than from a release,
 so the report records a hash of the document a conversion was checked
 against. That makes it possible to reproduce a conversion later, or at
 least to tell that the schema has moved since.
 
----
+→ [Handbuch, Kapitel 4](./handbuch/04-bericht-lesen.md) reads a real
+report end to end.
+
 
 ## Comparing against AVefi
 
@@ -508,19 +459,13 @@ as a whole object being replaced:
 $ uv run efi-conv diff reference.json efi_records.json
 ```
 
-```markdown
-| Outcome | Count |
-| --- | ---: |
-| Missing from candidate | 0 |
-| Only in candidate | 3 |
-| Changed | 1 |
-| Values lost | 0 |
-```
-
 The command exits non-zero when anything present in the reference is
-missing from the candidate, so it can be used in a pipeline.
+missing from the candidate, so it can be used in a pipeline. `--ignore`
+drops a top level field from the comparison, which is what makes it
+usable across a change to the identifier scheme.
 
----
+→ [Handbuch, Kapitel 5](./handbuch/05-pruefen-und-vergleichen.md)
+
 
 ## Writing a converter
 
@@ -653,6 +598,11 @@ providers do run this tool where the default encoding is not UTF-8.
 AVefi schema into the user cache directory on first use. Refresh it
 deliberately with `efi-conv check --update-schema`.
 
+**Far fewer records than the export holds.** Almost always the work
+type vocabulary. The report says which values made the decision;
+`film_work_type_terms` is where they belong, and a profile replaces
+that list rather than adding to it.
+
 **A file fails to convert and the run stops.** That is the default, so
 that a broken export does not pass unnoticed. Use `--continue-on-error`
 to skip it, record it in the report and carry on; the command still
@@ -660,74 +610,33 @@ exits non-zero at the end.
 
 **The run exits non-zero although records were written.** Something was
 lost: `summary.records_skipped` in the report counts the source records
-that could not be converted, and the entries say why. The output is
-usable, but it is not the whole export.
+that could not be converted, and the entries say why.
 
 **A document is refused because it declares XML entities.** An entity
 is expanded against the document type declaration, and a record is
 converted on its own, away from it — the reference and the rest of the
 text would silently disappear, which is worse than stopping. Resolve
 the entities first, for instance with `xmllint --noent export.xml >
-resolved.xml`, and check the result. External entities are never
-fetched, whatever the document points at.
+resolved.xml`. External entities are never fetched.
 
 **Two records that are the same film got two works.** The grouping key
 is the primary title, the director and the production date, and a key
 that comes down to the title alone does not group: two undated films
 called `Werbefilm` would otherwise become one work with one identifier,
-which no later correction can undo. The report names every record this
-applies to. Two works minted for one film can be merged afterwards.
+which no later correction can undo. Two works minted for one film can
+be merged afterwards; the report names every record this applies to.
 
 **`efi-conv check` reports unresolvable references.** A manifestation
 or item points at a parent that is not in the same file. Convert the
 whole export at once, or pass all the files to a single invocation.
 
-**A conversion produces no output.** If the converter recognised no
-record at all in a file, the run fails: the file is very probably a
-different schema, or wrapped differently than expected. If the records
-were read and then filtered out — because they describe posters rather
-than film, say — the run succeeds and the report says which values
-made the decision.
-
 **The conversion is refused because of the placeholder issuer.** A
 format converter cannot know whose collection it is pointed at, and an
 ISIL must not be guessed, so it will not convert until a
 [profile](#profiles) names the data provider.
-`--accept-placeholder-issuer` overrides that while a mapping is being
-worked out; identifiers must not be registered for records produced
-that way.
 
-**A profile is refused as being for another converter.** Its
-vocabularies are the terms of one source schema and mean nothing in
-another. Convert with the converter the profile names, correct its
-`format` key, or pass `--allow-profile-format-mismatch` if you mean
-it.
-
-**A document is refused because it declares an XML entity.** Entities
-are not resolved, because resolving them is how a document gets a
-converter to read a file it should not. Resolve them first, for
-instance with `xmllint --noent export.xml > resolved.xml`.
-
-**A harvest stops with a resumption token error.** The endpoint
-returned a token it had already returned, which would harvest for ever.
-Report it to whoever runs the server; the pages fetched up to that
-point are usable.
-
-**A harvest stops saying it is not complete.** An SRU endpoint reported
-a number of matching records and then answered several pages in a row
-with none, so the harvest would have ended short of what was announced.
-The pages written are usable; report the gap to whoever runs the server
-and harvest again rather than treating the files as the whole result.
-
-**A harvest stops saying the server asked us to wait too long.** The
-endpoint answered with a `Retry-After` longer than `--max-retry-after`.
-It is asking to be left alone. Come back later, or raise the limit if
-you can really wait that long.
-
-**Every record is skipped as not being a film.** The converter is
-filtering on the work type or record type vocabulary in its profile,
-and your provider uses different terms. The conversion report names the
-values it saw; add them to the profile.
+→ [Handbuch, Kapitel 8](./handbuch/08-fehlerbehebung.md) covers these
+with the commands to diagnose them.
 
 ---
 
