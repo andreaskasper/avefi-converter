@@ -516,7 +516,7 @@ def map_record(
             raw_value=len(lido_record.descriptive_metadata),
         )
 
-    if not is_film_record(descriptive, profile, source_key):
+    if not in_scope(lido_record, descriptive, profile, source_key):
         return []
 
     titles = collect_titles(descriptive, profile, source_key)
@@ -572,6 +572,60 @@ def map_record(
         (work, manifestation, item), profile.issuer_info, source_key
     )
     return new_records
+
+
+def in_scope(lido_record, descriptive, profile, source_key) -> bool:
+    """Return True if the record is one the conversion is about.
+
+    Two ways of deciding, and the first is the better one. Where a
+    provider states what each record describes — ``lido:recordType`` —
+    that is an answer rather than an inference, and a profile naming
+    the terms gets exactly the records the provider means.
+
+    Only where it does not is the work type consulted, which infers
+    the same thing from the object and can be wrong about it.
+
+    """
+    if profile.record_type_terms:
+        return has_record_type(lido_record, profile, source_key)
+    return is_film_record(descriptive, profile, source_key)
+
+
+def record_types(lido_record):
+    """Yield the recordType terms a record states."""
+    for administrative in lido_record.administrative_metadata or []:
+        record_wrap = administrative.record_wrap
+        if record_wrap is None:
+            continue
+        text = term_text(getattr(record_wrap, "record_type", None))
+        if text:
+            yield text
+
+
+def has_record_type(lido_record, profile, source_key) -> bool:
+    """Return True if the record states a type the profile wants."""
+    terms = list(record_types(lido_record))
+    if not terms:
+        report_issue(
+            "warning",
+            "Record states no recordType, so it cannot be told from a"
+            " record of another kind; record skipped",
+            record_id=source_key,
+            source_field="recordType",
+            target_field="—",
+        )
+        return False
+    if any(term.lower() in profile.record_type_terms for term in terms):
+        return True
+    report_issue(
+        "info",
+        "Record skipped: not a record type this conversion is about",
+        record_id=source_key,
+        source_field="recordType",
+        target_field="—",
+        raw_value=terms,
+    )
+    return False
 
 
 def is_film_record(descriptive, profile, source_key) -> bool:

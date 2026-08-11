@@ -31,6 +31,11 @@ class LidoProfile:
         Short description shown by ``efi-conv from --list-formats``.
     default_language : str or None
         ISO 639-2/B code assumed when a title carries no xml:lang.
+    record_type_terms : frozenset
+        Lower case ``lido:recordType`` terms denoting a record that is
+        in scope. Where a provider states what each record is about,
+        that is a better answer than inferring it from the object, and
+        it is the criterion to prefer. An empty set disables the check.
     film_work_type_terms : frozenset
         Lower case objectWorkType terms denoting film. Records whose
         work type is not among them are skipped, because only holdings
@@ -125,6 +130,7 @@ class LidoProfile:
     issuer_info: dict
     description: str = "LIDO export"
     default_language: str | None = None
+    record_type_terms: frozenset = frozenset()
     film_work_type_terms: frozenset = frozenset(
         {
             "film",

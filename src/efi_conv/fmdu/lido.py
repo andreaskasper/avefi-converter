@@ -29,50 +29,21 @@ ISSUER_INFO = {
     "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
 }
 
-#: The lido:objectWorkType values that denote holdings in scope.
+#: The lido:recordType terms this conversion is about.
 #:
-#: The generic default lists work types — "film", "spielfilm",
-#: "dokumentarfilm". This provider does not put a work type there. It
-#: puts the carrier: "Filmrolle", "Festplatte", "VHS". The two lists
-#: overlap in exactly one value, "Video", so the default accepted 67
-#: of 5562 records of a real export and skipped the other 5495,
-#: including all 5074 film reels, as accompanying material.
+#: The provider states what every record describes, so nothing has to
+#: be inferred from the object. All 5562 records of the reference
+#: export say "Item", which is the agreed criterion for a copy.
 #:
-#: The list below is not invented. It is every value occurring in the
-#: records of the CSV export agreed with the provider, which is the
-#: definition of what counts as holdings for this institution. Six
-#: records carry a title fragment instead of a carrier — "Teil 1",
-#: "Teil 2: Das Bündnis der Viererbande" — and are deliberately not
-#: listed: they are a data entry error at the provider, and accepting
-#: them here would hide it.
-FILM_WORK_TYPE_TERMS = frozenset(
-    {
-        "analog video",
-        "arbeitskopie",
-        "bild-negativ",
-        "bluray",
-        "datei",
-        "dcp",
-        "disc",
-        "dvd",
-        "festplatte",
-        "filmrolle",
-        # A misspelling of "Filmrolle" in a single record. Listed
-        # because the copy it describes is a film reel whatever the
-        # cataloguer typed, and reported to the provider separately.
-        "fimrolle",
-        "laserdisc",
-        "lto",
-        "lto-band",
-        "negativ",
-        "optisch",
-        "raid",
-        "ton-negativ",
-        "tonband",
-        "vhs",
-        "video",
-    }
-)
+#: This replaces an earlier filter on lido:objectWorkType. That field
+#: is meant for the type of work and this provider puts the carrier in
+#: it — Filmrolle, Festplatte, VHS — so the generic default, which
+#: lists work types, let 67 of 5562 records through. Reading the
+#: carrier as a work type worked well enough once the terms were
+#: collected, but it was answering the question by inference where the
+#: record answers it outright, and it wrongly dropped six copies whose
+#: objectWorkType holds a title fragment.
+RECORD_TYPE_TERMS = frozenset({"item"})
 
 #: House vocabularies, kept in step with the CSV importer for the same
 #: institution so that both produce identical AVefi values.
@@ -237,7 +208,11 @@ PROFILE = LidoProfile(
     issuer_info=ISSUER_INFO,
     description=DESCRIPTION,
     default_language="ger",
-    film_work_type_terms=FILM_WORK_TYPE_TERMS,
+    record_type_terms=RECORD_TYPE_TERMS,
+    # Switched off rather than left at the default: objectWorkType
+    # answers a different question in this export, and two criteria
+    # for one decision is one too many.
+    film_work_type_terms=frozenset(),
     role_activity_map=ROLE_ACTIVITY_MAP,
     duration_measurement_terms=DURATION_MEASUREMENT_TERMS,
     duration_units=DURATION_UNITS,

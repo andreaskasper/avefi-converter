@@ -116,7 +116,7 @@ LIDO_RECORD = """\
       <lido:recordWrap>
         <lido:recordID lido:type="local">{record_id}</lido:recordID>
         <lido:recordType>
-          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+          <lido:term xml:lang="de">{record_type}</lido:term>
         </lido:recordType>
       </lido:recordWrap>
     </lido:administrativeMetadata>
@@ -240,12 +240,14 @@ def make_lido_record(
     keywords=(),
     places=(),
     measurement="Laufzeit",
+    record_type="Item",
 ):
     """Return the LIDO serialisation of one film holding."""
     return LIDO_RECORD.format(
         record_id=record_id,
         work_type=work_type,
         measurement=measurement,
+        record_type=record_type,
         published=(LIDO_PUBLISHED_ID.format(handle=handle) if handle else ""),
         title=title,
         colour=colour,

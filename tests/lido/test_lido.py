@@ -78,7 +78,13 @@ def test_copies_differing_in_carrier_get_their_own_manifestation(
 
 
 def test_accompanying_material_is_not_imported_as_film(input_path):
-    """Only holdings metadata about film is in scope."""
+    """Only the records this conversion is about are in scope.
+
+    This provider states what each record describes, so the poster is
+    excluded by what it says it is rather than by an inference from
+    the object it holds.
+
+    """
     efi_records = from_.import_file(fmdu_lido, input_path("sample_data.xml"))
     source_keys = {
         key
@@ -139,7 +145,7 @@ def test_a_skipped_record_is_reported(input_path):
         entry for entry in report.entries if entry.record_id == "FMDU-0004"
     ]
     assert skipped, "The skipped poster must appear in the report"
-    assert "not a film" in skipped[0].message
+    assert "not a record type" in skipped[0].message
 
 
 def with_date(tmp_path, input_path, expression, name="dated.xml"):

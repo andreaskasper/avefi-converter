@@ -81,7 +81,7 @@
       <lido:recordWrap>
         <lido:recordID lido:type="local">FMDU-0001</lido:recordID>
         <lido:recordType>
-          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+          <lido:term xml:lang="de">Item</lido:term>
         </lido:recordType>
         <lido:recordSource>
           <lido:legalBodyID lido:type="URI">https://w3id.org/isil/DE-MUS-432511</lido:legalBodyID>
@@ -178,7 +178,7 @@
       <lido:recordWrap>
         <lido:recordID lido:type="local">FMDU-0002</lido:recordID>
         <lido:recordType>
-          <lido:term xml:lang="de">Einzelobjekt</lido:term>
+          <lido:term xml:lang="de">Item</lido:term>
         </lido:recordType>
       </lido:recordWrap>
     </lido:administrativeMetadata>
@@ -228,7 +228,7 @@
     <lido:administrativeMetadata xml:lang="de">
       <lido:recordWrap>
         <lido:recordID lido:type="local">FMDU-0003</lido:recordID>
-        <lido:recordType><lido:term xml:lang="de">Einzelobjekt</lido:term></lido:recordType>
+        <lido:recordType><lido:term xml:lang="de">Item</lido:term></lido:recordType>
       </lido:recordWrap>
     </lido:administrativeMetadata>
   </lido:lido>
@@ -251,7 +251,7 @@
     <lido:administrativeMetadata xml:lang="de">
       <lido:recordWrap>
         <lido:recordID lido:type="local">FMDU-0004</lido:recordID>
-        <lido:recordType><lido:term xml:lang="de">Einzelobjekt</lido:term></lido:recordType>
+        <lido:recordType><lido:term xml:lang="de">Sonstiges</lido:term></lido:recordType>
       </lido:recordWrap>
     </lido:administrativeMetadata>
   </lido:lido>
