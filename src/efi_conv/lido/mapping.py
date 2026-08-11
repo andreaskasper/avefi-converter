@@ -223,6 +223,19 @@ MAPPING_RULES = (
         " update instead of a second identifier for one copy",
     ),
     MappingRule(
+        "materials_tech",
+        "Item",
+        "lido:event/lido:eventMaterialsTech/lido:materialsTech"
+        "/lido:termMaterialsTech",
+        "has_colour_type, has_format, element_type, has_sound_type",
+        "Profile materials_tech_map, then the value itself",
+        "The colour, sound, element type and format vocabularies of"
+        " the schema share no value, so the value determines the"
+        " field. lido:conceptID is read as a cross check and a"
+        " disagreement is reported; publication and preservation"
+        " event types found here are recognised but not acted on",
+    ),
+    MappingRule(
         "webresource",
         "Item",
         "lido:administrativeMetadata/lido:resourceWrap//lido:linkResource",
@@ -292,6 +305,19 @@ ASSUMPTIONS = (
     " mapped; further blocks are reported.",
     "The article lists are provisional and are to be confirmed against"
     " the reference data.",
+    "A term of the technical description that is already an AVefi"
+    " value is taken as it stands. The values are a closed set, so a"
+    " term that is one of them means itself, and a provider adding a"
+    " carrier does not need a change to the converter.",
+    "Where `lido:conceptID` names a vocabulary the value does not"
+    " belong to, the value decides and the disagreement is reported."
+    " The reference data files `DCP` under the digital file"
+    " vocabulary although it is an element type, and a hard disk"
+    " under the optical one.",
+    "Publication and preservation event types occurring in the"
+    " technical description are reported rather than turned into"
+    " events. A note about the material of a copy does not state that"
+    " the film was distributed or restored.",
     "LIDO does not prescribe the `lido:type` values marking a colour,"
     " format or access status classification. The profile names them,"
     " and a classification of any other type becomes a genre.",
@@ -852,6 +878,141 @@ def build_publication_event(descriptive, profile, source_key):
     return event
 
 
+#: Where a value of the technical description belongs. The colour, the
+#: sound, the element type and the six format vocabularies share no
+#: value between them, so the value itself says which field it is
+#: destined for and a provider does not have to keep the two in step.
+TECHNICAL_TARGETS = {}
+for _enum_name in dir(efi):
+    if _enum_name == "ColourTypeEnum":
+        _target, _wrapper = "has_colour_type", None
+    elif _enum_name == "ItemElementTypeEnum":
+        _target, _wrapper = "element_type", None
+    elif _enum_name == "SoundTypeEnum":
+        _target, _wrapper = "has_sound_type", None
+    elif _enum_name.startswith("Format") and _enum_name.endswith("TypeEnum"):
+        _target = "has_format"
+        _wrapper = getattr(
+            efi, _enum_name[len("Format") : -len("TypeEnum")], None
+        )
+        if _wrapper is None:
+            continue
+    else:
+        continue
+    for _member in getattr(efi, _enum_name):
+        TECHNICAL_TARGETS.setdefault(_member.value, []).append(
+            (_enum_name, _target, _wrapper)
+        )
+del _enum_name, _target, _wrapper, _member
+
+#: Vocabularies this provider writes into the same field, which the
+#: mapping recognises but does not act on. Deriving a publication or a
+#: preservation event from a note about the material would be a
+#: statement about the film that the note does not make, so the value
+#: is reported and the decision left to the data provider.
+TECHNICAL_OUT_OF_SCOPE = {
+    member.value: name
+    for name in ("PublicationEventTypeEnum", "PreservationEventTypeEnum")
+    for member in getattr(efi, name)
+}
+
+
+def technical_terms(descriptive):
+    """Yield the terms of the technical description with their concept.
+
+    The concept identifier is what the provider says the term means.
+    It is read as a cross check rather than as the answer, because a
+    provider can name one vocabulary and write a value from another,
+    and the reference data does exactly that.
+
+    """
+    wrap = descriptive.event_wrap
+    if wrap is None:
+        return
+    for event_set in wrap.event_set or []:
+        event = event_set.event
+        if event is None:
+            continue
+        for materials_wrap in event.event_materials_tech or []:
+            for materials in materials_wrap.materials_tech or []:
+                for entry in materials.term_materials_tech or []:
+                    term = text_of(first(entry.term))
+                    if not term:
+                        continue
+                    concept = text_of(first(entry.concept_id)) or ""
+                    yield term.strip(), concept.rsplit("/", 1)[-1]
+
+
+def apply_technical_description(item, descriptive, profile, source_key):
+    """Fill colour, format and element type from the material notes.
+
+    A house term is translated first, and a term that is already an
+    AVefi value is taken as it stands. That second step is what keeps
+    the mapping from needing a commit every time the provider adds a
+    carrier: the values are a closed set, so a term that is one of
+    them means itself.
+
+    """
+    for term, concept in technical_terms(descriptive):
+        if term.lower() in profile.empty_terms:
+            continue
+        value = profile.materials_tech_map.get(term.lower(), term)
+        candidates = TECHNICAL_TARGETS.get(value)
+        if not candidates:
+            if value in TECHNICAL_OUT_OF_SCOPE:
+                report_issue(
+                    "info",
+                    "Recognised as"
+                    f" {TECHNICAL_OUT_OF_SCOPE[value]}, which this"
+                    " mapping does not derive from a material note",
+                    record_id=source_key,
+                    source_field="termMaterialsTech",
+                    target_field="—",
+                    raw_value=term,
+                )
+                continue
+            report_issue(
+                "warning",
+                "No AVefi value for this term of the technical description",
+                record_id=source_key,
+                source_field="termMaterialsTech",
+                target_field=concept or "—",
+                raw_value=term,
+            )
+            continue
+        chosen = candidates[0]
+        if len(candidates) > 1:
+            named = [c for c in candidates if c[0] == concept]
+            if not named:
+                report_issue(
+                    "warning",
+                    "Term belongs to more than one vocabulary and the"
+                    " record does not say which; not transferred",
+                    record_id=source_key,
+                    source_field="termMaterialsTech",
+                    target_field="—",
+                    raw_value=term,
+                )
+                continue
+            chosen = named[0]
+        enum_name, target, wrapper = chosen
+        if concept and concept != enum_name:
+            report_issue(
+                "info",
+                f"Record files this term under {concept}; it is a"
+                f" {enum_name} value and is mapped as one",
+                record_id=source_key,
+                source_field="termMaterialsTech/conceptID",
+                target_field=target,
+                raw_value=term,
+            )
+        if target == "has_format":
+            if not any(existing.type == value for existing in item.has_format):
+                item.has_format.append(wrapper(type=value))
+        elif getattr(item, target) is None:
+            setattr(item, target, value)
+
+
 def build_item(lido_record, descriptive, primary, profile, source_key):
     """Return the Item for one LIDO record.
 
@@ -893,6 +1054,7 @@ def build_item(lido_record, descriptive, primary, profile, source_key):
         item.has_format.append(
             efi.Film(type=efi.FormatFilmTypeEnum(film_format))
         )
+    apply_technical_description(item, descriptive, profile, source_key)
     for identifier in avefi_identifiers(lido_record, profile, source_key):
         item.has_identifier.append(identifier)
     for link in web_resources(lido_record):

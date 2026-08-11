@@ -262,3 +262,130 @@ class TestAgentIdentity:
             lido_page, lido_record, gnd="4711", gnd_source="Hauskartei"
         )
         assert agent.same_as == []
+
+
+class TestTechnicalDescription:
+    """Colour, format, element type and sound sit in one field here.
+
+    The mapping looked for them in typed classifications, which this
+    provider does not use for the purpose, so every copy of a 5562
+    record export arrived without a format, without a colour and
+    without an element type.
+
+    """
+
+    def item_with(self, lido_page, lido_record, *materials):
+        # colour="" keeps the typed classification of the shared
+        # fixture out of the way: this provider records the colour in
+        # the technical description, and that is what is under test.
+        source = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001", colour="", materials=materials),
+        )
+        records = fmdu_lido.efi_import(source)
+        return next(r for r in records if r.category == "avefi:Item")
+
+    def test_a_value_that_is_already_avefi_is_taken_as_it_stands(
+        self, lido_page, lido_record
+    ):
+        """The provider writes schema values into its own field.
+
+        They are a closed set, so a term that is one of them means
+        itself, and adding a carrier costs the provider nothing.
+
+        """
+        item = self.item_with(
+            lido_page, lido_record, ("35mmFilm", "FormatFilmTypeEnum")
+        )
+        assert [(f.category, f.type) for f in item.has_format] == [
+            ("avefi:Film", "35mmFilm")
+        ]
+
+    def test_a_house_spelling_is_translated(self, lido_page, lido_record):
+        item = self.item_with(
+            lido_page, lido_record, ("17,5mmFilm", "FormatFilmTypeEnum")
+        )
+        assert item.has_format[0].type == "17.5mmFilm"
+
+    def test_colour_and_element_and_sound_reach_their_own_fields(
+        self, lido_page, lido_record
+    ):
+        item = self.item_with(
+            lido_page,
+            lido_record,
+            ("Colour, SW", "ColourTypeEnum"),
+            ("Positive", "ItemElementTypeEnum"),
+            ("Stummfilm", ""),
+        )
+        assert item.has_colour_type == "ColourBlackAndWhite"
+        assert item.element_type == "Positive"
+        assert item.has_sound_type == "Silent"
+
+    def test_the_value_decides_where_the_concept_disagrees(
+        self, lido_page, lido_record
+    ):
+        """The provider files DCP under the digital file vocabulary.
+
+        It is an element type. Following the label rather than the
+        value would put a value into a field the schema does not
+        allow it in, so the value wins and the disagreement is noted.
+
+        """
+        item = self.item_with(
+            lido_page, lido_record, ("DCP", "FormatDigitalFileTypeEnum")
+        )
+        assert item.element_type == "DCP"
+        assert not item.has_format
+
+    def test_not_assigned_is_not_a_value(self, lido_page, lido_record):
+        item = self.item_with(
+            lido_page, lido_record, ("(not assigned)", "ColourTypeEnum")
+        )
+        assert item.has_colour_type is None
+
+    def test_a_publication_event_type_is_reported_not_acted_on(
+        self, lido_page, lido_record
+    ):
+        """A note on the material does not state a distribution.
+
+        Deriving an event from it would put something in the record
+        that the source does not say, so it is left to the provider.
+
+        """
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            item = self.item_with(
+                lido_page,
+                lido_record,
+                ("TheatricalDistributionEvent", "PublicationEventTypeEnum"),
+            )
+        assert not item.has_format
+        assert [
+            entry
+            for entry in report.entries
+            if entry.raw_value == "TheatricalDistributionEvent"
+            and entry.severity == "info"
+        ]
+
+    def test_an_unknown_term_is_reported(self, lido_page, lido_record):
+        """A hard disk has no format in the schema, so say so.
+
+        Ninety one copies are stored on one. Silently dropping the
+        fact would leave the copy looking as if nothing were known
+        about its carrier.
+
+        """
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            self.item_with(
+                lido_page, lido_record, ("Festplatte", "FormatOpticalTypeEnum")
+            )
+        assert [
+            entry
+            for entry in report.entries
+            if entry.raw_value == "Festplatte" and entry.severity == "warning"
+        ]

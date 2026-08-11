@@ -24,6 +24,7 @@ do not edit by hand.
 | `format` | Item | `lido:classification[@lido:type in profile classification_types['format']]` | `has_format (Film)` | Profile vocabulary | — |
 | `access_status` | Item | `lido:classification[@lido:type in profile classification_types['access']]` | `has_access_status` | Profile vocabulary | — |
 | `avefi_identifier` | Item | `lido:objectPublishedID carrying the AVefi handle prefix` | `has_identifier (AVefiResource)` | Profile avefi_handle_prefix | A copy registered in AVefi carries its handle back into the provider's export; transferring it makes a re-import an update instead of a second identifier for one copy |
+| `materials_tech` | Item | `lido:event/lido:eventMaterialsTech/lido:materialsTech/lido:termMaterialsTech` | `has_colour_type, has_format, element_type, has_sound_type` | Profile materials_tech_map, then the value itself | The colour, sound, element type and format vocabularies of the schema share no value, so the value determines the field. lido:conceptID is read as a cross check and a disagreement is reported; publication and preservation event types found here are recognised but not acted on |
 | `webresource` | Item | `lido:administrativeMetadata/lido:resourceWrap//lido:linkResource` | `has_webresource` | — | — |
 | `issuer` | Work, Manifestation, Item | `profile issuer_info` | `described_by.has_issuer_id, described_by.has_issuer_name` | — | Taken from the profile, not from lido:recordSource, so that the issuer is unambiguous |
 
@@ -46,6 +47,9 @@ Decisions the mapping takes that LIDO does not determine, and that need confirmi
 - A date such as `2003-04` is read as an ISO year and month. Note that `fmdu/csv.py` reads the same notation as the interval 2003 to 2004; the divergence is reported per occurrence.
 - Only the first `lido:descriptiveMetadata` block of a record is mapped; further blocks are reported.
 - The article lists are provisional and are to be confirmed against the reference data.
+- A term of the technical description that is already an AVefi value is taken as it stands. The values are a closed set, so a term that is one of them means itself, and a provider adding a carrier does not need a change to the converter.
+- Where `lido:conceptID` names a vocabulary the value does not belong to, the value decides and the disagreement is reported. The reference data files `DCP` under the digital file vocabulary although it is an element type, and a hard disk under the optical one.
+- Publication and preservation event types occurring in the technical description are reported rather than turned into events. A note about the material of a copy does not state that the film was distributed or restored.
 - LIDO does not prescribe the `lido:type` values marking a colour, format or access status classification. The profile names them, and a classification of any other type becomes a genre.
 - A work key that would be no more than the title does not group: the record keeps a work of its own, and the decision is reported. Two undated films of the same name are two films, and one AVefi identifier registered for both cannot be corrected afterwards, whereas two works minted for one film can be merged.
 - A running time that cannot be read leaves `has_duration` unset and is reported. Discarding the record over it would cost the work, every manifestation and every item derived from it.

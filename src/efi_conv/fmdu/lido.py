@@ -128,6 +128,38 @@ ROLE_ACTIVITY_MAP = {
     "produktionsfirma": "ProductionCompany",
     "produktion": "Producer",
     "ton": "SoundEngineer",
+    "produzent*in": "Producer",
+    "produzent": "Producer",
+    "produzentin": "Producer",
+    "kamerassistenz": "CameraAssistant",
+    "kameraassistenz": "CameraAssistant",
+    "aufnahmeleitung": "ProductionManager",
+    "bauten": "ProductionDesigner",
+    "szenenbild": "ProductionDesigner",
+    "maske": "MakeUpArtist",
+    "erzähler*in": "Narrator",
+    "sprecher*in": "Narrator",
+}
+
+#: House spellings in the technical description, and the AVefi value
+#: each one means. Everything else this provider writes there is
+#: already an AVefi value and needs no entry.
+#:
+#: "Coloriert" is absent for the same reason it is absent from the
+#: colour map: hand and stencil colouring is neither Colour nor
+#: Tinted, and the schema has no third answer.
+MATERIALS_TECH_MAP = {
+    "super8": "Super8mmFilm",
+    "super 8": "Super8mmFilm",
+    # A decimal comma where the schema writes a point.
+    "17,5mmfilm": "17.5mmFilm",
+    "colour, sw": "ColourBlackAndWhite",
+    "blackandwhite & colour": "ColourBlackAndWhite",
+    "laserdisc (ld)": "LaserDisc",
+    "duplicatepositivee": "DuplicatePositive",
+    "nicht-theatricaldistributionevent": "NonTheatricalDistributionEvent",
+    "heimkino": "HomeVideoPublicationEvent",
+    "stummfilm": "Silent",
 }
 
 #: Profile class a profile file is read into.
@@ -139,6 +171,7 @@ PROFILE = LidoProfile(
     default_language="ger",
     film_work_type_terms=FILM_WORK_TYPE_TERMS,
     role_activity_map=ROLE_ACTIVITY_MAP,
+    materials_tech_map=MATERIALS_TECH_MAP,
     colour_type_map=COLOUR_TYPE_MAP,
     access_status_map=ACCESS_STATUS_MAP,
     format_map=FORMAT_MAP,

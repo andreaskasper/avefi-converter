@@ -105,6 +105,7 @@ LIDO_RECORD = """\
             <lido:eventDate>
               <lido:displayDate>{date}</lido:displayDate>
             </lido:eventDate>
+{materials}\
           </lido:event>
         </lido:eventSet>
       </lido:eventWrap>
@@ -147,6 +148,28 @@ LIDO_ACTOR = """\
             </lido:eventActor>
 """
 
+#: The technical description of a copy, where this provider records
+#: colour, format, element type and sound.
+LIDO_MATERIALS_TECH = """\
+            <lido:eventMaterialsTech>
+              <lido:materialsTech>
+{terms}\
+              </lido:materialsTech>
+            </lido:eventMaterialsTech>
+"""
+
+LIDO_MATERIALS_TERM = """\
+                <lido:termMaterialsTech lido:type="http://terminology.lido-schema.org/lido00131">
+{concept}\
+                  <lido:term>{term}</lido:term>
+                </lido:termMaterialsTech>
+"""
+
+LIDO_MATERIALS_CONCEPT = """\
+                  <lido:conceptID lido:type="http://terminology.lido-schema.org/lido00099"
+                    lido:source="www.av-efi.net">https://www.av-efi.net/av-efi-schema/{concept}</lido:conceptID>
+"""
+
 LIDO_ACTOR_ID = """\
                   <lido:actorID lido:type="http://terminology.lido-schema.org/lido00099"
                     lido:source="{source}">{value}</lido:actorID>
@@ -187,6 +210,7 @@ def make_lido_record(
     actor_type="",
     gnd="",
     gnd_source="GND",
+    materials=(),
 ):
     """Return the LIDO serialisation of one film holding."""
     return LIDO_RECORD.format(
@@ -198,6 +222,23 @@ def make_lido_record(
         date=date,
         duration=duration,
         genre=LIDO_GENRE.format(genre=genre) if genre else "",
+        materials=(
+            LIDO_MATERIALS_TECH.format(
+                terms="".join(
+                    LIDO_MATERIALS_TERM.format(
+                        term=term,
+                        concept=(
+                            LIDO_MATERIALS_CONCEPT.format(concept=concept)
+                            if concept
+                            else ""
+                        ),
+                    )
+                    for term, concept in materials
+                )
+            )
+            if materials
+            else ""
+        ),
         actor=(
             LIDO_ACTOR.format(
                 director=director,

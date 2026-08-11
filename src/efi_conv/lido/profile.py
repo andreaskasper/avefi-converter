@@ -79,6 +79,17 @@ class LidoProfile:
         Source term (lower case) to AVefi ItemAccessStatusEnum value.
     format_map : dict
         Source term (lower case) to AVefi FormatFilmTypeEnum value.
+    element_type_map : dict
+        Source term (lower case) to AVefi ItemElementTypeEnum value.
+    materials_tech_map : dict
+        Source term (lower case) to the AVefi value it denotes, for
+        the technical description of a copy. One map for colour,
+        format and element type together, because the values of those
+        vocabularies are unique across the schema and the source does
+        not separate them either.
+    empty_terms : frozenset
+        Lower case terms standing for "nothing recorded" rather than
+        for a value, such as a cataloguing system's "(not assigned)".
     unknown_agent_names : frozenset
         Lower case placeholder names that do not denote an agent.
     avefi_handle_prefix : str or None
@@ -135,6 +146,11 @@ class LidoProfile:
     colour_type_map: dict = field(default_factory=dict)
     access_status_map: dict = field(default_factory=dict)
     format_map: dict = field(default_factory=dict)
+    element_type_map: dict = field(default_factory=dict)
+    materials_tech_map: dict = field(default_factory=dict)
+    empty_terms: frozenset = frozenset(
+        {"(not assigned)", "not assigned", "n/a", "-", "—", "unbekannt"}
+    )
     unknown_agent_names: frozenset = frozenset(
         {"unbekannt", "unknown", "verschiedene", "n.n.", "nn"}
     )
