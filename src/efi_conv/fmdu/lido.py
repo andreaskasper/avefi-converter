@@ -214,6 +214,22 @@ MATERIALS_TECH_MAP = {
     "stummfilm": "Silent",
 }
 
+#: The measurement holding the running time, and the unit its values
+#: are really in.
+#:
+#: The records label this column " Min" and the values are hours. It
+#: is not a close call: a 35mm print of 2523 metres runs 92 minutes at
+#: 24 frames a second, and the record for it says 1.5207. Read as
+#: minutes, the median running time of the whole export would be
+#: fourteen seconds; read as hours it is 14.4 minutes, with a quartile
+#: at 87, which is what a collection of shorts and features looks
+#: like. The override is a statement about this one export and lives
+#: here rather than in the mapping.
+DURATION_MEASUREMENT_TERMS = frozenset(
+    {"zeit", "laufzeit", "dauer", "spieldauer", "running time", "duration"}
+)
+DURATION_UNITS = {"zeit": "h"}
+
 #: Profile class a profile file is read into.
 PROFILE_CLASS = LidoProfile
 
@@ -223,6 +239,8 @@ PROFILE = LidoProfile(
     default_language="ger",
     film_work_type_terms=FILM_WORK_TYPE_TERMS,
     role_activity_map=ROLE_ACTIVITY_MAP,
+    duration_measurement_terms=DURATION_MEASUREMENT_TERMS,
+    duration_units=DURATION_UNITS,
     keyword_classification_types=frozenset({"schlagwort"}),
     language_name_map=LANGUAGE_NAME_MAP,
     materials_tech_map=MATERIALS_TECH_MAP,

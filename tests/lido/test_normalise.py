@@ -185,6 +185,21 @@ class TestNotationsRatherThanGuesses:
 
 class TestNormaliseDuration:
     @pytest.mark.parametrize(
+        ("value", "unit"),
+        [("0", "min"), ("0", "h"), ("0.0", "min"), ("0E-10", "h")],
+    )
+    def test_zero_is_no_running_time(self, value, unit):
+        """A copy that runs no length is not what the source means.
+
+        Cataloguing systems write an empty measurement as a zero, and
+        one of them writes it as 0E-10; 1084 records of the reference
+        export do. Recording PT00H00M00S would state a fact about the
+        copy where the source states that nobody measured it.
+
+        """
+        assert normalise_duration(value, unit) is None
+
+    @pytest.mark.parametrize(
         ("value", "unit", "expected"),
         [
             ("103", "min", "PT01H43M00S"),
@@ -195,7 +210,6 @@ class TestNormaliseDuration:
             ("6180", "s", "PT01H43M00S"),
             ("1,5", "h", "PT01H30M00S"),
             ("90", "Minuten", "PT01H30M00S"),
-            ("0", "min", "PT00H00M00S"),
         ],
     )
     def test_maps_known_notations(self, value, unit, expected):

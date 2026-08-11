@@ -138,7 +138,10 @@ MAPPING_RULES = (
         "production_place",
         "Work",
         "lido:eventWrap/lido:eventSet/lido:event[production]/lido:eventPlace",
-        "has_event.located_in.has_name",
+        "has_event.located_in.has_name, located_in.same_as",
+        notes="Name as the source gives it, plus the authority"
+        " identifier where the record carries one; a place stated"
+        " twice is recorded once",
     ),
     MappingRule(
         "activity",
@@ -306,7 +309,19 @@ ASSUMPTIONS = (
     "Month names are read in German and English, full and abbreviated."
     " `8/1988` is read as a month and year rather than an interval,"
     " because the left hand side cannot be a year.",
-    "A running time given as a bare number without a unit is read as minutes.",
+    "A running time given as a bare number without a unit is read as"
+    " minutes, unless the profile states the unit of that measurement."
+    " A provider labelling a column once and filling it in another"
+    " unit is a fact about that export, so it is corrected in its"
+    " profile rather than guessed at in the mapping.",
+    "A running time of zero is read as none given. Cataloguing"
+    " systems write an empty measurement as a zero, and recording"
+    " `PT00H00M00S` would state that the copy runs no length.",
+    "Production places keep the name the source gives, including"
+    " historical states such as `DDR` or `Deutsches Reich`. That is"
+    " the country the film was made in at the time, which is the part"
+    " worth having; where the record carries an authority identifier"
+    " it is transferred, and that is what resolves the spelling.",
     "Clock notation with two components, such as `1:43`, is read as"
     " minutes and seconds, not as hours and minutes.",
     "A date such as `2003-04` is read as an ISO year and month. Note"
@@ -691,10 +706,7 @@ def build_production_event(descriptive, profile, source_key):
     if has_date:
         event.has_date = has_date
 
-    for place in lido_event.event_place or []:
-        name = place_name(place)
-        if name:
-            event.located_in.append(efi.GeographicName(has_name=name))
+    add_places(event, lido_event)
 
     for activity in collect_activities(descriptive, profile, source_key):
         event.has_activity.append(activity)
@@ -838,6 +850,8 @@ AUTHORITY_RESOURCES = {
     "gnd": efi.GNDResource,
     "viaf": efi.VIAFResource,
     "wikidata": efi.WikidataResource,
+    "tgn": efi.TGNResource,
+    "aat": efi.AATResource,
 }
 
 #: An authority identifier is written either bare or as the URI that
@@ -846,7 +860,10 @@ AUTHORITY_ID_PATTERN = re.compile(r"([^/#\s]+)\s*$")
 
 
 def authority_resources(actor):
-    """Yield the authority file identifiers stated for an actor.
+    """Yield the authority file identifiers stated for an entity.
+
+    Used for actors and for places, which state theirs the same way
+    and differ only in the name of the element.
 
     Reading an identifier the source already carries is mapping, not
     the authority file enrichment the commission puts out of scope:
@@ -855,7 +872,12 @@ def authority_resources(actor):
 
     """
     seen = set()
-    for candidate in getattr(actor, "actor_id", None) or []:
+    candidates = (
+        getattr(actor, "actor_id", None)
+        or getattr(actor, "place_id", None)
+        or []
+    )
+    for candidate in candidates:
         source = str(getattr(candidate, "source", "") or "").strip().lower()
         resource = AUTHORITY_RESOURCES.get(source)
         text = text_of(candidate)
@@ -889,10 +911,7 @@ def build_publication_event(descriptive, profile, source_key):
     )
     if has_date:
         event.has_date = has_date
-    for place in lido_event.event_place or []:
-        name = place_name(place)
-        if name:
-            event.located_in.append(efi.GeographicName(has_name=name))
+    add_places(event, lido_event)
     if not (event.has_date or event.located_in):
         return None
     return event
@@ -1417,8 +1436,9 @@ def duration_measurement(descriptive, profile):
                 continue
             value = text_of(first(entry.measurement_value))
             unit = text_of(first(entry.measurement_unit))
+            override = profile.duration_units.get(kind.lower())
             if value:
-                return value, unit
+                return value, override or unit
     return None, None
 
 
@@ -1462,6 +1482,42 @@ def place_name(place_wrap) -> str | None:
             if text:
                 return text
     return None
+
+
+def build_place(place_wrap, name: str):
+    """Return the GeographicName for an eventPlace element.
+
+    The name is taken as the source gives it. A holdings record saying
+    "Deutsches Reich" or "DDR" is stating the country a film was made
+    in at the time it was made, which is not the same country that
+    stands there today, and normalising it away would be losing the
+    part that is worth having. Where the record carries an authority
+    identifier, that is what resolves the spelling.
+
+    """
+    place = efi.GeographicName(has_name=name)
+    for authority in authority_resources(
+        getattr(place_wrap, "place", None) or place_wrap
+    ):
+        place.same_as.append(authority)
+    return place
+
+
+def add_places(event, lido_event) -> None:
+    """Add the places of a LIDO event, without repeating one."""
+    for place_wrap in lido_event.event_place or []:
+        name = place_name(place_wrap)
+        if not name:
+            continue
+        place = build_place(place_wrap, name)
+        identifiers = {(a.category, a.id) for a in place.same_as}
+        if any(
+            existing.has_name == name
+            and {(a.category, a.id) for a in existing.same_as} == identifiers
+            for existing in event.located_in
+        ):
+            continue
+        event.located_in.append(place)
 
 
 def actor_name(in_role) -> str | None:

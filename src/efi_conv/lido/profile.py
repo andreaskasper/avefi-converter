@@ -68,6 +68,15 @@ class LidoProfile:
         activities and are mapped onto the production event.
     duration_measurement_terms : frozenset
         Lower case measurementType terms denoting a running time.
+    duration_units : dict
+        Lower case measurementType to the unit its values are really
+        in, overriding the unit stated in the record. Needed where a
+        provider labels a column once and the values disagree with the
+        label; the override is a statement about one export and
+        belongs in its profile rather than in the mapping.
+    authority_sources : dict
+        Lower case ``lido:source`` of an identifier to the AVefi
+        resource class carrying it, for places as well as agents.
     classification_types : dict
         AVefi target (``colour``, ``format`` or ``access``) to the
         lower case ``lido:type`` values marking a classification as
@@ -151,6 +160,7 @@ class LidoProfile:
     duration_measurement_terms: frozenset = frozenset(
         {"laufzeit", "dauer", "spieldauer", "running time", "duration"}
     )
+    duration_units: dict = field(default_factory=dict)
     classification_types: dict = field(
         default_factory=lambda: dict(DEFAULT_CLASSIFICATION_TYPES)
     )

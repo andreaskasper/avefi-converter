@@ -496,3 +496,108 @@ class TestDeaccession:
             if entry.target_field == "has_access_status"
             and entry.severity == "warning"
         ]
+
+
+class TestPlaces:
+    def work_with(self, lido_page, lido_record, *places):
+        source = lido_page(
+            "export.xml", lido_record("FMDU-0001", places=places)
+        )
+        return next(
+            r
+            for r in fmdu_lido.efi_import(source)
+            if r.category == "avefi:WorkVariant"
+        )
+
+    def test_the_name_is_left_as_the_source_gives_it(
+        self, lido_page, lido_record
+    ):
+        """A film made in the DDR was made in the DDR.
+
+        Normalising it to Germany would drop the part that carries
+        information, and it is a heuristic the commission puts out of
+        scope besides.
+
+        """
+        work = self.work_with(lido_page, lido_record, ("DDR", "7017366"))
+        assert [p.has_name for p in work.has_event[0].located_in] == ["DDR"]
+
+    def test_the_authority_identifier_comes_along(
+        self, lido_page, lido_record
+    ):
+        """It is what resolves BRD and Deutschland to one country.
+
+        Every place in the reference export carries one, so the
+        spelling does not have to be argued about.
+
+        """
+        work = self.work_with(lido_page, lido_record, ("BRD", "7003656"))
+        place = work.has_event[0].located_in[0]
+        assert [(a.category, a.id) for a in place.same_as] == [
+            ("avefi:TGNResource", "7003656")
+        ]
+
+    def test_a_place_stated_twice_is_recorded_once(
+        self, lido_page, lido_record
+    ):
+        """The reference data repeats one, three times in a record."""
+        work = self.work_with(
+            lido_page,
+            lido_record,
+            ("Dänemark", "7006429"),
+            ("Dänemark", "7006429"),
+            ("BRD", "7003656"),
+        )
+        assert [p.has_name for p in work.has_event[0].located_in] == [
+            "Dänemark",
+            "BRD",
+        ]
+
+
+class TestRunningTime:
+    """The column says minutes and holds hours.
+
+    A 35mm print of 2523 metres runs 92 minutes at 24 frames a second,
+    and its record says 1.5207. Read as minutes the median running
+    time of the export would be fourteen seconds.
+
+    """
+
+    def item_with(self, lido_page, lido_record, duration):
+        source = lido_page(
+            "export.xml", lido_record("FMDU-0001", duration=duration)
+        )
+        return next(
+            r
+            for r in fmdu_lido.efi_import(source)
+            if r.category == "avefi:Item"
+        )
+
+    def test_the_profile_states_the_unit_the_values_are_in(self):
+        assert fmdu_lido.PROFILE.duration_units["zeit"] == "h"
+
+    def test_zeit_counts_as_a_running_time(self):
+        """The generic list has laufzeit and dauer, not this one."""
+        assert "zeit" in fmdu_lido.PROFILE.duration_measurement_terms
+
+    def test_a_zero_is_not_a_running_time(self, lido_page, lido_record):
+        """1084 records of the export write an empty column as 0E-10."""
+        assert (
+            self.item_with(lido_page, lido_record, "0E-10").has_duration
+            is None
+        )
+
+    def test_the_value_is_read_as_hours(self, lido_page, lido_record):
+        """1.5207 in the "Zeit" column is 91 minutes, not 91 seconds."""
+        source = lido_page(
+            "export.xml",
+            lido_record(
+                "FMDU-0001", measurement="Zeit", duration="1.5206666667"
+            ),
+        )
+        item = next(
+            r
+            for r in fmdu_lido.efi_import(source)
+            if r.category == "avefi:Item"
+        )
+        assert item.has_duration.has_value == "PT01H31M14S"

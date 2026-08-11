@@ -13,7 +13,7 @@ do not edit by hand.
 | `alternative_title` | Work | `lido:titleWrap/lido:titleSet (remaining sets)` | `has_alternative_title` | Article handling in both directions | — |
 | `genre` | Work | `lido:objectClassificationWrap/lido:classificationWrap/lido:classification` | `has_genre.has_name` | — | Classifications whose lido:type is named in the profile as carrying colour, format or access status are consumed by those rules instead |
 | `production_date` | Work | `lido:eventWrap/lido:eventSet/lido:event[production]/lido:eventDate` | `has_event.has_date` | ISODate; abbreviated intervals expanded | lido:earliestDate and lido:latestDate take precedence over lido:displayDate |
-| `production_place` | Work | `lido:eventWrap/lido:eventSet/lido:event[production]/lido:eventPlace` | `has_event.located_in.has_name` | — | — |
+| `production_place` | Work | `lido:eventWrap/lido:eventSet/lido:event[production]/lido:eventPlace` | `has_event.located_in.has_name, located_in.same_as` | — | Name as the source gives it, plus the authority identifier where the record carries one; a place stated twice is recorded once |
 | `activity` | Work | `lido:event[production or creation]/lido:eventActor/lido:actorInRole` | `has_event.has_activity` | Profile role_activity_map and director_role_terms | The role decides the activity class, since no value is shared between the sixteen activity vocabularies. Agents of one role share one activity. Placeholder names such as 'unbekannt' are skipped and reported |
 | `agent_type` | Work | `lido:actor/@lido:type` | `has_event.has_activity.has_agent.type` | — | Person or CorporateBody as the source states it; it is not derived from the name |
 | `agent_authority` | Work | `lido:actor/lido:actorID[@lido:source in GND, VIAF, Wikidata]` | `has_event.has_activity.has_agent.same_as` | — | Transferred where the source carries it; nothing is looked up and nothing is added |
@@ -43,7 +43,9 @@ Decisions the mapping takes that LIDO does not determine, and that need confirmi
 - Square brackets around a date mark one the cataloguer supplied rather than read off the object. That states where the date came from, not how certain it is, so the brackets are dropped, the date is taken as given, and the fact is reported.
 - Words joining an interval — `zwischen 1940 und 1945`, `1970 bis 1977` — are read as the interval they spell out. An open one, `nach 1989`, is reported instead: level 0 cannot express it, and reading it as 1989 would state a year the source refuses to give.
 - Month names are read in German and English, full and abbreviated. `8/1988` is read as a month and year rather than an interval, because the left hand side cannot be a year.
-- A running time given as a bare number without a unit is read as minutes.
+- A running time given as a bare number without a unit is read as minutes, unless the profile states the unit of that measurement. A provider labelling a column once and filling it in another unit is a fact about that export, so it is corrected in its profile rather than guessed at in the mapping.
+- A running time of zero is read as none given. Cataloguing systems write an empty measurement as a zero, and recording `PT00H00M00S` would state that the copy runs no length.
+- Production places keep the name the source gives, including historical states such as `DDR` or `Deutsches Reich`. That is the country the film was made in at the time, which is the part worth having; where the record carries an authority identifier it is transferred, and that is what resolves the spelling.
 - Clock notation with two components, such as `1:43`, is read as minutes and seconds, not as hours and minutes.
 - A date such as `2003-04` is read as an ISO year and month. Note that `fmdu/csv.py` reads the same notation as the interval 2003 to 2004; the divergence is reported per occurrence.
 - Only the first `lido:descriptiveMetadata` block of a record is mapped; further blocks are reported.

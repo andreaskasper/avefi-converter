@@ -24,7 +24,9 @@ from efi_conv.lido.normalise import (
 )
 
 years = st.integers(min_value=1000, max_value=2999)
-minutes = st.integers(min_value=0, max_value=6000)
+# From one, because a running time of zero is read as none given
+# rather than as a copy that runs no length.
+minutes = st.integers(min_value=1, max_value=6000)
 words = st.text(
     alphabet=st.characters(
         min_codepoint=32, max_codepoint=0x24F, blacklist_categories=("Cc",)

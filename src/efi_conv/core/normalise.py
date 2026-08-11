@@ -493,6 +493,19 @@ def normalise_duration(
         )
     if seconds < 0:
         raise NormalisationError(f"Negative duration: {value!r}")
+    if round(seconds) == 0:
+        # A running time of zero is not a running time. Recording it
+        # as PT00H00M00S would state that the copy runs no length,
+        # where the source states that nobody measured it.
+        report_issue(
+            "info",
+            "Running time is zero; read as not recorded",
+            record_id=record_id,
+            source_field=source_field,
+            target_field=target_field,
+            raw_value=value,
+        )
+        return None
     hours, rest = divmod(int(round(seconds)), 3600)
     minutes, secs = divmod(rest, 60)
     result = f"PT{hours:02d}H{minutes:02d}M{secs:02d}S"
@@ -547,7 +560,12 @@ def _duration_seconds(text: str, unit: str | None) -> float | None:
         return int(hours) * 3600 + int(minutes or 0) * 60
 
     # Number with an explicit or supplied unit
-    match = re.match(r"^(\d+(?:[.,]\d+)?)\s*([a-zA-Zäöü.']*)$", text)
+    # The exponent is not decoration: a cataloguing system writing
+    # "0E-10" into a measurement column means the field is empty, and
+    # 1084 records of one export say it that way.
+    match = re.match(
+        r"^(\d+(?:[.,]\d+)?(?:[eE][-+]?\d+)?)\s*([a-zA-Zäöü.']*)$", text
+    )
     if not match:
         return None
     amount = float(match.group(1).replace(",", "."))

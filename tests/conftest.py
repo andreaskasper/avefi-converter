@@ -89,7 +89,7 @@ LIDO_RECORD = """\
             <lido:objectMeasurements>
               <lido:measurementsSet>
                 <lido:measurementType
-                  xml:lang="de">Laufzeit</lido:measurementType>
+                  xml:lang="de">{measurement}</lido:measurementType>
                 <lido:measurementValue>{duration}</lido:measurementValue>
               </lido:measurementsSet>
             </lido:objectMeasurements>
@@ -106,6 +106,7 @@ LIDO_RECORD = """\
             <lido:eventDate>
               <lido:displayDate>{date}</lido:displayDate>
             </lido:eventDate>
+{places}\
 {materials}\
           </lido:event>
         </lido:eventSet>
@@ -125,6 +126,22 @@ LIDO_RECORD = """\
 LIDO_PUBLISHED_ID = """\
     <lido:objectPublishedID lido:type="http://terminology.lido-schema.org/lido00099"
       lido:source="www.av-efi.net">{handle}</lido:objectPublishedID>
+"""
+
+LIDO_PLACE = """\
+            <lido:eventPlace lido:type="Produktionsland">
+              <lido:place>
+{place_id}\
+                <lido:namePlaceSet>
+                  <lido:appellationValue>{name}</lido:appellationValue>
+                </lido:namePlaceSet>
+              </lido:place>
+            </lido:eventPlace>
+"""
+
+LIDO_PLACE_ID = """\
+                <lido:placeID lido:type="http://terminology.lido-schema.org/lido00100"
+                  lido:source="TGN">{tgn}</lido:placeID>
 """
 
 LIDO_GENRE = """\
@@ -221,17 +238,27 @@ def make_lido_record(
     gnd_source="GND",
     materials=(),
     keywords=(),
+    places=(),
+    measurement="Laufzeit",
 ):
     """Return the LIDO serialisation of one film holding."""
     return LIDO_RECORD.format(
         record_id=record_id,
         work_type=work_type,
+        measurement=measurement,
         published=(LIDO_PUBLISHED_ID.format(handle=handle) if handle else ""),
         title=title,
         colour=colour,
         date=date,
         duration=duration,
         genre=LIDO_GENRE.format(genre=genre) if genre else "",
+        places="".join(
+            LIDO_PLACE.format(
+                name=name,
+                place_id=(LIDO_PLACE_ID.format(tgn=tgn) if tgn else ""),
+            )
+            for name, tgn in places
+        ),
         keywords=(
             LIDO_KEYWORDS.format(
                 terms="".join(
