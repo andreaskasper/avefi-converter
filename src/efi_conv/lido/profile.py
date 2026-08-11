@@ -86,6 +86,11 @@ class LidoProfile:
         activities and are mapped onto the production event.
     duration_measurement_terms : frozenset
         Lower case measurementType terms denoting a running time.
+    extent_measurement_terms : frozenset
+        Lower case measurementType terms denoting the length of a
+        copy.
+    extent_unit_map : dict
+        Lower case measurement unit to the AVefi UnitEnum value.
     duration_units : dict
         Lower case measurementType to the unit its values are really
         in, overriding the unit stated in the record. Needed where a
@@ -188,6 +193,24 @@ class LidoProfile:
     )
     duration_measurement_terms: frozenset = frozenset(
         {"laufzeit", "dauer", "spieldauer", "running time", "duration"}
+    )
+    extent_measurement_terms: frozenset = frozenset(
+        {"länge", "laenge", "length", "extent"}
+    )
+    extent_unit_map: dict = field(
+        default_factory=lambda: {
+            "m": "Metre",
+            "meter": "Metre",
+            "metre": "Metre",
+            "metres": "Metre",
+            "ft": "Feet",
+            "feet": "Feet",
+            "fuß": "Feet",
+            "kb": "KiloByte",
+            "mb": "MegaByte",
+            "gb": "GigaByte",
+            "tb": "TeraByte",
+        }
     )
     duration_units: dict = field(default_factory=dict)
     classification_types: dict = field(

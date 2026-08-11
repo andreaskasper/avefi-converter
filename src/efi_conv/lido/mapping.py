@@ -216,7 +216,17 @@ MAPPING_RULES = (
         "Item",
         "lido:objectMeasurementsWrap//lido:measurementsSet[running time]",
         "has_duration.has_value",
-        "ISODurationInHours",
+        "ISODurationInHours; profile duration_units may state the unit",
+    ),
+    MappingRule(
+        "extent",
+        "Item",
+        "lido:objectMeasurementsWrap//lido:measurementsSet[length]",
+        "has_extent.has_value, has_extent.has_unit",
+        "Profile extent_unit_map",
+        "Transferred as the record states it. Where the length and the"
+        " running time cannot both be right for the format, that is"
+        " reported and neither is changed",
     ),
     MappingRule(
         "colour_type",
@@ -347,6 +357,10 @@ ASSUMPTIONS = (
     " A provider labelling a column once and filling it in another"
     " unit is a fact about that export, so it is corrected in its"
     " profile rather than guessed at in the mapping.",
+    "A length and a running time that contradict each other are both"
+    " transferred as stated and the contradiction is reported. Which"
+    " of the two is in the wrong unit is not decidable from the"
+    " record, and the provider is the one who knows.",
     "A running time of zero is read as none given. Cataloguing"
     " systems write an empty measurement as a zero, and recording"
     " `PT00H00M00S` would state that the copy runs no length.",
@@ -1398,7 +1412,10 @@ def build_item(lido_record, descriptive, primary, profile, source_key):
         item.has_format.append(
             efi.Film(type=efi.FormatFilmTypeEnum(film_format))
         )
+    # After the technical description: the plausibility check needs
+    # the format to know how fast the film runs.
     apply_technical_description(item, descriptive, profile, source_key)
+    apply_extent(item, descriptive, profile, source_key)
     # Before the keywords, because one of them can only be stated
     # about a copy that carries an identifier.
     for identifier in avefi_identifiers(lido_record, profile, source_key):
@@ -1742,31 +1759,146 @@ def add_language(item, code: str, usage: str) -> None:
     )
 
 
-def duration_measurement(descriptive, profile):
-    """Return value and unit of the running time measurement."""
+def measurements(descriptive):
+    """Yield the measurements of a record as type, value and unit."""
     wrap = getattr(
         descriptive.object_identification_wrap,
         "object_measurements_wrap",
         None,
     )
     if wrap is None:
-        return None, None
+        return
     for measurements_set in wrap.object_measurements_set or []:
-        measurements = measurements_set.object_measurements
-        if measurements is None:
+        entries = measurements_set.object_measurements
+        if entries is None:
             continue
-        for entry in measurements.measurements_set or []:
+        for entry in entries.measurements_set or []:
             kind = text_of(first(entry.measurement_type))
-            if not kind or kind.lower() not in (
-                profile.duration_measurement_terms
-            ):
-                continue
             value = text_of(first(entry.measurement_value))
-            unit = text_of(first(entry.measurement_unit))
+            if not kind or not value:
+                continue
+            yield kind, value, text_of(first(entry.measurement_unit))
+
+
+def duration_measurement(descriptive, profile):
+    """Return value and unit of the running time measurement."""
+    for kind, value, unit in measurements(descriptive):
+        if kind.lower() in profile.duration_measurement_terms:
             override = profile.duration_units.get(kind.lower())
-            if value:
-                return value, override or unit
+            return value, override or unit
     return None, None
+
+
+#: Metres of film per minute at 24 frames a second, by format. Used
+#: only to notice that a stated length and a stated running time
+#: cannot both be right, never to change either of them.
+METRES_PER_MINUTE = {
+    "35mmFilm": 27.36,
+    "16mmFilm": 10.97,
+    "8mmFilm": 4.01,
+    "Super8mmFilm": 4.88,
+}
+
+#: How far the two may disagree before it is worth reporting. Generous
+#: on purpose: prints run at other speeds, leaders and trailers are
+#: counted or not, and a factor of three is still an ordinary record.
+EXTENT_DISAGREEMENT_FACTOR = 10
+
+
+def extent_measurement(descriptive, profile):
+    """Return value and unit of the length measurement."""
+    for kind, value, unit in measurements(descriptive):
+        if kind.lower() in profile.extent_measurement_terms:
+            return value, unit
+    return None, None
+
+
+def apply_extent(item, descriptive, profile, source_key):
+    """Record the length of a copy, and check it against its duration."""
+    value, unit = extent_measurement(descriptive, profile)
+    if not value:
+        return
+    try:
+        amount = float(str(value).replace(",", "."))
+    except ValueError:
+        report_issue(
+            "warning",
+            "Length is not a number",
+            record_id=source_key,
+            source_field="measurementsSet[length]",
+            target_field="has_extent",
+            raw_value=value,
+        )
+        return
+    if round(amount) == 0:
+        return
+    mapped = profile.extent_unit_map.get(str(unit or "").strip().lower())
+    if mapped is None:
+        report_issue(
+            "warning",
+            "No AVefi unit configured for this measurement unit",
+            record_id=source_key,
+            source_field="measurementsSet[length]",
+            target_field="has_extent.has_unit",
+            raw_value=unit,
+        )
+        return
+    item.has_extent = efi.Extent(
+        has_value=amount, has_unit=efi.UnitEnum(mapped)
+    )
+    check_extent_against_duration(item, source_key, value, unit)
+
+
+def check_extent_against_duration(item, source_key, value, unit) -> None:
+    """Report a length and a running time that contradict each other.
+
+    Both are transferred as the record states them. This only says
+    that they cannot both be right, which is worth knowing before
+    anybody computes with either: in the reference export the length
+    column is labelled in metres and holds centimetres for two records
+    in three.
+
+    """
+    if item.has_extent is None or item.has_duration is None:
+        return
+    speeds = [
+        METRES_PER_MINUTE[str(fmt.type)]
+        for fmt in item.has_format or []
+        if str(fmt.type) in METRES_PER_MINUTE
+    ]
+    if len(speeds) != 1 or item.has_extent.has_unit != "Metre":
+        return
+    minutes = iso_duration_minutes(item.has_duration.has_value)
+    if not minutes:
+        return
+    expected = minutes * speeds[0]
+    # has_value is a Decimal in the schema; the comparison is about
+    # orders of magnitude, so float is the right precision for it.
+    ratio = float(item.has_extent.has_value) / expected
+    if 1 / EXTENT_DISAGREEMENT_FACTOR <= ratio <= EXTENT_DISAGREEMENT_FACTOR:
+        return
+    report_issue(
+        "info",
+        f"Length and running time disagree by a factor of"
+        f" {ratio:.0f}; both are transferred as stated, but the unit"
+        f" of one of them is not what the record says it is",
+        record_id=source_key,
+        source_field="measurementsSet[length]",
+        target_field="has_extent.has_value",
+        raw_value=f"{value} {unit or ''}".strip(),
+    )
+
+
+def iso_duration_minutes(value: str | None) -> float | None:
+    """Return an ISODurationInHours as a number of minutes."""
+    if not value:
+        return None
+    match = re.match(r"^PT(\d+)H(\d\d)M(\d\d)S$", value)
+    if not match:
+        return None
+    hours, minutes, seconds = (int(part) for part in match.groups())
+    total = hours * 60 + minutes + seconds / 60
+    return total or None
 
 
 def find_event(descriptive, terms):

@@ -21,7 +21,8 @@ do not edit by hand.
 | `agent_authority` | Work | `lido:actor/lido:actorID[@lido:source in GND, VIAF, Wikidata]` | `has_event.has_activity.has_agent.same_as` | — | Transferred where the source carries it; nothing is looked up and nothing is added |
 | `other_agent` | Work | `lido:eventActor/lido:actorInRole (roles with no activity)` | `—` | — | Reported as unmapped rather than dropped silently |
 | `publication_date` | Manifestation | `lido:event[publication]/lido:eventDate and lido:eventPlace` | `has_event (PublicationEvent, ReleaseEvent)` | ISODate | — |
-| `duration` | Item | `lido:objectMeasurementsWrap//lido:measurementsSet[running time]` | `has_duration.has_value` | ISODurationInHours | — |
+| `duration` | Item | `lido:objectMeasurementsWrap//lido:measurementsSet[running time]` | `has_duration.has_value` | ISODurationInHours; profile duration_units may state the unit | — |
+| `extent` | Item | `lido:objectMeasurementsWrap//lido:measurementsSet[length]` | `has_extent.has_value, has_extent.has_unit` | Profile extent_unit_map | Transferred as the record states it. Where the length and the running time cannot both be right for the format, that is reported and neither is changed |
 | `colour_type` | Item | `lido:classification[@lido:type in profile classification_types['colour']]` | `has_colour_type` | Profile vocabulary | — |
 | `format` | Item | `lido:classification[@lido:type in profile classification_types['format']]` | `has_format (Film)` | Profile vocabulary | — |
 | `access_status` | Item | `lido:classification[@lido:type in profile classification_types['access']]` | `has_access_status` | Profile vocabulary | — |
@@ -47,6 +48,7 @@ Decisions the mapping takes that LIDO does not determine, and that need confirmi
 - Words joining an interval — `zwischen 1940 und 1945`, `1970 bis 1977` — are read as the interval they spell out. An open one, `nach 1989`, is reported instead: level 0 cannot express it, and reading it as 1989 would state a year the source refuses to give.
 - Month names are read in German and English, full and abbreviated. `8/1988` is read as a month and year rather than an interval, because the left hand side cannot be a year.
 - A running time given as a bare number without a unit is read as minutes, unless the profile states the unit of that measurement. A provider labelling a column once and filling it in another unit is a fact about that export, so it is corrected in its profile rather than guessed at in the mapping.
+- A length and a running time that contradict each other are both transferred as stated and the contradiction is reported. Which of the two is in the wrong unit is not decidable from the record, and the provider is the one who knows.
 - A running time of zero is read as none given. Cataloguing systems write an empty measurement as a zero, and recording `PT00H00M00S` would state that the copy runs no length.
 - Production places keep the name the source gives, including historical states such as `DDR` or `Deutsches Reich`. That is the country the film was made in at the time, which is the part worth having; where the record carries an authority identifier it is transferred, and that is what resolves the spelling.
 - Clock notation with two components, such as `1:43`, is read as minutes and seconds, not as hours and minutes.

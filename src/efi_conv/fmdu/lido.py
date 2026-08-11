@@ -263,6 +263,16 @@ DURATION_MEASUREMENT_TERMS = frozenset(
 )
 DURATION_UNITS = {"zeit": "h"}
 
+#: The measurement holding the length of a copy.
+#:
+#: Transferred as the record states it, in metres. Be aware that the
+#: unit is not reliable in this export: of 1947 comparable 35 mm
+#: records, 1334 hold centimetres and 613 metres, all of them labelled
+#: "m". Nothing is corrected here — the conversion reports where a
+#: length and a running time cannot both be right and leaves the
+#: decision with the provider.
+EXTENT_MEASUREMENT_TERMS = frozenset({"länge", "laenge", "length"})
+
 #: Profile class a profile file is read into.
 PROFILE_CLASS = LidoProfile
 
@@ -282,6 +292,7 @@ PROFILE = LidoProfile(
     subject_role_terms=SUBJECT_ROLE_TERMS,
     duration_measurement_terms=DURATION_MEASUREMENT_TERMS,
     duration_units=DURATION_UNITS,
+    extent_measurement_terms=EXTENT_MEASUREMENT_TERMS,
     keyword_classification_types=frozenset({"schlagwort"}),
     language_name_map=LANGUAGE_NAME_MAP,
     materials_tech_map=MATERIALS_TECH_MAP,

@@ -837,3 +837,95 @@ class TestFormGenreAndSubject:
         assert [(a.category, a.id) for a in work.has_subject[0].same_as] == [
             ("avefi:GNDResource", "118715585")
         ]
+
+
+class TestExtent:
+    """The length of a copy, and a unit that is not to be trusted.
+
+    Of 1947 comparable 35 mm records, 1334 hold centimetres and 613
+    metres, all of them labelled "m". The conversion transfers what
+    the record says and reports where the length and the running time
+    cannot both be right. Correcting one of them would be guessing
+    which, and the provider is the one who knows.
+
+    """
+
+    def item_with(self, lido_page, lido_record, **kwargs):
+        source = lido_page("export.xml", lido_record("FMDU-0001", **kwargs))
+        return next(
+            r
+            for r in fmdu_lido.efi_import(source)
+            if r.category == "avefi:Item"
+        )
+
+    def test_the_length_is_transferred(self, lido_page, lido_record):
+        item = self.item_with(lido_page, lido_record, extent="2523")
+        assert float(item.has_extent.has_value) == 2523
+        assert item.has_extent.has_unit == "Metre"
+
+    def test_a_zero_length_is_not_a_length(self, lido_page, lido_record):
+        item = self.item_with(lido_page, lido_record, extent="0E-10")
+        assert item.has_extent is None
+
+    def test_an_unknown_unit_is_reported(self, lido_page, lido_record):
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            item = self.item_with(
+                lido_page, lido_record, extent="2523", extent_unit="Ellen"
+            )
+        assert item.has_extent is None
+        assert [
+            entry
+            for entry in report.entries
+            if entry.target_field == "has_extent.has_unit"
+        ]
+
+    def test_a_plausible_pair_says_nothing(self, lido_page, lido_record):
+        """2523 m of 35 mm is 92 minutes at 24 frames a second."""
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            self.item_with(
+                lido_page,
+                lido_record,
+                extent="2523",
+                measurement="Zeit",
+                duration="1.5206666667",
+                materials=(("35mmFilm", "FormatFilmTypeEnum"),),
+            )
+        assert not [
+            entry for entry in report.entries if "disagree" in entry.message
+        ]
+
+    def test_a_length_in_the_wrong_unit_is_reported(
+        self, lido_page, lido_record
+    ):
+        """The same copy with the length in centimetres.
+
+        Both values are still transferred as stated; the report says
+        that the two contradict each other, which is what anybody
+        computing with either needs to know first.
+
+        """
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            item = self.item_with(
+                lido_page,
+                lido_record,
+                extent="252300",
+                measurement="Zeit",
+                duration="1.5206666667",
+                materials=(("35mmFilm", "FormatFilmTypeEnum"),),
+            )
+        assert float(item.has_extent.has_value) == 252300
+        assert [
+            entry
+            for entry in report.entries
+            if "disagree" in entry.message
+            and entry.target_field == "has_extent.has_value"
+        ]

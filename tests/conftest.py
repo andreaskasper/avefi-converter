@@ -92,6 +92,7 @@ LIDO_RECORD = """\
                   xml:lang="de">{measurement}</lido:measurementType>
                 <lido:measurementValue>{duration}</lido:measurementValue>
               </lido:measurementsSet>
+{extent}\
             </lido:objectMeasurements>
           </lido:objectMeasurementsSet>
         </lido:objectMeasurementsWrap>
@@ -167,6 +168,15 @@ LIDO_RELATED_WORK_SET = """\
               <lido:term xml:lang="de">{rel}</lido:term>
             </lido:relatedWorkRelType>
           </lido:relatedWorkSet>
+"""
+
+LIDO_EXTENT = """\
+              <lido:measurementsSet>
+                <lido:measurementType
+                  xml:lang="de">Länge</lido:measurementType>
+                <lido:measurementUnit>{unit}</lido:measurementUnit>
+                <lido:measurementValue>{value}</lido:measurementValue>
+              </lido:measurementsSet>
 """
 
 LIDO_GENRE = """\
@@ -268,6 +278,8 @@ def make_lido_record(
     record_type="Item",
     related=(),
     related_rel="Film",
+    extent="",
+    extent_unit="m",
 ):
     """Return the LIDO serialisation of one film holding."""
     return LIDO_RECORD.format(
@@ -275,6 +287,11 @@ def make_lido_record(
         work_type=work_type,
         measurement=measurement,
         record_type=record_type,
+        extent=(
+            LIDO_EXTENT.format(value=extent, unit=extent_unit)
+            if extent
+            else ""
+        ),
         related=(
             LIDO_RELATED_WORK.format(
                 sets="".join(
