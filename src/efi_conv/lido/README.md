@@ -27,6 +27,7 @@ flowchart TD
     NEW --> MK{"manifestation key known?<br/>colour · format · language"}
     MK -->|yes| MREUSE["reuse Manifestation"]
     MK -->|no| MNEW["new Manifestation<br/>+ publication event"]
+    MK -.->|"the record names it"| MPID["its own identifier is the key"]
     MREUSE --> MP["PID from the is_item_of relation"]
     MNEW --> MP
     MP --> IT["Item<br/>duration, carrier, access status<br/>languages by their label<br/>PID and links from objectPublishedID"]
@@ -50,10 +51,13 @@ describes one object and the object is the copy. The **work** and the
 work's handle and its authority links, one with
 `manifestation_rel_terms` carries the manifestation's.
 
-Which identifier of a related record is which follows from the value and
-not from its position, LIDO ordering nothing: a handle with the profile's
-prefix is the AVefi identifier, a value matching an authority's URI
-becomes `same_as`, and what is left is the provider's own key.
+Which identifier of a related record is which follows from what the
+record says about it and not from its position, LIDO ordering nothing:
+the one whose `lido:source` names AVefi is the AVefi identifier, one
+naming another authority becomes `same_as`, and what is left is the
+provider's own key. The handle prefix is not the criterion — AVefi will
+register under more than one — and is used only where a record states
+no source at all.
 
 A handle is always added **beside** the local identifier and never in
 front of it. `is_item_of` and `is_manifestation_of` refer to a record by
@@ -65,6 +69,13 @@ run succeeds and the output validates. The conversion therefore compares
 its own input and output and reports any handle the record states that
 no record derived from it carries, naming the relation it stood under.
 That is usually a term missing from the profile.
+
+Grouping is by what the provider states wherever it states anything.
+Copies of one manifestation are one manifestation because the record
+names it, whatever else the two records say about colour, format and
+language; the derived key is the fallback for a copy that names none.
+Deriving it in both cases produced two manifestations carrying one
+identifier between them, which `efi-conv check` rejects.
 
 Grouping matters: several LIDO records commonly describe several copies
 of one film. Emitting a work per record would register identifiers for
