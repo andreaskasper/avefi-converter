@@ -88,6 +88,22 @@ Beide werden **neben** den lokalen Identifier gestellt, nicht an seine
 Stelle: `is_item_of` und `is_manifestation_of` verweisen über den lokalen
 Identifier, und der bleibt deshalb der erste.
 
+```mermaid
+flowchart LR
+    subgraph REC["Ein LIDO-Datensatz des Hauses"]
+      direction TB
+      P["objectPublishedID"]
+      RF["relatedWorkSet<br/>relType = Film"]
+      RI["relatedWorkSet<br/>relType = is item of"]
+    end
+    P -->|"source = www.av-efi.net"| IP["<b>Exemplar</b><br/>has_identifier · PID"]
+    P -->|"eine URL"| IW["<b>Exemplar</b><br/>has_webresource"]
+    RF -->|"source = www.av-efi.net"| WP["<b>Werk</b><br/>has_identifier · PID"]
+    RF -->|"source = www.filmportal.de"| WS["<b>Werk</b><br/>same_as"]
+    RF -->|"lokale ID"| WL["<b>Werk</b><br/>lokaler Identifier"]
+    RI -->|"source = www.av-efi.net"| MP["<b>Fassung</b><br/>has_identifier · PID<br/>und Schlüssel der Gruppierung"]
+```
+
 Erkannt wird eine AVefi-PID an `lido:source="www.av-efi.net"` und nicht am
 Präfix `21.11155`. AVefi wird unter weiteren Präfixen registrieren, und ein
 Datensatz, der den Aussteller eines Identifikators nennt, hat die Frage schon
@@ -113,9 +129,10 @@ Hängen zwei Kopien derselben Fassung an unterschiedlichen Werken, wird das
 gemeldet und die Fassung behält die Werke des Datensatzes, der sie eingeführt
 hat. Eine Fassung gehört zu einem Film, nicht zu zweien.
 
-Warum das wichtig ist: Ohne diese Übernahme fordert jede Nachlieferung eine
-zweite Identität für Werke, Fassungen und Kopien, die längst eine haben. Ein
-Handle lässt sich nicht zurücknehmen.
+> [!IMPORTANT]
+> Ohne diese Übernahme fordert jede Nachlieferung eine zweite Identität für
+> Werke, Fassungen und Kopien, die längst eine haben. **Ein Handle lässt sich
+> nicht zurücknehmen.**
 
 ## Der Filmportal-Eintrag steht beim Werk
 
@@ -205,7 +222,7 @@ aber **nicht** in Ereignisse verwandelt: eine Notiz über das Material sagt
 nicht, dass der Film verliehen oder restauriert wurde. Das ist mit dem Haus
 zu klären.
 
-## Sprache und Zugangsstatus liegen unter „Schlagwort"
+## Sprache und Zugangsstatus liegen unter einer Schlagwort-Klassifikation
 
 In einer Klassifikation liegen nebeneinander: Sprachen („Deutsch",
 „Englisch"), Zugangsstatus („Archivkopie", „Verleihkopie", „Master",
@@ -245,7 +262,12 @@ Drei Feinheiten:
   Datensatz bleibt dann ohne Status und wird gemeldet: ob eine
   deakzessionierte Kopie in eine Lieferung gehört, entscheidet das Haus.
 
-## ⚠️ Die Laufzeit steht in Stunden, obwohl „Min" dransteht
+## Die Laufzeit steht in Stunden, obwohl Min dransteht
+
+> [!WARNING]
+> Die Spalte ist mit „Min" beschriftet und enthält Stunden. Wer das übersieht,
+> liefert einen Bestand aus, dessen mittlere Laufzeit vierzehn Sekunden
+> beträgt.
 
 Die wichtigste Eigenheit, weil sie sich nicht von selbst zeigt.
 
@@ -309,3 +331,7 @@ dem Datensatz nicht hervor.
 | Lokale ID des Werks lautet `<ID>_work`, nicht `<ID>` — so gewollt? | — |
 | Uneindeutige Datumsangaben, überwiegend Jahrzehnte | 85 |
 | Einheit der Längenangabe — Länge und Laufzeit widersprechen sich | 2347 |
+
+---
+
+← [6 · Daten ernten](06-ernten.md) · [Übersicht](README.md) · [8 · Wenn etwas schiefgeht](08-fehlerbehebung.md) →
