@@ -50,9 +50,10 @@ def test_copies_of_one_film_share_a_work(input_path):
     """
     efi_records = from_.import_file(fmdu_lido, input_path("sample_data.xml"))
     categories = [record.category for record in efi_records]
-    # Four film records, two of them prints of the same film, plus one
-    # poster that is not a film holding at all.
-    assert categories.count("avefi:Item") == 4
+    # Five film records, two of them prints of the same film and two
+    # copies of one manifestation, plus one poster that is not a film
+    # holding at all.
+    assert categories.count("avefi:Item") == 5
     assert categories.count("avefi:WorkVariant") == 3
     assert categories.count("avefi:Manifestation") == 4
 
@@ -957,3 +958,213 @@ class TestAHandleThatReachesNothing:
         self, lido_page, lido_record
     ):
         assert self.lost(self.report_for(lido_page, lido_record)) == []
+
+
+class TestWhoIssuedAnIdentifier:
+    """The record says so, and that is a better answer than its shape.
+
+    Reading an AVefi identifier off the handle prefix worked while
+    there was one prefix. There will be more, and a record that names
+    the issuer of an identifier has already answered the question the
+    prefix was standing in for.
+
+    """
+
+    OTHER_PREFIX = (
+        "https://hdl.handle.net/21.99999/8C5A0C79-7A6C-44EC-8920-01C8A158BFBC"
+    )
+
+    def work_with(self, lido_page, lido_record, *identifiers):
+        source = lido_page(
+            "export.xml",
+            lido_record(
+                "955613",
+                related=[
+                    ("955613", "Im Dorf der weissen Störche", identifiers)
+                ],
+            ),
+        )
+        return one(fmdu_lido.efi_import(source), "avefi:WorkVariant")
+
+    def test_a_handle_under_a_prefix_we_do_not_know_yet_is_read(
+        self, lido_page, lido_record
+    ):
+        work = self.work_with(
+            lido_page, lido_record, ("www.av-efi.net", self.OTHER_PREFIX)
+        )
+        assert work.has_identifier[1].id == (
+            "21.99999/8C5A0C79-7A6C-44EC-8920-01C8A158BFBC"
+        )
+
+    def test_the_resolver_is_not_part_of_the_identifier(
+        self, lido_page, lido_record
+    ):
+        work = self.work_with(
+            lido_page, lido_record, ("www.av-efi.net", WORK_HANDLE_URL)
+        )
+        assert work.has_identifier[1].id == WORK_HANDLE
+
+    def test_a_bare_handle_is_read_as_it_stands(self, lido_page, lido_record):
+        work = self.work_with(
+            lido_page, lido_record, ("www.av-efi.net", WORK_HANDLE)
+        )
+        assert work.has_identifier[1].id == WORK_HANDLE
+
+    def test_an_identifier_of_another_authority_is_not_an_avefi_one(
+        self, lido_page, lido_record
+    ):
+        work = self.work_with(
+            lido_page, lido_record, ("www.filmportal.de", FILMPORTAL_URL)
+        )
+        assert [i.category for i in work.has_identifier] == [
+            "avefi:LocalResource"
+        ]
+
+    def test_both_shapes_of_a_filmportal_url_give_one_identifier(
+        self, lido_page, lido_record
+    ):
+        """The two resolve to the same work, so they say the same thing."""
+        short = "https://www.filmportal.de/" + FILMPORTAL_ID
+        with_path = FILMPORTAL_URL
+        for url in (short, with_path):
+            work = self.work_with(
+                lido_page, lido_record, ("www.filmportal.de", url)
+            )
+            assert [(link.category, link.id) for link in work.same_as] == [
+                ("avefi:FilmportalResource", FILMPORTAL_ID)
+            ]
+
+    def test_an_unknown_source_is_left_as_the_local_key(
+        self, lido_page, lido_record
+    ):
+        work = self.work_with(
+            lido_page, lido_record, ("Digitales Kunstarchiv", "955613")
+        )
+        assert [i.id for i in work.has_identifier] == ["955613_work"]
+        assert work.same_as == []
+
+
+class TestCopiesOfOneManifestation:
+    """Several copies belong to one manifestation, and it says which.
+
+    The converter used to decide by deriving a key from the copy —
+    colour, format, languages. Two copies described differently then
+    became two manifestations, and both were given the one identifier
+    the provider stated for them. `efi-conv check` rejects that, and
+    rightly: an identifier that names two records names neither.
+
+    """
+
+    def records_for(self, lido_page, lido_record, first, second):
+        source = lido_page(
+            "export.xml",
+            lido_record("955613", **first),
+            lido_record("955614", **second),
+        )
+        return fmdu_lido.efi_import(source)
+
+    def belongs_to(self, work_id="955613", handle=MANIFESTATION_HANDLE_URL):
+        return {
+            "related": [(work_id, "Im Dorf der weissen Störche")],
+            "manifestation_handle": handle,
+        }
+
+    def test_two_copies_described_differently_are_one_manifestation(
+        self, lido_page, lido_record
+    ):
+        records = self.records_for(
+            lido_page,
+            lido_record,
+            {**self.belongs_to(), "colour": "Farbe"},
+            {**self.belongs_to(), "colour": "sw"},
+        )
+        manifestation = one(records, "avefi:Manifestation")
+        assert manifestation.has_identifier[1].id == MANIFESTATION_HANDLE
+        assert len([r for r in records if r.category == "avefi:Item"]) == 2
+
+    def test_both_copies_point_at_it(self, lido_page, lido_record):
+        records = self.records_for(
+            lido_page,
+            lido_record,
+            {**self.belongs_to(), "colour": "Farbe"},
+            {**self.belongs_to(), "colour": "sw"},
+        )
+        manifestation = one(records, "avefi:Manifestation")
+        items = [r for r in records if r.category == "avefi:Item"]
+        assert {item.is_item_of.id for item in items} == {
+            manifestation.has_identifier[0].id
+        }
+
+    def test_the_identifiers_stay_unique(self, lido_page, lido_record):
+        """Which is what efi-conv check was complaining about."""
+        records = self.records_for(
+            lido_page,
+            lido_record,
+            {**self.belongs_to(), "colour": "Farbe"},
+            {**self.belongs_to(), "colour": "sw"},
+        )
+        ids = [
+            identifier.id
+            for record in records
+            for identifier in record.has_identifier
+        ]
+        assert len(ids) == len(set(ids))
+        assert check.pass_checks(records, check.get_schema_validator())
+
+    def test_a_copy_without_the_identifier_still_finds_it(
+        self, lido_page, lido_record
+    ):
+        """The derived key is kept as a second way in."""
+        records = self.records_for(
+            lido_page,
+            lido_record,
+            self.belongs_to(),
+            {"related": [("955613", "Im Dorf der weissen Störche")]},
+        )
+        assert (
+            len([r for r in records if r.category == "avefi:Manifestation"])
+            == 1
+        )
+
+    def test_two_manifestations_keep_their_own_local_identifier(
+        self, lido_page, lido_record
+    ):
+        """Even where the copies look the same to the derived key.
+
+        The provider says they are two, so they are two, and one local
+        identifier between them would be the same duplicate in another
+        shape.
+
+        """
+        other = (
+            "https://hdl.handle.net/21.11155/"
+            "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE"
+        )
+        records = self.records_for(
+            lido_page,
+            lido_record,
+            self.belongs_to(),
+            self.belongs_to(handle=other),
+        )
+        manifestations = [
+            r for r in records if r.category == "avefi:Manifestation"
+        ]
+        assert len(manifestations) == 2
+        ids = [m.has_identifier[0].id for m in manifestations]
+        assert len(set(ids)) == 2
+
+    def test_copies_attached_to_different_works_are_reported(
+        self, lido_page, lido_record
+    ):
+        """A manifestation belongs to one film, not to two."""
+        report = ConversionReport()
+        with collecting(report):
+            self.records_for(
+                lido_page,
+                lido_record,
+                self.belongs_to(work_id="955613"),
+                self.belongs_to(work_id="955699"),
+            )
+        assert any(
+            "different works" in entry.message for entry in report.entries
+        )
