@@ -63,13 +63,64 @@ wieder drin:
 
 Im Referenzexport tragen 3712 von 5562 Datensätzen einen — genau die 3712
 Exemplare der früheren CSV-Lieferung. Der Konverter übernimmt sie als
-`avefi:AVefiResource` am **Exemplar**. Werk- und Fassungs-PIDs stehen nicht
-im Export; ein LIDO-Datensatz beschreibt ein Objekt, und das Objekt ist die
-Kopie.
+`avefi:AVefiResource` am **Exemplar**.
+
+Werk und Manifestation tragen ihre PID ebenfalls, aber nicht hier: ein
+LIDO-Datensatz beschreibt die Kopie, also ist `objectPublishedID` die PID
+der Kopie. Werk und Manifestation stehen in den **Beziehungen** des
+Datensatzes, und dort steht auch ihr Handle:
+
+```xml
+<lido:relatedWorkSet>
+  <lido:relatedWork><lido:object>
+    <lido:objectID lido:source="www.av-efi.net"
+      >https://hdl.handle.net/21.11155/73F965CE-…</lido:objectID>
+  </lido:object></lido:relatedWork>
+  <lido:relatedWorkRelType>
+    <lido:conceptID>https://www.av-efi.net/av-efi-schema/is_item_of</lido:conceptID>
+    <lido:term xml:lang="en">is item of</lido:term>
+  </lido:relatedWorkRelType>
+</lido:relatedWorkSet>
+```
+
+`relType` `Film` liefert die Werk-PID, `is_item_of` die der Manifestation.
+Beide werden **neben** den lokalen Identifier gestellt, nicht an seine
+Stelle: `is_item_of` und `is_manifestation_of` verweisen über den lokalen
+Identifier, und der bleibt deshalb der erste.
 
 Warum das wichtig ist: Ohne diese Übernahme fordert jede Nachlieferung eine
-zweite Identität für Kopien, die längst eine haben. Ein Handle lässt sich
-nicht zurücknehmen.
+zweite Identität für Werke, Fassungen und Kopien, die längst eine haben. Ein
+Handle lässt sich nicht zurücknehmen.
+
+## Der Filmportal-Eintrag steht beim Werk
+
+Im selben `relatedWorkSet` steht neben der lokalen ID und dem Handle oft
+noch der Filmportal-Identifier des Werks:
+
+```xml
+<lido:objectID lido:source="www.filmportal.de"
+  >https://www.filmportal.de/film/4029730364e64a1a9bc0d3f5fd3534f4</lido:objectID>
+```
+
+Er wird zu `same_as` am Werk, als `avefi:FilmportalResource` mit der bloßen
+ID — nicht mit der URL, in der sie geschrieben steht. Erkannt wird er an
+der Form des Werts und nicht an `lido:source`: wie ein Haus die Normdatei
+benennt, ist seine Sache, die URI der Normdatei ist es nicht.
+
+## Die Objektseite ist eine Webressource
+
+`objectPublishedID` enthält zweierlei: das AVefi-Handle und die Adresse der
+Objektseite im hauseigenen System.
+
+```xml
+<lido:objectPublishedID lido:type="…/lido00100"
+  >http://www.duesseldorf.de/dkult/DE-MUS-432511/994335</lido:objectPublishedID>
+```
+
+Der Wert entscheidet, welches von beidem vorliegt, nicht `lido:type` — das
+Haus typisiert die Adresse als „Local identifier", eine URL ist sie
+trotzdem. Was eine URL ist und kein Handle, wird zu `has_webresource` am
+Exemplar.
 
 ## Die Mitwirkenden stehen in einem eigenen Ereignis
 
@@ -132,11 +183,30 @@ Genre-Liste — „Deutsch" 1922 Mal als Genre des Films.
 Jetzt entscheidet der Begriff. Eine Sprache wird zur Sprache, ein
 Zugangsstatus zum Zugangsstatus, alles andere wird gemeldet.
 
-Zwei Feinheiten:
+Drei Feinheiten:
 
-- Die Sprache steht **ohne Verwendungsangabe** da. Sie wird als gesprochene
-  Sprache gelesen — der Normalfall, und das, was der CSV-Importer desselben
-  Hauses schreibt. Die Annahme steht im Bericht.
+- Trägt der Begriff ein `lido:label`, sagt das Label, **wofür** die Sprache
+  da ist, und nur das Label sagt es: die Begriffe selbst heißen alle
+  „Deutsch" oder „Englisch".
+
+  ```xml
+  <lido:term lido:label="Untertitel" lido:pref="alternate">Englisch</lido:term>
+  ```
+
+  wird zu `{"code": "eng", "usage": ["Subtitles"]}`. Bekannt sind
+  „Dialogton" (`SpokenLanguage`), „Untertitel" (`Subtitles`) und
+  „Zwischentitel" (`Intertitles`); weitere Label kommen ins Profil unter
+  `language_usage_labels`. Ein unbekanntes Label wird gemeldet, statt die
+  Sprache als gesprochene zu lesen — eine englische Untertitelspur ist
+  keine englische Tonspur.
+
+  „Ohne Sprache" unter „Dialogton" wird zu `{"usage": ["NoDialogue"]}`,
+  ohne Sprachcode: Der Satz sagt etwas über die Kopie aus und nicht über
+  eine Sprache, und `zxx` wäre die Antwort auf eine Frage, die niemand
+  gestellt hat.
+- Die Sprache **ohne Label** steht ohne Verwendungsangabe da. Sie wird als
+  gesprochene Sprache gelesen — der Normalfall, und das, was der
+  CSV-Importer desselben Hauses schreibt. Die Annahme steht im Bericht.
 - „Deakzession" wird zu `Removed`, **aber nur** bei einem Exemplar mit PID.
   Ohne PID sagt der Status nichts und `efi-conv check` weist ihn zurück. Der
   Datensatz bleibt dann ohne Status und wird gemeldet: ob eine
@@ -203,5 +273,6 @@ dem Datensatz nicht hervor.
 | „Coloriert" hat kein Gegenstück in `ColourTypeEnum` | 2 |
 | „Amateurfilm", „bewegtes Bild-Werk" unter einer ungültigen `conceptID` | 27 |
 | Sechs Datensätze mit Titelbestandteilen in `objectWorkType` | 6 |
+| Lokale ID des Werks lautet `<ID>_work`, nicht `<ID>` — so gewollt? | — |
 | Uneindeutige Datumsangaben, überwiegend Jahrzehnte | 85 |
 | Einheit der Längenangabe — Länge und Laufzeit widersprechen sich | 2347 |
