@@ -198,6 +198,7 @@ def efi_from(
             # where it notices, so there is nothing to conclude here.
             if report.files_unrecognised > unrecognised_before:
                 unreadable_files.append(input_file)
+        finish_shared_context(importer, context, generated_records)
     if generated_records:
         sort_source_keys(generated_records)
         generated_records = avefi.sort_records(generated_records)
@@ -293,6 +294,29 @@ def new_shared_context(importer):
     if factory is None or not accepts(importer, "context"):
         return None
     return factory()
+
+
+def finish_shared_context(importer, context, records):
+    """Let a converter check a conversion once it is complete.
+
+    Some things are only true or false of a whole conversion. Whether
+    an identifier a record states reached the output cannot be
+    answered while that record is being mapped: the record it belongs
+    to may be further down the file, or in the next one. Asking too
+    early is worse than not asking, because a check that cries wolf
+    gets ignored and then it is not there for the case it was built
+    for.
+
+    A converter opts in by offering ``finish_context`` beside
+    ``new_context``.
+
+    """
+    if context is None:
+        return
+    finish = getattr(importer, "finish_context", None)
+    if finish is None:
+        return
+    finish(context, records)
 
 
 def sort_source_keys(records):
