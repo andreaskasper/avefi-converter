@@ -1,4 +1,13 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="bilder/avefi-logo-dunkel.png">
+  <img src="bilder/avefi-logo.png" alt="AVefi" width="200">
+</picture>
+
 # Handbuch
+
+</div>
 
 Anleitung für alle, die Bestandsdaten nach AVefi konvertieren — geschrieben
 für die Menschen in den Archiven und Museen, nicht für Entwicklerinnen und
@@ -29,3 +38,33 @@ Identifikator des Exemplars bleiben.
 **Geraten wird nicht.** Wo die Quelle schweigt, bleibt das Feld leer. Ein
 plausibler Wert, den niemand angegeben hat, ist im Verbund schlimmer als eine
 Lücke, die man sieht.
+
+## Über das Projekt
+
+AVefi — „Automatisiertes Verbundsystem für audiovisuelle Bestände über
+einheitliche Film-Identifikatoren" — baut ein zentrales, PID-basiertes
+Verbundsystem für audiovisuelle Bestände auf. Filmhaltende Häuser und
+Infrastrukturanbieter arbeiten darin zusammen, damit ein Film über
+Sammlungsgrenzen hinweg eindeutig benannt werden kann.
+
+**Projektpartner**
+
+- Leibniz-Informationszentrum Technik und Naturwissenschaften (TIB), Hannover
+- Stiftung Deutsche Kinemathek — Museum für Film und Fernsehen (SDK), Berlin
+- Gesellschaft für wissenschaftliche Datenverarbeitung mbH Göttingen (GWDG)
+- Filmmuseum der Landeshauptstadt Düsseldorf (FMDU)
+
+Die GWDG ist an allen Arbeitspaketen beteiligt und verantwortet Aufbau und
+Betrieb der technischen Infrastruktur sowie die Middle-Layer-Software.
+
+**Förderung**
+
+Gefördert von der Deutschen Forschungsgemeinschaft (DFG),
+Fördernummer **517778207**.
+
+**Weiterführend**
+
+- Projektseite der GWDG: <https://gwdg.de/projects/avefi/>
+- Projektseite der TIB: <https://projects.tib.eu/av-efi/>
+- Quellcode und Schema: <https://github.com/AV-EFI>
+- Kontakt: <contact@av-efi.net>
