@@ -66,9 +66,17 @@ pointing at nothing.
 
 Losing a handle is expensive — one cannot be withdrawn — and silent: the
 run succeeds and the output validates. The conversion therefore compares
-its own input and output and reports any handle the record states that
-no record derived from it carries, naming the relation it stood under.
-That is usually a term missing from the profile.
+its own input and output, once every input file has been read, and
+reports any handle the input states that no record of the output
+carries, naming the relation it stood under. That is usually a term
+missing from the profile.
+
+The comparison waits for the end of the conversion because that is when
+it can be made. Copies of one film refer to each other by identifier, so
+a handle one record does not carry is commonly carried by the next;
+asking per record reported 172 identifiers as lost in the reference
+export, every one of them present. A check that cries wolf is one nobody
+reads, and then it is not there for the case it was built for.
 
 Grouping is by what the provider states wherever it states anything.
 Copies of one manifestation are one manifestation because the record
