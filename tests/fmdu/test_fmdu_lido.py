@@ -425,9 +425,17 @@ class TestKeywordsCarryMoreThanKeywords:
     def test_no_dialogue_is_a_usage_not_a_language(
         self, lido_page, lido_record
     ):
+        """And it is not a language code either.
+
+        zxx says "no linguistic content", which is an answer to a
+        question the record does not ask: it states that the copy
+        carries no dialogue, not which language it does not carry.
+        The schema lets the code stand empty, so it stands empty.
+
+        """
         item = self.item_with(lido_page, lido_record, "Ohne Sprache")
         assert [(lang.code, lang.usage) for lang in item.in_language] == [
-            ("zxx", ["NoDialogue"])
+            (None, ["NoDialogue"])
         ]
 
     def test_an_access_status_becomes_one(self, lido_page, lido_record):
