@@ -44,17 +44,25 @@ worüber der Datensatz handeln könnte.
 
 ## Die eine Warnung, die keine Frage ans Haus ist
 
-> `Record states an AVefi identifier that no output record carries`
+> `The input states an AVefi identifier that no record of the output carries`
 
 Alle anderen Warnungen sagen: „Ihr Haus hat einen Wert, für den das Schema
 keinen Platz hat." Diese hier sagt: „Die Konvertierung hat etwas übersehen."
-Der Datensatz nennt ein Handle, und keiner der daraus gebauten Datensätze
-trägt es — die nächste Lieferung würde also eine zweite Identität für etwas
+Die Eingabe nennt ein Handle, und kein einziger Datensatz der Ausgabe trägt
+es — die nächste Lieferung würde also eine zweite Identität für etwas
 anfordern, das längst eine hat, und ein Handle lässt sich nicht zurücknehmen.
 
 Die Meldung nennt die Beziehung, unter der das Handle stand. Fast immer fehlt
 der entsprechende Begriff im Profil (`related_work_rel_terms`,
 `manifestation_rel_terms`). Diese Warnung gehört zu Andreas, nicht zu Ihnen.
+
+Sie wird erst am **Ende** des Laufs gestellt, und das ist keine Kleinigkeit:
+Kopien eines Films verweisen im Düsseldorfer Export aufeinander, ein Handle
+also, das dieser Datensatz nicht trägt, trägt sehr oft der nächste. Beim
+ersten Anlauf wurde die Frage pro Datensatz gestellt und meldete 172 Handles
+als verloren, die alle vorhanden waren. Eine Prüfung, die grundlos anschlägt,
+liest nach kurzer Zeit niemand mehr — und dann ist sie für den Fall, für den
+sie gebaut wurde, auch nicht mehr da.
 
 ## Was ein guter Bericht aussieht
 

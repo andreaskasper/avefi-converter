@@ -101,9 +101,9 @@ kostet nichts, sie zu vergessen dagegen etwas:
   unbekanntes Label wird gemeldet und die Sprache nicht übernommen — die
   Meldung ist der Hinweis, dass hier ein Eintrag fehlt.
 - Ohne `manifestation_rel_terms` kommt die PID der Fassung nicht an. Der Lauf
-  meldet das inzwischen von selbst: „Record states an AVefi identifier that
-  no output record carries", zusammen mit dem Namen der Beziehung, unter der
-  sie stand. Diese Meldung heißt fast immer, dass ein Begriff im Profil
+  meldet das inzwischen von selbst: „The input states an AVefi identifier
+  that no record of the output carries", zusammen mit dem Namen der
+  Beziehung, unter der sie stand. Diese Meldung heißt fast immer, dass ein Begriff im Profil
   fehlt.
 
 ## Rollen benennen, nicht Klassen

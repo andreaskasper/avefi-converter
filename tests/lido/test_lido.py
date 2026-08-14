@@ -912,7 +912,7 @@ class TestAHandleThatReachesNothing:
         return [
             entry
             for entry in report.entries
-            if "no output record carries" in entry.message
+            if "no record of the output carries" in entry.message
         ]
 
     def test_a_handle_under_an_unknown_relation_is_reported(
@@ -1168,3 +1168,65 @@ class TestCopiesOfOneManifestation:
         assert any(
             "different works" in entry.message for entry in report.entries
         )
+
+
+class TestTheHandleCheckWaitsForTheWholeConversion:
+    """Copies of one film refer to each other by identifier.
+
+    A record naming the handle of another copy is not losing it: that
+    copy is a record of its own further down the file and brings its
+    handle with it. Asking while the first record is being mapped
+    reported 172 identifiers as lost in the reference export, every
+    one of them present — and a check that cries wolf is one nobody
+    reads, which is the whole of its value gone.
+
+    """
+
+    OTHER = (
+        "https://hdl.handle.net/21.11155/90499299-7B78-4CCA-97C9-32888F8D4EC4"
+    )
+    OTHER_ID = "21.11155/90499299-7B78-4CCA-97C9-32888F8D4EC4"
+
+    def refers_to_it(self, lido_record):
+        return lido_record(
+            "955613",
+            related=[("W1", "Im Dorf", (("www.av-efi.net", self.OTHER),))],
+            related_rel="gehört zu",
+        )
+
+    def report_for(self, lido_page, *records):
+        source = lido_page("export.xml", *records)
+        report = ConversionReport()
+        with collecting(report):
+            fmdu_lido.efi_import(source)
+        return report
+
+    def lost(self, report):
+        return [
+            entry
+            for entry in report.entries
+            if "no record of the output carries" in entry.message
+        ]
+
+    def test_a_handle_another_record_carries_is_not_lost(
+        self, lido_page, lido_record
+    ):
+        report = self.report_for(
+            lido_page,
+            self.refers_to_it(lido_record),
+            lido_record("217018", handle=self.OTHER),
+        )
+        assert self.lost(report) == []
+
+    def test_one_no_record_carries_still_is(self, lido_page, lido_record):
+        report = self.report_for(lido_page, self.refers_to_it(lido_record))
+        assert [entry.raw_value for entry in self.lost(report)] == [
+            self.OTHER_ID
+        ]
+
+    def test_the_relation_it_stood_under_is_named(
+        self, lido_page, lido_record
+    ):
+        """That is what tells a reader which term the profile lacks."""
+        report = self.report_for(lido_page, self.refers_to_it(lido_record))
+        assert "gehört zu" in self.lost(report)[0].source_field

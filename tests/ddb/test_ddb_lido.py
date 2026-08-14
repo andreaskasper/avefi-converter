@@ -63,6 +63,7 @@ def test_the_provider_was_added_without_touching_the_generic_mapping():
     assert own_functions == {
         "convert",
         "efi_import",
+        "finish_context",
         "first_appellation",
         "first_text",
         "main",

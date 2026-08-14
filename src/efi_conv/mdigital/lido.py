@@ -41,6 +41,7 @@ from avefi_schema import model_pydantic_v2 as efi
 from ..core.report import for_file, report_issue
 from ..lido import LidoProfile, MappingContext, parse_lido
 from ..lido import efi_import as lido_import
+from ..lido import finish_context as lido_finish_context
 from ..lido import new_context as lido_new_context
 
 DESCRIPTION = "museum-digital, LIDO export of one instance"
@@ -252,6 +253,17 @@ def convert(
     with for_file(input_file):
         report_stand_in_issuer(input_file, profile)
         return lido_import(input_file, profile, continue_on_error, context)
+
+
+def finish_context(context: MappingContext, records) -> None:
+    """Check the conversion once every input file has been read.
+
+    ``efi-conv from`` calls this after the last file, which is when a
+    question about the conversion as a whole — did every identifier
+    the input states reach the output — can be answered.
+
+    """
+    lido_finish_context(context, records)
 
 
 def new_context(profile: LidoProfile | None = None) -> MappingContext:

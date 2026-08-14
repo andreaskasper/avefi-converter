@@ -20,6 +20,7 @@ from avefi_schema import model_pydantic_v2 as efi
 
 from ..lido import LidoProfile, MappingContext
 from ..lido import efi_import as lido_import
+from ..lido import finish_context as lido_finish_context
 from ..lido import new_context as lido_new_context
 
 DESCRIPTION = "Filmmuseum der Landeshauptstadt Düsseldorf, LIDO export"
@@ -120,6 +121,29 @@ LANGUAGE_NAME_MAP = {
     # not left without a language over a typing slip.
     "kantonesich": "chi",
     "chinesisch": "chi",
+    # Added after the 2026-08 export named them. Flemish and Dutch
+    # share a code in ISO 639-2, and Dari is the code for Persian at
+    # this level of the standard; neither is a guess about the film.
+    "flämisch": "dut",
+    "flaemisch": "dut",
+    "dari": "per",
+    "pashtu": "pus",
+    "paschtu": "pus",
+    "kurdisch": "kur",
+    "lingála": "lin",
+    "lingala": "lin",
+    "tadschikisch": "tgk",
+    "yoruba": "yor",
+    "indonesisch": "ind",
+    "georgisch": "geo",
+    "tamil": "tam",
+    "finnisch": "fin",
+    "litauisch": "lit",
+    # "Jugoslawisch" and "Irakisch" are deliberately absent. Neither
+    # names a language — the first a state that had several and no
+    # longer exists, the second a country — and picking Serbian or
+    # Arabic would put into the data a decision the provider never
+    # made. Both are reported instead.
     "dänisch": "dan",
     "daenisch": "dan",
     "schwedisch": "swe",
@@ -177,6 +201,7 @@ ROLE_ACTIVITY_MAP = {
     "kamerassistenz": "CameraAssistant",
     "kameraassistenz": "CameraAssistant",
     "aufnahmeleitung": "ProductionManager",
+    "produktionsleitung": "ProductionManager",
     "bauten": "ProductionDesigner",
     "szenenbild": "ProductionDesigner",
     "maske": "MakeUpArtist",
@@ -324,6 +349,17 @@ def convert(
 
     """
     return lido_import(input_file, profile, continue_on_error, context)
+
+
+def finish_context(context: MappingContext, records) -> None:
+    """Check the conversion once every input file has been read.
+
+    ``efi-conv from`` calls this after the last file, which is when a
+    question about the conversion as a whole — did every identifier
+    the input states reach the output — can be answered.
+
+    """
+    lido_finish_context(context, records)
 
 
 def new_context(profile: LidoProfile | None = None) -> MappingContext:
