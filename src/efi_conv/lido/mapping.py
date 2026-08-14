@@ -357,11 +357,14 @@ MAPPING_RULES = (
         "lido:objectPublishedID, lido:relatedWorkSet//lido:objectID"
         " whose lido:source names AVefi",
         "—",
-        "Profile avefi_handle_prefix",
-        "Not a mapping but its own check: a handle stated in the"
-        " record and carried by none of the records derived from it"
-        " is reported with the relation it stood under. A handle"
-        " cannot be withdrawn, so losing one is expensive and silent",
+        "Profile avefi_sources",
+        "Not a mapping but its own check, and one that only a finished"
+        " conversion can answer: copies of one film refer to each"
+        " other by identifier, so a handle this record does not carry"
+        " is commonly carried by the next. An identifier the input"
+        " states and no record of the output carries is reported with"
+        " the relation it stood under. A handle cannot be withdrawn,"
+        " so losing one is expensive and silent",
     ),
     MappingRule(
         "issuer",
@@ -579,7 +582,11 @@ def efi_import(
 
     """
     records = []
-    if context is None:
+    # A caller that brought its own context is converting more than
+    # this file and says when the conversion is over; see
+    # :func:`finish_context`.
+    alone = context is None
+    if alone:
         context = new_context(profile)
     with for_file(input_file):
         for lido_record in parse_lido(input_file):
@@ -592,7 +599,19 @@ def efi_import(
                 report_record_skipped(
                     e, record_id=safe_record_identifier(lido_record, profile)
                 )
+    if alone:
+        finish_context(context, records)
     return records
+
+
+def finish_context(context: "MappingContext", records) -> None:
+    """Check what only a finished conversion can be checked against.
+
+    Called by ``efi-conv from`` once every input file has been read,
+    and by :func:`efi_import` itself where it is the whole conversion.
+
+    """
+    report_handles_not_transferred(context, records)
 
 
 @dataclass
@@ -608,6 +627,9 @@ class MappingContext(GroupingContext):
     """
 
     profile: LidoProfile | None = None
+    #: Identifiers the input claims, and where each one was claimed.
+    #: Checked against the output once the conversion is complete.
+    stated_handles: dict = field(default_factory=dict)
     #: Keys a manifestation has already built its local identifier
     #: from. A dict rather than a set so that it is rolled back with
     #: everything else a failed record registered.
@@ -1028,13 +1050,7 @@ def map_record(
     attach_source_key(
         (*works, manifestation, item), profile.issuer_info, source_key
     )
-    report_handles_not_transferred(
-        lido_record,
-        descriptive,
-        (*works, manifestation, item),
-        profile,
-        source_key,
-    )
+    note_stated_handles(lido_record, descriptive, profile, source_key, context)
     return new_records
 
 
@@ -1050,26 +1066,54 @@ def manifestation_for(context, key, stated, factory, work_ids, source_key):
     the one identifier the provider stated, which ``efi-conv check``
     rightly rejects as not unique.
 
-    The identifier is therefore the key where there is one, and the
-    derived key is registered alongside it so that a copy of the same
-    manifestation that carries no identifier still finds it. What the
-    local identifier is built from does not change: it is what a
-    reader recognises, and a handle repeated inside it would say the
-    same thing twice.
+    Three ways in, in this order. The stated identifier, which settles
+    it. Then the derived key, so that a copy naming the manifestation
+    and one saying nothing about it still meet — unless what the
+    derived key finds already carries a different identifier, in which
+    case the provider has said they are two. Otherwise a new one.
+
+    What the local identifier is built from does not change: it is
+    what a reader recognises, and a handle repeated inside it would
+    say the same thing twice. It only has to be unique, and two
+    manifestations the derived key cannot tell apart are exactly where
+    it would not be.
 
     """
     pid = stated.avefi if stated is not None else None
-    if not pid:
-        return context.manifestation_for(key, factory)
+    if pid:
+        known = context.manifestations.get(f"avefi:{pid}")
+        if known is not None:
+            report_manifestation_disagreement(known, work_ids, source_key)
+            return known, False
+    known = context.manifestations.get(key)
+    if known is not None and not carries_another_handle(known, pid):
+        if pid:
+            context.manifestations[f"avefi:{pid}"] = known
+            report_manifestation_disagreement(known, work_ids, source_key)
+        return known, False
+    local_id = unique_manifestation_id(context, key)
     manifestation, is_new = context.manifestation_for(
-        f"avefi:{pid}", factory, local_id=unique_manifestation_id(context, key)
+        f"avefi:{pid}" if pid else local_id, factory, local_id=local_id
     )
-    context.manifestations.setdefault(key, manifestation)
-    if not is_new:
-        report_manifestation_disagreement(
-            manifestation, work_ids, pid, source_key
-        )
+    if pid:
+        context.manifestations.setdefault(key, manifestation)
     return manifestation, is_new
+
+
+def carries_another_handle(manifestation, pid) -> bool:
+    """Return True if this manifestation is a different one.
+
+    A copy naming a manifestation and a manifestation already naming
+    itself as something else are two, whatever the derived key makes
+    of them.
+
+    """
+    if not pid:
+        return False
+    return any(
+        identifier.category == "avefi:AVefiResource" and identifier.id != pid
+        for identifier in manifestation.has_identifier
+    )
 
 
 def unique_manifestation_id(context, key: str) -> str:
@@ -1079,23 +1123,22 @@ def unique_manifestation_id(context, key: str) -> str:
     the derived key — it knows colour, format and language and the
     provider may be separating them on something else. They would then
     be given one local identifier between them, which is the same
-    duplicate the persistent identifiers were producing.
+    duplicate the persistent identifiers were producing, and
+    ``efi-conv check`` rejects it for the same reason.
 
     """
     taken = context.manifestation_local_keys
-    if key not in taken:
-        taken[key] = True
-        return key
-    suffix = 2
-    while make_key(key, str(suffix)) in taken:
+    candidate = key
+    suffix = 1
+    while candidate in taken:
         suffix += 1
-    unique = make_key(key, str(suffix))
-    taken[unique] = True
-    return unique
+        candidate = make_key(key, str(suffix))
+    taken[candidate] = True
+    return candidate
 
 
 def report_manifestation_disagreement(
-    manifestation, work_ids, pid, source_key
+    manifestation, work_ids, source_key
 ) -> None:
     """Report a manifestation two records attach to different works."""
     known = {identifier.id for identifier in manifestation.is_manifestation_of}
@@ -1104,9 +1147,12 @@ def report_manifestation_disagreement(
         return
     report_issue(
         "warning",
-        "Copies of one manifestation are attached to different works;"
-        " the manifestation keeps the works of the record that"
-        " introduced it",
+        "Two copies name one manifestation but different works. The"
+        " manifestation keeps the works of the record that introduced"
+        " it, so the work of this one is left without a manifestation"
+        " and efi-conv check will report it as having no items. Either"
+        " one film is catalogued twice or one identifier was given to"
+        " two films; both are for the data provider to settle",
         record_id=source_key,
         source_field="relatedWorkSet",
         target_field="is_manifestation_of",
@@ -1114,40 +1160,51 @@ def report_manifestation_disagreement(
     )
 
 
-def report_handles_not_transferred(
-    lido_record, descriptive, records, profile, source_key
+def note_stated_handles(
+    lido_record, descriptive, profile, source_key, context
 ) -> None:
-    """Report an AVefi handle in the record that reached no output.
+    """Remember the identifiers this record claims for something.
 
-    A handle in the source and not in the output means the next
-    delivery asks for a second identifier for something that already
-    has one, and a handle cannot be withdrawn. It is also a silent
-    failure: the conversion succeeds, the records validate, and only
-    a comparison of input and output shows it — which is how the
-    handles of works and manifestations went unread for weeks.
-
-    So the conversion compares them itself. Every handle the record
-    writes into an identifier is looked for in the records derived
-    from it, and one that is not there is reported together with the
-    relation it was stated under, which is usually what is missing
-    from the profile.
+    Whether one of them reached the output is a question about the
+    conversion and not about this record: the record that carries it
+    may be further down the file or in the next one. Copies of one
+    film refer to each other, so asking here reported 172 identifiers
+    as lost that were all present, which is how a check stops being
+    read.
 
     """
-    transferred = {
+    for handle, relation in stated_handles(lido_record, descriptive, profile):
+        context.stated_handles.setdefault(handle, (source_key, relation))
+
+
+def report_handles_not_transferred(context, records) -> None:
+    """Report an identifier the input states and the output lacks.
+
+    Losing one is expensive — a handle cannot be withdrawn, so the
+    next delivery asks for a second identity for something that has
+    one — and silent: the run succeeds and the records validate. Only
+    a comparison of input and output shows it, which is how the
+    handles of works and manifestations went unread for weeks.
+
+    Run once the conversion is complete, because that is when the
+    question can be answered.
+
+    """
+    carried = {
         identifier.id
         for record in records
         for identifier in record.has_identifier
         if identifier.category == "avefi:AVefiResource"
     }
-    for handle, relation in stated_handles(lido_record, descriptive, profile):
-        if handle in transferred:
+    for handle, (source_key, relation) in context.stated_handles.items():
+        if handle in carried:
             continue
         report_issue(
             "warning",
-            "Record states an AVefi identifier that no output record"
-            " carries; the next delivery would ask for a second one."
-            " A relation named here that the profile does not know is"
-            " the usual cause",
+            "The input states an AVefi identifier that no record of"
+            " the output carries; the next delivery would ask for a"
+            " second one. A relation named here that the profile does"
+            " not know is the usual cause",
             record_id=source_key,
             source_field=relation,
             target_field="has_identifier",
