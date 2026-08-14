@@ -640,6 +640,31 @@ with the commands to diagnose them.
 
 ---
 
+## About the project
+
+AVefi — *Automatisiertes Verbundsystem für audiovisuelle Bestände über
+einheitliche Film-Identifikatoren* — is building a central, PID based
+union system for audio-visual holdings, so that one film can be named
+unambiguously across collection boundaries.
+
+**Project partners**
+
+- Leibniz Information Centre for Science and Technology (TIB), Hannover
+- Deutsche Kinemathek — Museum für Film und Fernsehen (SDK), Berlin
+- Gesellschaft für wissenschaftliche Datenverarbeitung mbH Göttingen (GWDG)
+- Filmmuseum der Landeshauptstadt Düsseldorf (FMDU)
+
+**Funding**
+
+Funded by the Deutsche Forschungsgemeinschaft (DFG, German Research
+Foundation) — project number **517778207**.
+
+→ [GWDG project page](https://gwdg.de/projects/avefi/) ·
+[TIB project page](https://projects.tib.eu/av-efi/) ·
+[contact@av-efi.net](mailto:contact@av-efi.net)
+
+---
+
 ## License
 
 Released under the [MIT License](./LICENSE).
