@@ -3,16 +3,18 @@
 ## Was das Werkzeug tut
 
 `efi-conv` liest den Export Ihres Systems und schreibt eine JSON-Datei im
-AVefi-Schema. Diese Datei ist das Ergebnis. Sie wird **nicht** automatisch
-irgendwohin hochgeladen — was damit geschieht, entscheiden Sie und die
-Projektstelle gemeinsam.
+AVefi-Schema. Diese Datei ist das Ergebnis.
 
-```
-Ihr Export  →  efi-conv from  →  AVefi-JSON  →  efi-conv check
- (XML, CSV)                      (das Ergebnis)   (Prüfung)
-                     ↓
-              Konvertierungsbericht
-              (was nicht ging, und warum)
+> [!NOTE]
+> Die Datei wird **nicht** automatisch irgendwohin hochgeladen. Was damit
+> geschieht, entscheiden Sie und die Projektstelle gemeinsam.
+
+```mermaid
+flowchart LR
+    A["Ihr Export<br/>XML · CSV"] --> B["efi-conv from"]
+    B --> C["AVefi-JSON<br/>das Ergebnis"]
+    B --> R[("Konvertierungsbericht<br/>was nicht ging, und warum")]
+    C --> D["efi-conv check<br/>Prüfung"]
 ```
 
 ## Installation
@@ -63,6 +65,21 @@ Eine JSON-Datei mit drei Sorten von Datensätzen:
 - **Manifestation** — die Fassung, also eine bestimmte Ausprägung davon
 - **Item** — das Exemplar, also das Stück in Ihrem Magazin
 
+```mermaid
+flowchart TD
+    W["<b>WorkVariant</b> · das Werk<br/>DIE BRÜCKE, Wicki, 1959"]
+    M1["<b>Manifestation</b> · die Fassung<br/>s/w, 35 mm, deutsch"]
+    M2["<b>Manifestation</b> · die Fassung<br/>s/w, 16 mm, deutsch"]
+    I1["<b>Item</b> · das Exemplar<br/>Archivkopie, Magazin 1"]
+    I2["<b>Item</b> · das Exemplar<br/>Verleihkopie, Magazin 3"]
+    I3["<b>Item</b> · das Exemplar<br/>Schulkopie"]
+    W --> M1
+    W --> M2
+    M1 --> I1
+    M1 --> I2
+    M2 --> I3
+```
+
 Mehrere Exemplare desselben Films teilen sich ein Werk. Das ist Absicht: eine
 PID pro Film, nicht eine pro Rolle im Regal.
 
@@ -71,3 +88,7 @@ PID pro Film, nicht eine pro Rolle im Regal.
 Wenn der Konverter für Ihr Haus noch nicht existiert, brauchen Sie meist
 keinen neuen, sondern ein → [Profil](03-profile.md). Wenn Ihre Daten LIDO
 sind, gilt das fast sicher.
+
+---
+
+[Übersicht](README.md) · [2 · Konvertieren](02-konvertieren.md) →

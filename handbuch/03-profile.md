@@ -40,7 +40,10 @@ Beispiele für beide Formate liegen in
 
 ## Die eine Falle, die Sie kennen sollten
 
+> [!WARNING]
 > **Ein Profil ersetzt die Vokabulare des Konverters, es ergänzt sie nicht.**
+> Ein Feld, das Sie weglassen, fällt auf die allgemeine Voreinstellung
+> zurück — nicht auf die Liste, die der Konverter für Ihr Haus mitbringt.
 
 Wenn Sie ein Profil schreiben, um nur die Einrichtung zu ändern, und dabei
 `film_work_type_terms` weglassen, dann gilt **nicht** die Liste des
@@ -67,7 +70,7 @@ Jeder Name unter `settings` ist ein Feld der Profilklasse des Konverters.
 Ein Name, den es nicht gibt, ist ein **Fehler** und kein stiller Hinweis —
 ein vertipptes Vokabular sähe sonst aus wie ein funktionierendes Profil und
 würde jeden Wert verlieren, den es abbilden sollte. Dasselbe gilt für einen
-Wert vom falschen Typ.
+Wert vom falschen Typ. Das ist Absicht und Ihr Schutz.
 
 Die wichtigsten Felder für LIDO:
 
@@ -122,3 +125,7 @@ Wert, deshalb ist `Composer` eindeutig und die Klasse `MusicActivity` ergibt
 sich von selbst. Eine Rolle, die Sie nicht eintragen, wird gemeldet und die
 Person nicht übernommen — das ist Absicht und besser, als sie einer falschen
 Tätigkeit zuzuschlagen.
+
+---
+
+← [2 · Konvertieren](02-konvertieren.md) · [Übersicht](README.md) · [4 · Den Bericht lesen](04-bericht-lesen.md) →

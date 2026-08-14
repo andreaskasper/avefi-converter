@@ -17,8 +17,10 @@ ERROR  Do not expect has_access_status=Removed for an item without a PID
 ein Exemplar ohne PID sagt es nichts. Solche Regeln kennt `check` und Sie
 sollten es deshalb nach jedem Lauf ausführen, nicht nur einmal am Ende.
 
-`--remove-invalid` schreibt die Datei ohne die beanstandeten Datensätze neu.
-Vorsicht damit: erst verstehen, warum sie beanstandet werden.
+> [!CAUTION]
+> `--remove-invalid` schreibt die Datei ohne die beanstandeten Datensätze
+> neu. Erst verstehen, warum sie beanstandet werden — sonst verschwindet
+> genau die Frage aus der Lieferung, die zu klären gewesen wäre.
 
 Der Aufruf holt das Schema aus dem Netz. Der Bericht hält fest, welche
 Fassung benutzt wurde.
@@ -53,3 +55,7 @@ $ uv run efi-conv diff --ignore has_identifier alt.json neu.json
 
 `--ignore` blendet ein Feld der obersten Ebene aus. Nützlich, wenn sich die
 lokalen Identifikatoren geändert haben und Sie den Inhalt vergleichen wollen.
+
+---
+
+← [4 · Den Bericht lesen](04-bericht-lesen.md) · [Übersicht](README.md) · [6 · Daten ernten](06-ernten.md) →
