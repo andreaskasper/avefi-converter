@@ -18,6 +18,56 @@ DEFAULT_CLASSIFICATION_TYPES = {
     "access": ("access", "zugang", "zugangsstatus"),
 }
 
+#: The ``lido:label`` of a language term and the usage it states.
+#:
+#: A provider records the languages of a copy as terms and says on the
+#: term what each one is for — "Dialogton", "Untertitel",
+#: "Zwischentitel". Without reading the label every language arrives
+#: as the spoken one, which turns an English subtitle track into an
+#: English soundtrack.
+#:
+#: Only labels a provider has actually been seen to use belong here.
+#: A label that is not listed leaves the term to the usual routing and
+#: is reported where the term is a language, so that the gap is
+#: visible rather than guessed at.
+DEFAULT_LANGUAGE_USAGE_LABELS = {
+    "dialogton": "SpokenLanguage",
+    "originalton": "SpokenLanguage",
+    "sprache": "SpokenLanguage",
+    "spoken language": "SpokenLanguage",
+    "untertitel": "Subtitles",
+    "subtitles": "Subtitles",
+    "zwischentitel": "Intertitles",
+    "intertitles": "Intertitles",
+}
+
+#: ``lido:type`` on ``lido:actor``, and the kind of agent it states.
+#:
+#: LIDO leaves the value to the provider. "corporation" is what the
+#: Düsseldorf export writes, and a corporate body arriving without a
+#: type is a corporate body the schema does not know about.
+DEFAULT_AGENT_TYPES = {
+    "person": "Person",
+    "personal": "Person",
+    "individual": "Person",
+    "corporatebody": "CorporateBody",
+    "corporate body": "CorporateBody",
+    "corporation": "CorporateBody",
+    "corporate": "CorporateBody",
+    "koerperschaft": "CorporateBody",
+    "körperschaft": "CorporateBody",
+    "institution": "CorporateBody",
+    "organisation": "CorporateBody",
+    "organization": "CorporateBody",
+    "company": "CorporateBody",
+    "firma": "CorporateBody",
+    "group": "CorporateBody",
+    "family": "Family",
+    "familie": "Family",
+    "persongroup": "PersonGroup",
+    "personengruppe": "PersonGroup",
+}
+
 
 @dataclass(frozen=True)
 class LidoProfile:
@@ -37,6 +87,12 @@ class LidoProfile:
         match where there is none. Providers prefix the identifier
         with their own namespaces, and the bare identifier is what the
         rest of the institution's data uses, so the two have to agree.
+    manifestation_rel_terms : frozenset
+        Lower case ``lido:relatedWorkRelType`` terms — the term text
+        or the last segment of its ``lido:conceptID`` — marking a
+        related work as the manifestation this copy is one of. The
+        relation carries the manifestation's AVefi identifier, which
+        no other element of the record states.
     related_work_rel_terms : frozenset
         Lower case ``lido:relatedWorkRelType`` terms marking a related
         work as the film a copy is of. Where a provider states this,
@@ -136,6 +192,16 @@ class LidoProfile:
     language_name_map : dict
         Lower case language name to ISO 639-2/B code. Providers name
         languages in their own language.
+    language_usage_labels : dict
+        Lower case ``lido:label`` of a language term to the AVefi
+        LanguageUsageEnum value it states. A provider writes the
+        languages of a copy as terms and says on the term what each
+        one is for; without the label every one of them is read as
+        the spoken language.
+    agent_type_map : dict
+        Lower case ``lido:type`` on ``lido:actor`` to the AVefi
+        AgentTypeEnum value it denotes, merged over
+        :data:`DEFAULT_AGENT_TYPES`.
     no_dialogue_terms : frozenset
         Lower case terms stating that a copy carries no dialogue.
     empty_terms : frozenset
@@ -158,6 +224,9 @@ class LidoProfile:
     default_language: str | None = None
     source_key_pattern: str | None = None
     related_work_rel_terms: frozenset = frozenset()
+    manifestation_rel_terms: frozenset = frozenset(
+        {"is item of", "is_item_of"}
+    )
     record_type_terms: frozenset = frozenset()
     film_work_type_terms: frozenset = frozenset(
         {
@@ -225,6 +294,10 @@ class LidoProfile:
     materials_tech_map: dict = field(default_factory=dict)
     keyword_classification_types: frozenset = frozenset()
     language_name_map: dict = field(default_factory=dict)
+    language_usage_labels: dict = field(
+        default_factory=lambda: dict(DEFAULT_LANGUAGE_USAGE_LABELS)
+    )
+    agent_type_map: dict = field(default_factory=dict)
     no_dialogue_terms: frozenset = frozenset(
         {"ohne sprache", "stumm", "no dialogue", "silent"}
     )
