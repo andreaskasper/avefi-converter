@@ -276,5 +276,141 @@
       "category": "avefi:LocalResource",
       "id": "Brücke_Die__Wicki_Bernhard__1959__BlackAndWhite__16mmFilm~4e87a4bb_manifestation"
     }
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+        "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+        "has_source_key": [
+          "FMDU-0005"
+        ]
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:ProducingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "DEFA-Studio für Dokumentarfilme",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "ProductionCompany"
+          }
+        ],
+        "has_date": "1960"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0005-W_work"
+      },
+      {
+        "category": "avefi:AVefiResource",
+        "id": "21.11155/8C5A0C79-7A6C-44EC-8920-01C8A158BFBC"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "IM DORF DER WEISSEN STÖRCHE",
+      "type": "PreferredTitle"
+    },
+    "same_as": [
+      {
+        "category": "avefi:FilmportalResource",
+        "id": "4029730364e64a1a9bc0d3f5fd3534f4"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+      "has_source_key": [
+        "FMDU-0005"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0005-W__Colour__16mmFilm___NoDialogue_eng_Subtitles_ger_Intertitles~7c3f5629_manifestation"
+      },
+      {
+        "category": "avefi:AVefiResource",
+        "id": "21.11155/73F965CE-E4C5-4E82-AC4D-30E51DBA6B74"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Im Dorf der weissen Störche",
+      "type": "SuppliedDevisedTitle"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0005-W_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+      "has_source_key": [
+        "FMDU-0005"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0005"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Im Dorf der weissen Störche",
+      "type": "SuppliedDevisedTitle"
+    },
+    "has_webresource": [
+      "http://www.duesseldorf.de/dkult/DE-MUS-432511/FMDU-0005"
+    ],
+    "has_access_status": "Archive",
+    "has_colour_type": "Colour",
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "16mmFilm"
+      }
+    ],
+    "in_language": [
+      {
+        "usage": [
+          "NoDialogue"
+        ]
+      },
+      {
+        "code": "eng",
+        "usage": [
+          "Subtitles"
+        ]
+      },
+      {
+        "code": "ger",
+        "usage": [
+          "Intertitles"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "FMDU-0005-W__Colour__16mmFilm___NoDialogue_eng_Subtitles_ger_Intertitles~7c3f5629_manifestation"
+    }
   }
 ]
