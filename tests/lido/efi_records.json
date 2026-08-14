@@ -284,7 +284,8 @@
         "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
         "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
         "has_source_key": [
-          "FMDU-0005"
+          "FMDU-0005",
+          "FMDU-0006"
         ]
       }
     ],
@@ -335,7 +336,8 @@
       "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
       "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
       "has_source_key": [
-        "FMDU-0005"
+        "FMDU-0005",
+        "FMDU-0006"
       ]
     },
     "has_identifier": [
@@ -387,6 +389,60 @@
       {
         "category": "avefi:Film",
         "type": "16mmFilm"
+      }
+    ],
+    "in_language": [
+      {
+        "usage": [
+          "NoDialogue"
+        ]
+      },
+      {
+        "code": "eng",
+        "usage": [
+          "Subtitles"
+        ]
+      },
+      {
+        "code": "ger",
+        "usage": [
+          "Intertitles"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "FMDU-0005-W__Colour__16mmFilm___NoDialogue_eng_Subtitles_ger_Intertitles~7c3f5629_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf",
+      "has_source_key": [
+        "FMDU-0006"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "FMDU-0006"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Im Dorf der weissen Störche",
+      "type": "SuppliedDevisedTitle"
+    },
+    "has_webresource": [
+      "http://www.duesseldorf.de/dkult/DE-MUS-432511/FMDU-0006"
+    ],
+    "has_access_status": "Archive",
+    "has_colour_type": "BlackAndWhite",
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "35mmFilm"
       }
     ],
     "in_language": [

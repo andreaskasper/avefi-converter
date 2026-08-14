@@ -64,7 +64,7 @@ class TestFrom:
         )
         assert result.exit_code == 0, result.output
         records = json.loads(target.read_text(encoding="utf-8"))
-        assert len(records) == 11
+        assert len(records) == 12
 
     def test_writes_to_stdout_without_output_option(self, runner):
         result = runner.invoke(
