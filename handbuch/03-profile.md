@@ -86,7 +86,9 @@ Die wichtigsten Felder für LIDO:
 | `related_work_rel_terms` | Beziehungen, die das Werk benennen, zu dem ein Exemplar gehört |
 | `manifestation_rel_terms` | Beziehungen, die die Fassung benennen — dort steht deren PID |
 | `duration_units` | Einheit einer Messung, wenn die Angabe im Datensatz nicht stimmt |
-| `avefi_handle_prefix` | Handle-Präfix, unter dem PIDs vergeben werden |
+| `avefi_sources` | `lido:source`-Werte, die AVefi als Aussteller eines Identifikators benennen |
+| `related_authority_sources` | `lido:source` → Normdatei (`filmportal`, `gnd`, `viaf`, `wikidata`, `eidr`) |
+| `avefi_handle_prefix` | Handle-Präfix — nur noch Rückfallebene für Identifikatoren ohne `lido:source` |
 
 ## Zwei Felder, die man leicht übersieht
 

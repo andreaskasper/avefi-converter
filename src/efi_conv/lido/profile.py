@@ -41,6 +41,34 @@ DEFAULT_LANGUAGE_USAGE_LABELS = {
     "intertitles": "Intertitles",
 }
 
+#: ``lido:source`` values naming AVefi as the authority that issued an
+#: identifier.
+#:
+#: This and not the handle prefix is the criterion. AVefi will register
+#: under further prefixes, and a record that says who issued an
+#: identifier has answered the question the prefix was standing in for.
+#: The prefix remains as a fallback for a record that states no source
+#: at all.
+DEFAULT_AVEFI_SOURCES = frozenset(
+    {"www.av-efi.net", "av-efi.net", "https://www.av-efi.net", "avefi"}
+)
+
+#: ``lido:source`` of an identifier stated for a related record, and the
+#: authority it belongs to.
+#:
+#: Only Filmportal has been seen so far. The others are named because
+#: ``same_as`` on a work accepts them and a provider adding one should
+#: not need a code change.
+DEFAULT_RELATED_AUTHORITY_SOURCES = {
+    "www.filmportal.de": "filmportal",
+    "filmportal.de": "filmportal",
+    "filmportal": "filmportal",
+    "gnd": "gnd",
+    "viaf": "viaf",
+    "wikidata": "wikidata",
+    "eidr": "eidr",
+}
+
 #: ``lido:type`` on ``lido:actor``, and the kind of agent it states.
 #:
 #: LIDO leaves the value to the provider. "corporation" is what the
@@ -209,13 +237,21 @@ class LidoProfile:
         for a value, such as a cataloguing system's "(not assigned)".
     unknown_agent_names : frozenset
         Lower case placeholder names that do not denote an agent.
+    avefi_sources : frozenset
+        Lower case ``lido:source`` values naming AVefi as the authority
+        that issued an identifier. This is the criterion for reading
+        one, because a provider states who issued an identifier and
+        further handle prefixes are to be expected.
+    related_authority_sources : dict
+        Lower case ``lido:source`` of an identifier stated for a
+        related record to the authority it belongs to, one of
+        ``filmportal``, ``gnd``, ``viaf``, ``wikidata``, ``eidr``.
     avefi_handle_prefix : str or None
-        Handle prefix under which AVefi identifiers are registered. A
-        provider that has had identifiers minted for its holdings gets
-        them back in its own system and exports them again, so a
-        published identifier carrying this prefix is the copy's own
-        AVefi identifier and is transferred as one. Set to None to
-        ignore published identifiers.
+        Handle prefix under which AVefi identifiers are registered.
+        Used only where an identifier states no ``lido:source``: the
+        source is the criterion, and this is what is left to go on
+        when a record does not give one. Set to None to read an
+        identifier by its source alone.
 
     """
 
@@ -306,5 +342,9 @@ class LidoProfile:
     )
     unknown_agent_names: frozenset = frozenset(
         {"unbekannt", "unknown", "verschiedene", "n.n.", "nn"}
+    )
+    avefi_sources: frozenset = DEFAULT_AVEFI_SOURCES
+    related_authority_sources: dict = field(
+        default_factory=lambda: dict(DEFAULT_RELATED_AUTHORITY_SOURCES)
     )
     avefi_handle_prefix: str | None = "21.11155"
