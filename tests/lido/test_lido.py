@@ -50,11 +50,11 @@ def test_copies_of_one_film_share_a_work(input_path):
     """
     efi_records = from_.import_file(fmdu_lido, input_path("sample_data.xml"))
     categories = [record.category for record in efi_records]
-    # Three film records, two of them prints of the same film, plus one
+    # Four film records, two of them prints of the same film, plus one
     # poster that is not a film holding at all.
-    assert categories.count("avefi:Item") == 3
-    assert categories.count("avefi:WorkVariant") == 2
-    assert categories.count("avefi:Manifestation") == 3
+    assert categories.count("avefi:Item") == 4
+    assert categories.count("avefi:WorkVariant") == 3
+    assert categories.count("avefi:Manifestation") == 4
 
     works = [r for r in efi_records if r.category == "avefi:WorkVariant"]
     shared = next(
@@ -74,7 +74,7 @@ def test_copies_differing_in_carrier_get_their_own_manifestation(
         r for r in efi_records if r.category == "avefi:Manifestation"
     ]
     parents = {m.is_manifestation_of[0].id for m in manifestations}
-    assert len(parents) == 2, "Manifestations must hang off their work"
+    assert len(parents) == 3, "Manifestations must hang off their work"
 
 
 def test_accompanying_material_is_not_imported_as_film(input_path):
@@ -512,3 +512,448 @@ class TestUnreadableDuration:
         records = fmdu_lido.efi_import(source)
         item = next(r for r in records if r.category == "avefi:Item")
         assert item.has_duration.has_value == "PT01H43M00S"
+
+
+#: A work registered in AVefi, as the Düsseldorf export carries it
+#: back: the handle is written as a resolvable URL, and the identifier
+#: is the part after the resolver.
+WORK_HANDLE_URL = (
+    "https://hdl.handle.net/21.11155/8C5A0C79-7A6C-44EC-8920-01C8A158BFBC"
+)
+WORK_HANDLE = "21.11155/8C5A0C79-7A6C-44EC-8920-01C8A158BFBC"
+MANIFESTATION_HANDLE_URL = (
+    "https://hdl.handle.net/21.11155/73F965CE-E4C5-4E82-AC4D-30E51DBA6B74"
+)
+MANIFESTATION_HANDLE = "21.11155/73F965CE-E4C5-4E82-AC4D-30E51DBA6B74"
+FILMPORTAL_URL = (
+    "https://www.filmportal.de/film/4029730364e64a1a9bc0d3f5fd3534f4"
+)
+FILMPORTAL_ID = "4029730364e64a1a9bc0d3f5fd3534f4"
+
+
+def one(records, category):
+    """Return the single record of ``category``."""
+    matching = [r for r in records if r.category == category]
+    assert len(matching) == 1, [r.category for r in records]
+    return matching[0]
+
+
+class TestIdentifiersARecordAlreadyCarries:
+    """A registered holding brings its identifiers back with it.
+
+    A provider whose collection has been registered gets the handles
+    into its own system and exports them again. Ignoring them means
+    the next conversion mints a second identifier for something that
+    has one, and a handle cannot be withdrawn once it is out.
+
+    They were read for the copy only, on the assumption that a LIDO
+    record states no others. It states them for the work and for the
+    manifestation as well, in the relations the record has to them.
+
+    """
+
+    def records(self, lido_page, lido_record, **kwargs):
+        source = lido_page(
+            "export.xml",
+            lido_record(
+                "DE-MUS-042628:DE-MUS-432511:955613",
+                related=[
+                    (
+                        "DE-MUS-042628:DE-MUS-432511:955613",
+                        "IM DORF DER WEISSEN STÖRCHE",
+                        (
+                            ("www.filmportal.de", FILMPORTAL_URL),
+                            ("www.av-efi.net", WORK_HANDLE_URL),
+                        ),
+                    )
+                ],
+                manifestation_handle=MANIFESTATION_HANDLE_URL,
+                **kwargs,
+            ),
+        )
+        return fmdu_lido.efi_import(source)
+
+    def test_the_work_keeps_the_pid_the_provider_states(
+        self, lido_page, lido_record
+    ):
+        work = one(self.records(lido_page, lido_record), "avefi:WorkVariant")
+        assert [(i.category, i.id) for i in work.has_identifier] == [
+            ("avefi:LocalResource", "955613_work"),
+            ("avefi:AVefiResource", WORK_HANDLE),
+        ]
+
+    def test_the_manifestation_does_too(self, lido_page, lido_record):
+        manifestation = one(
+            self.records(lido_page, lido_record), "avefi:Manifestation"
+        )
+        assert [i.category for i in manifestation.has_identifier] == [
+            "avefi:LocalResource",
+            "avefi:AVefiResource",
+        ]
+        assert manifestation.has_identifier[1].id == MANIFESTATION_HANDLE
+
+    def test_the_local_identifier_stays_and_stays_first(
+        self, lido_page, lido_record
+    ):
+        """Everything in the delivery refers to it.
+
+        ``is_item_of`` and ``is_manifestation_of`` name a record by
+        its first identifier, so a PID appended in front of the local
+        one would leave the references pointing at nothing.
+
+        """
+        records = self.records(lido_page, lido_record)
+        item = one(records, "avefi:Item")
+        manifestation = one(records, "avefi:Manifestation")
+        work = one(records, "avefi:WorkVariant")
+        assert item.is_item_of.category == "avefi:LocalResource"
+        assert item.is_item_of.id == manifestation.has_identifier[0].id
+        assert manifestation.is_manifestation_of[0].id == (
+            work.has_identifier[0].id
+        )
+
+    def test_the_filmportal_entry_becomes_an_authority_link(
+        self, lido_page, lido_record
+    ):
+        """And the bare identifier, not the URL it was written as."""
+        work = one(self.records(lido_page, lido_record), "avefi:WorkVariant")
+        assert [(link.category, link.id) for link in work.same_as] == [
+            ("avefi:FilmportalResource", FILMPORTAL_ID)
+        ]
+
+    def test_the_provider_namespaces_are_stripped_from_the_local_one(
+        self, lido_page, lido_record
+    ):
+        """The related work is identified as the record itself is.
+
+        Both are written with the archive and the museum in front of
+        the number, and the rest of the institution's data uses the
+        number alone.
+
+        """
+        work = one(self.records(lido_page, lido_record), "avefi:WorkVariant")
+        assert work.has_identifier[0].id == "955613_work"
+
+    def test_a_second_conversion_does_not_add_them_twice(
+        self, lido_page, lido_record
+    ):
+        records = self.records(lido_page, lido_record)
+        work = one(records, "avefi:WorkVariant")
+        assert len(work.has_identifier) == 2
+        assert len(work.same_as) == 1
+
+    def test_the_order_of_the_identifiers_does_not_matter(
+        self, lido_page, lido_record
+    ):
+        """Which identifier is which follows from the value.
+
+        LIDO does not order them, and taking the first one worked
+        only as long as the provider wrote its own first.
+
+        """
+        source = lido_page(
+            "export.xml",
+            lido_record(
+                "955613",
+                related=[
+                    (
+                        "955613",
+                        "IM DORF DER WEISSEN STÖRCHE",
+                        (("www.av-efi.net", WORK_HANDLE_URL),),
+                    )
+                ],
+            ),
+        )
+        work = one(fmdu_lido.efi_import(source), "avefi:WorkVariant")
+        assert work.has_identifier[0].id == "955613_work"
+        assert work.has_identifier[1].id == WORK_HANDLE
+
+
+class TestATitleTheCataloguerSupplied:
+    """Square brackets mean the same thing wherever they are written.
+
+    The rule was applied to the titles of the copy and not to the one
+    the related work carries, so a work kept its brackets while the
+    copies of it did not.
+
+    """
+
+    def work_with(self, lido_page, lido_record, title):
+        source = lido_page(
+            "export.xml",
+            lido_record("955613", related=[("955613", title)]),
+        )
+        return one(fmdu_lido.efi_import(source), "avefi:WorkVariant")
+
+    def test_a_bracketed_work_title_is_supplied_and_devised(
+        self, lido_page, lido_record
+    ):
+        work = self.work_with(lido_page, lido_record, "[Storchennest]")
+        assert work.has_primary_title.type == "SuppliedDevisedTitle"
+        assert work.has_primary_title.has_name == "Storchennest"
+
+    def test_an_ordinary_work_title_is_the_preferred_one(
+        self, lido_page, lido_record
+    ):
+        work = self.work_with(lido_page, lido_record, "Storchennest")
+        assert work.has_primary_title.type == "PreferredTitle"
+
+    def test_the_ordering_name_is_derived_here_as_well(
+        self, lido_page, lido_record
+    ):
+        work = self.work_with(lido_page, lido_record, "[Die Störche]")
+        assert work.has_primary_title.has_ordering_name == "Störche, Die"
+
+
+class TestAnAgentThatIsAnOrganisation:
+    """The source says so; the vocabulary has to know the word.
+
+    "corporation" is what the Düsseldorf export writes, and it was in
+    neither of the two lists, so every production company arrived
+    without a type.
+
+    """
+
+    def agent(self, lido_page, lido_record, actor_type):
+        source = lido_page(
+            "export.xml",
+            lido_record(
+                "955613",
+                director="DEFA-Studio für Dokumentarfilme",
+                role="Produktionsfirma",
+                actor_type=actor_type,
+            ),
+        )
+        work = one(fmdu_lido.efi_import(source), "avefi:WorkVariant")
+        activity = work.has_event[0].has_activity[0]
+        return activity.has_agent[0]
+
+    def test_a_corporation_is_a_corporate_body(self, lido_page, lido_record):
+        assert (
+            self.agent(lido_page, lido_record, "corporation").type
+            == "CorporateBody"
+        )
+
+    def test_a_person_still_is_one(self, lido_page, lido_record):
+        assert self.agent(lido_page, lido_record, "person").type == "Person"
+
+    def test_an_unstated_type_stays_unstated(self, lido_page, lido_record):
+        """Deriving it from the name is a documented non-goal."""
+        assert self.agent(lido_page, lido_record, "").type is None
+
+
+class TestWhatALanguageIsFor:
+    """The label on the term says it, and nothing else does.
+
+    Every language of a copy is written as a term reading "Deutsch" or
+    "Englisch". Read without the label they are all the spoken
+    language, which turns an English subtitle track into an English
+    soundtrack.
+
+    """
+
+    def item_with(self, lido_page, lido_record, keywords):
+        source = lido_page(
+            "export.xml", lido_record("955613", keywords=keywords)
+        )
+        return one(fmdu_lido.efi_import(source), "avefi:Item")
+
+    def test_a_subtitle_is_a_subtitle(self, lido_page, lido_record):
+        item = self.item_with(
+            lido_page, lido_record, (("Englisch", "Untertitel"),)
+        )
+        assert [(lang.code, lang.usage) for lang in item.in_language] == [
+            ("eng", ["Subtitles"])
+        ]
+
+    def test_an_intertitle_is_an_intertitle(self, lido_page, lido_record):
+        item = self.item_with(
+            lido_page, lido_record, (("Deutsch", "Zwischentitel"),)
+        )
+        assert [(lang.code, lang.usage) for lang in item.in_language] == [
+            ("ger", ["Intertitles"])
+        ]
+
+    def test_no_dialogue_under_a_dialogue_label_is_a_usage(
+        self, lido_page, lido_record
+    ):
+        item = self.item_with(
+            lido_page, lido_record, (("Ohne Sprache", "Dialogton"),)
+        )
+        assert [(lang.code, lang.usage) for lang in item.in_language] == [
+            (None, ["NoDialogue"])
+        ]
+
+    def test_all_three_are_kept_apart(self, lido_page, lido_record):
+        item = self.item_with(
+            lido_page,
+            lido_record,
+            (
+                ("Ohne Sprache", "Dialogton"),
+                ("Englisch", "Untertitel"),
+                ("Deutsch", "Zwischentitel"),
+            ),
+        )
+        assert [(lang.code, lang.usage) for lang in item.in_language] == [
+            (None, ["NoDialogue"]),
+            ("eng", ["Subtitles"]),
+            ("ger", ["Intertitles"]),
+        ]
+
+    def test_one_language_used_twice_is_one_entry(
+        self, lido_page, lido_record
+    ):
+        item = self.item_with(
+            lido_page,
+            lido_record,
+            (("Deutsch", "Dialogton"), ("Deutsch", "Zwischentitel")),
+        )
+        assert [(lang.code, lang.usage) for lang in item.in_language] == [
+            ("ger", ["SpokenLanguage", "Intertitles"])
+        ]
+
+    def test_a_labelled_language_is_not_also_a_genre(
+        self, lido_page, lido_record
+    ):
+        source = lido_page(
+            "export.xml",
+            lido_record("955613", keywords=(("Englisch", "Untertitel"),)),
+        )
+        work = one(fmdu_lido.efi_import(source), "avefi:WorkVariant")
+        assert "Englisch" not in [g.has_name for g in work.has_genre]
+
+    def test_an_unlabelled_language_is_read_as_before(
+        self, lido_page, lido_record
+    ):
+        """Which is the spoken one, reported as the assumption it is."""
+        item = self.item_with(lido_page, lido_record, ("Deutsch",))
+        assert [(lang.code, lang.usage) for lang in item.in_language] == [
+            ("ger", ["SpokenLanguage"])
+        ]
+
+    def test_an_unknown_label_is_reported(self, lido_page, lido_record):
+        report = ConversionReport()
+        with collecting(report):
+            self.item_with(
+                lido_page, lido_record, (("Englisch", "Gesangssprache"),)
+            )
+        assert any(
+            "language usage" in entry.message.lower()
+            for entry in report.entries
+        )
+
+
+class TestWhereAnObjectIsPublished:
+    """A published identifier that is a URL is a link to the object.
+
+    ``objectPublishedID`` holds both the AVefi handle and the address
+    of the object's page in the provider's own system. The value tells
+    them apart; ``lido:type`` does not, this provider typing the page
+    address as a local identifier.
+
+    """
+
+    PAGE = "http://www.duesseldorf.de/dkult/DE-MUS-432511/994335"
+
+    def item_with(self, lido_page, lido_record, **kwargs):
+        source = lido_page("export.xml", lido_record("955613", **kwargs))
+        return one(fmdu_lido.efi_import(source), "avefi:Item")
+
+    def test_the_page_of_an_object_becomes_a_web_resource(
+        self, lido_page, lido_record
+    ):
+        item = self.item_with(
+            lido_page, lido_record, published_urls=(self.PAGE,)
+        )
+        assert item.has_webresource == [self.PAGE]
+
+    def test_the_handle_does_not(self, lido_page, lido_record):
+        """It is the identifier of the copy, and it already is one."""
+        item = self.item_with(
+            lido_page,
+            lido_record,
+            handle=WORK_HANDLE_URL,
+            published_urls=(self.PAGE,),
+        )
+        assert item.has_webresource == [self.PAGE]
+        assert [i.category for i in item.has_identifier] == [
+            "avefi:AVefiResource",
+            "avefi:LocalResource",
+        ]
+
+    def test_the_same_address_is_not_listed_twice(
+        self, lido_page, lido_record
+    ):
+        item = self.item_with(
+            lido_page, lido_record, published_urls=(self.PAGE, self.PAGE)
+        )
+        assert item.has_webresource == [self.PAGE]
+
+
+class TestAHandleThatReachesNothing:
+    """The conversion compares its own input and output.
+
+    A handle in the record and in none of the records derived from it
+    is a silent failure: the run succeeds and the output validates.
+    The next delivery then asks for a second identifier for something
+    that has one, and a handle cannot be withdrawn.
+
+    """
+
+    def report_for(self, lido_page, lido_record, **kwargs):
+        source = lido_page("export.xml", lido_record("955613", **kwargs))
+        report = ConversionReport()
+        with collecting(report):
+            fmdu_lido.efi_import(source)
+        return report
+
+    def lost(self, report):
+        return [
+            entry
+            for entry in report.entries
+            if "no output record carries" in entry.message
+        ]
+
+    def test_a_handle_under_an_unknown_relation_is_reported(
+        self, lido_page, lido_record
+    ):
+        """Which is what a missing profile term looks like from here."""
+        report = self.report_for(
+            lido_page,
+            lido_record,
+            related=[
+                (
+                    "955613",
+                    "Im Dorf der weissen Störche",
+                    (("www.av-efi.net", WORK_HANDLE_URL),),
+                )
+            ],
+            related_rel="ist Teil von",
+        )
+        lost = self.lost(report)
+        assert [entry.raw_value for entry in lost] == [WORK_HANDLE]
+        assert "ist teil von" in lost[0].source_field
+
+    def test_a_handle_that_is_transferred_is_not(self, lido_page, lido_record):
+        report = self.report_for(
+            lido_page,
+            lido_record,
+            related=[
+                (
+                    "955613",
+                    "Im Dorf der weissen Störche",
+                    (("www.av-efi.net", WORK_HANDLE_URL),),
+                )
+            ],
+            manifestation_handle=MANIFESTATION_HANDLE_URL,
+            handle=(
+                "https://hdl.handle.net/21.11155/"
+                "11111111-2222-3333-4444-555555555555"
+            ),
+        )
+        assert self.lost(report) == []
+
+    def test_a_record_without_handles_says_nothing(
+        self, lido_page, lido_record
+    ):
+        assert self.lost(self.report_for(lido_page, lido_record)) == []
