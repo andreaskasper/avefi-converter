@@ -10,7 +10,7 @@ the structure the CSV importer produces for the same institution.
 
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 import re
 
@@ -87,9 +87,9 @@ MAPPING_RULES = (
         "work_pid",
         "Work",
         "lido:relatedWorkSet[relType in profile terms]/lido:relatedWork"
-        "/lido:object/lido:objectID carrying the AVefi handle prefix",
+        "/lido:object/lido:objectID whose lido:source names AVefi",
         "has_identifier (AVefiResource)",
-        "Profile avefi_handle_prefix",
+        "Profile avefi_sources",
         "The local identifier stays and stays first; the handle is"
         " added beside it, so that a re-import of registered holdings"
         " updates the work instead of minting a second one for it",
@@ -98,24 +98,29 @@ MAPPING_RULES = (
         "work_authority",
         "Work",
         "lido:relatedWorkSet[relType in profile terms]/lido:relatedWork"
-        "/lido:object/lido:objectID naming an authority AVefi knows",
+        "/lido:object/lido:objectID whose lido:source names an"
+        " authority AVefi knows",
         "same_as",
-        notes="Recognised by the shape of the value rather than by"
-        " lido:source, which a provider writes as it pleases."
-        " Filmportal is the one authority a LIDO export has been seen"
-        " to carry here",
+        "Profile related_authority_sources",
+        "The identifier is the last segment of the value: an authority"
+        " writes one identifier under more than one path, and"
+        " filmportal.de/film/<id> and filmportal.de/<id> resolve to"
+        " the same work. Filmportal is the one authority a LIDO export"
+        " has been seen to carry here",
     ),
     MappingRule(
         "manifestation_pid",
         "Manifestation",
         "lido:relatedWorkSet[relType in profile"
         " manifestation_rel_terms]/lido:relatedWork/lido:object"
-        "/lido:objectID carrying the AVefi handle prefix",
-        "has_identifier (AVefiResource)",
-        "Profile manifestation_rel_terms, avefi_handle_prefix",
+        "/lido:objectID whose lido:source names AVefi",
+        "has_identifier (AVefiResource), manifestation grouping",
+        "Profile manifestation_rel_terms, avefi_sources",
         "The only place a record states the identifier of its"
         " manifestation: the record describes the copy, so"
-        " objectPublishedID is the copy's",
+        " objectPublishedID is the copy's. It also decides which"
+        " copies share a manifestation, the derived key being the"
+        " fallback for a copy that states none",
     ),
     MappingRule(
         "work_grouping",
@@ -130,10 +135,14 @@ MAPPING_RULES = (
     MappingRule(
         "manifestation_grouping",
         "Manifestation",
-        "work key plus colour type, format and languages of the copy",
+        "the manifestation's own identifier where the record states"
+        " one, else the work key plus colour type, format and"
+        " languages of the copy",
         "has_identifier (manifestation)",
-        notes="Copies agreeing on the carrier characteristics share a"
-        " manifestation",
+        notes="Where the provider names the manifestation, that"
+        " decides which copies share one — two copies described"
+        " differently are still one manifestation. Otherwise copies"
+        " agreeing on the carrier characteristics share one",
     ),
     MappingRule(
         "record_id",
@@ -289,9 +298,9 @@ MAPPING_RULES = (
     MappingRule(
         "avefi_identifier",
         "Item",
-        "lido:objectPublishedID carrying the AVefi handle prefix",
+        "lido:objectPublishedID whose lido:source names AVefi",
         "has_identifier (AVefiResource)",
-        "Profile avefi_handle_prefix",
+        "Profile avefi_sources, avefi_handle_prefix as a fallback",
         "A copy registered in AVefi carries its handle back into the"
         " provider's export; transferring it makes a re-import an"
         " update instead of a second identifier for one copy",
@@ -346,7 +355,7 @@ MAPPING_RULES = (
         "handle_check",
         "Record",
         "lido:objectPublishedID, lido:relatedWorkSet//lido:objectID"
-        " carrying the AVefi handle prefix",
+        " whose lido:source names AVefi",
         "—",
         "Profile avefi_handle_prefix",
         "Not a mapping but its own check: a handle stated in the"
@@ -392,6 +401,11 @@ ASSUMPTIONS = (
     " the work as on the copy. It becomes `SuppliedDevisedTitle` with"
     " the brackets removed, including where the title arrives through"
     " `lido:displayObject` of a related work.",
+    "Who issued an identifier is read from `lido:source` and not from"
+    " the shape of the value. AVefi will register under more than one"
+    " handle prefix, and a record naming the issuer has answered the"
+    " question the prefix was standing in for. The prefix is used only"
+    " where a record states no source at all.",
     "Whether an agent is a `Person` or a `CorporateBody` is taken from"
     " `lido:type`, against the profile's vocabulary, and left unset"
     " where the source does not say."
@@ -594,6 +608,10 @@ class MappingContext(GroupingContext):
     """
 
     profile: LidoProfile | None = None
+    #: Keys a manifestation has already built its local identifier
+    #: from. A dict rather than a set so that it is rolled back with
+    #: everything else a failed record registered.
+    manifestation_local_keys: dict = field(default_factory=dict)
 
 
 def new_context(profile: LidoProfile) -> MappingContext:
@@ -607,18 +625,26 @@ def new_context(profile: LidoProfile) -> MappingContext:
     return MappingContext(profile=profile)
 
 
-#: Authority an identifier found in a related work belongs to,
-#: recognised by the shape of its value.
-#:
-#: ``lido:source`` names the authority as well, but a provider writes
-#: it as it pleases — "www.filmportal.de", "Filmportal", "filmportal"
-#: — whereas the value is the authority's own URI and says the same
-#: thing without a vocabulary to keep in step.
-RELATED_WORK_AUTHORITIES = (
-    (
-        re.compile(r"filmportal\.de/film/([0-9a-fA-F]{32})"),
-        efi.FilmportalResource,
-    ),
+#: The AVefi resource class for each authority a related record may
+#: be linked to. The profile says which ``lido:source`` means which of
+#: them, so a provider naming Filmportal differently needs a profile
+#: entry and not a code change.
+RELATED_WORK_RESOURCES = {
+    "filmportal": efi.FilmportalResource,
+    "gnd": efi.GNDResource,
+    "viaf": efi.VIAFResource,
+    "wikidata": efi.WikidataResource,
+    "eidr": efi.EIDRResource,
+}
+
+#: Resolvers an identifier may be written through. A handle is the
+#: same handle whether it is written bare or as a URL that resolves
+#: it, and providers write both.
+HANDLE_RESOLVERS = (
+    "https://hdl.handle.net/",
+    "http://hdl.handle.net/",
+    "https://doi.org/",
+    "hdl:",
 )
 
 
@@ -691,50 +717,89 @@ def related_sets(descriptive, terms):
             yield related_set
 
 
+def issued_by_avefi(candidate, text, profile) -> bool:
+    """Return True if AVefi issued this identifier.
+
+    The record says so: ``lido:source`` names the authority. The handle
+    prefix is not the criterion, because AVefi will register under more
+    than one and an identifier that named its issuer has already
+    answered the question the prefix was standing in for. Where a
+    record states no source, the prefix is what is left to go on.
+
+    """
+    source = str(getattr(candidate, "source", "") or "").strip().lower()
+    if source:
+        return source in profile.avefi_sources
+    prefix = profile.avefi_handle_prefix
+    return bool(prefix) and f"{prefix}/" in text
+
+
+def avefi_handle(text: str) -> str | None:
+    """Return the handle in ``text``, without the resolver it is under."""
+    value = (text or "").strip()
+    for resolver in HANDLE_RESOLVERS:
+        if value.lower().startswith(resolver):
+            value = value[len(resolver) :]
+            break
+    value = value.strip().strip("/")
+    return value or None
+
+
+def authority_resource_for(candidate, profile):
+    """Return the resource class for an identifier's ``lido:source``."""
+    source = str(getattr(candidate, "source", "") or "").strip().lower()
+    if not source:
+        return None
+    authority = profile.related_authority_sources.get(source)
+    return RELATED_WORK_RESOURCES.get(authority) if authority else None
+
+
+def authority_identifier(text: str) -> str | None:
+    """Return the identifier in ``text``, without the URL around it.
+
+    An authority writes the same identifier under more than one path —
+    ``filmportal.de/film/<id>`` and ``filmportal.de/<id>`` resolve to
+    one work — so the last segment is the identifier and the rest is
+    how one gets to it.
+
+    """
+    value = (text or "").strip().rstrip("/")
+    return value.rsplit("/", 1)[-1].strip() or None
+
+
 def object_identifiers(obj, profile):
     """Return local identifier, AVefi handle and authority links.
 
     A related record states several identifiers of itself and LIDO
-    does not order them, so which one is which follows from the value
-    rather than from its position: a handle carrying the AVefi prefix
-    is the AVefi identifier, a value matching an authority's URI is a
-    link to that authority, and what remains is the provider's own
-    key. Taking the first one, as this did, worked only as long as
-    the provider happened to write its own first.
+    does not order them, so which one is which follows from what the
+    record says about them rather than from their position: the one
+    whose ``lido:source`` names AVefi is the AVefi identifier, one
+    naming another authority is a link to it, and what remains is the
+    provider's own key. Taking the first one, as this did, worked only
+    as long as the provider happened to write its own first.
 
     """
     local = None
     avefi = None
     same_as = []
-    handle = handle_pattern(profile)
     for candidate in getattr(obj, "object_id", None) or []:
         text = (text_of(candidate) or "").strip()
         if not text:
             continue
-        if handle is not None:
-            match = handle.search(text)
-            if match:
-                avefi = avefi or match.group(1)
-                continue
-        for pattern, resource in RELATED_WORK_AUTHORITIES:
-            match = pattern.search(text)
-            if match:
-                link = resource(id=match.group(1))
+        if issued_by_avefi(candidate, text, profile):
+            avefi = avefi or avefi_handle(text)
+            continue
+        resource = authority_resource_for(candidate, profile)
+        if resource is not None:
+            identifier = authority_identifier(text)
+            if identifier:
+                link = resource(id=identifier)
                 if link not in same_as:
                     same_as.append(link)
-                break
-        else:
-            if local is None and not is_absolute_url(text):
-                local = local_source_key(text, profile)
+            continue
+        if local is None and not is_absolute_url(text):
+            local = local_source_key(text, profile)
     return local, avefi, tuple(same_as)
-
-
-def handle_pattern(profile):
-    """Return the pattern matching an AVefi handle, if configured."""
-    prefix = profile.avefi_handle_prefix
-    if not prefix:
-        return None
-    return re.compile(rf"\b({re.escape(prefix)}/[^\s\"'<>]+)")
 
 
 def is_absolute_url(text: str) -> bool:
@@ -937,14 +1002,19 @@ def map_record(
             manifestation.has_event.append(publication)
         return manifestation
 
-    manifestation, is_new = context.manifestation_for(
-        manifestation_key, new_manifestation
-    )
-    if is_new:
-        new_records.append(manifestation)
     stated_manifestation = manifestation_relations(
         descriptive, profile, source_key
     )
+    manifestation, is_new = manifestation_for(
+        context,
+        manifestation_key,
+        stated_manifestation,
+        new_manifestation,
+        work_ids,
+        source_key,
+    )
+    if is_new:
+        new_records.append(manifestation)
     if stated_manifestation is not None:
         apply_stated_identifiers(
             manifestation, stated_manifestation, source_key, "Manifestation"
@@ -968,6 +1038,82 @@ def map_record(
     return new_records
 
 
+def manifestation_for(context, key, stated, factory, work_ids, source_key):
+    """Return the manifestation this copy belongs to.
+
+    Several copies commonly belong to one manifestation, and until now
+    the converter decided which by deriving a key from the copy —
+    colour, format, languages. Where the provider states the
+    manifestation's own identifier, that is the better answer and the
+    only one that cannot contradict itself: two copies described
+    differently were becoming two manifestations, and both were given
+    the one identifier the provider stated, which ``efi-conv check``
+    rightly rejects as not unique.
+
+    The identifier is therefore the key where there is one, and the
+    derived key is registered alongside it so that a copy of the same
+    manifestation that carries no identifier still finds it. What the
+    local identifier is built from does not change: it is what a
+    reader recognises, and a handle repeated inside it would say the
+    same thing twice.
+
+    """
+    pid = stated.avefi if stated is not None else None
+    if not pid:
+        return context.manifestation_for(key, factory)
+    manifestation, is_new = context.manifestation_for(
+        f"avefi:{pid}", factory, local_id=unique_manifestation_id(context, key)
+    )
+    context.manifestations.setdefault(key, manifestation)
+    if not is_new:
+        report_manifestation_disagreement(
+            manifestation, work_ids, pid, source_key
+        )
+    return manifestation, is_new
+
+
+def unique_manifestation_id(context, key: str) -> str:
+    """Return a key no other manifestation has built its id from.
+
+    Two manifestations the provider keeps apart can look the same to
+    the derived key — it knows colour, format and language and the
+    provider may be separating them on something else. They would then
+    be given one local identifier between them, which is the same
+    duplicate the persistent identifiers were producing.
+
+    """
+    taken = context.manifestation_local_keys
+    if key not in taken:
+        taken[key] = True
+        return key
+    suffix = 2
+    while make_key(key, str(suffix)) in taken:
+        suffix += 1
+    unique = make_key(key, str(suffix))
+    taken[unique] = True
+    return unique
+
+
+def report_manifestation_disagreement(
+    manifestation, work_ids, pid, source_key
+) -> None:
+    """Report a manifestation two records attach to different works."""
+    known = {identifier.id for identifier in manifestation.is_manifestation_of}
+    stated = {identifier.id for identifier in work_ids}
+    if known == stated:
+        return
+    report_issue(
+        "warning",
+        "Copies of one manifestation are attached to different works;"
+        " the manifestation keeps the works of the record that"
+        " introduced it",
+        record_id=source_key,
+        source_field="relatedWorkSet",
+        target_field="is_manifestation_of",
+        raw_value=sorted(known ^ stated),
+    )
+
+
 def report_handles_not_transferred(
     lido_record, descriptive, records, profile, source_key
 ) -> None:
@@ -987,16 +1133,13 @@ def report_handles_not_transferred(
     from the profile.
 
     """
-    pattern = handle_pattern(profile)
-    if pattern is None:
-        return
     transferred = {
         identifier.id
         for record in records
         for identifier in record.has_identifier
         if identifier.category == "avefi:AVefiResource"
     }
-    for handle, relation in stated_handles(lido_record, descriptive, pattern):
+    for handle, relation in stated_handles(lido_record, descriptive, profile):
         if handle in transferred:
             continue
         report_issue(
@@ -1012,7 +1155,7 @@ def report_handles_not_transferred(
         )
 
 
-def stated_handles(lido_record, descriptive, pattern):
+def stated_handles(lido_record, descriptive, profile):
     """Yield every AVefi handle the record writes into an identifier.
 
     Identifiers only — ``objectPublishedID`` and the ``objectID`` of
@@ -1023,14 +1166,17 @@ def stated_handles(lido_record, descriptive, pattern):
     """
     seen = set()
 
-    def handles(text, relation):
-        match = pattern.search(text or "")
-        if match and match.group(1) not in seen:
-            seen.add(match.group(1))
-            yield match.group(1), relation
+    def handles(candidate, relation):
+        text = (text_of(candidate) or "").strip()
+        if not text or not issued_by_avefi(candidate, text, profile):
+            return
+        handle = avefi_handle(text)
+        if handle and handle not in seen:
+            seen.add(handle)
+            yield handle, relation
 
     for published in lido_record.object_published_id or []:
-        yield from handles(text_of(published), "objectPublishedID")
+        yield from handles(published, "objectPublishedID")
     wrap = getattr(
         descriptive.object_relation_wrap, "related_works_wrap", None
     )
@@ -1047,7 +1193,7 @@ def stated_handles(lido_record, descriptive, pattern):
             else None
         )
         for candidate in getattr(obj, "object_id", None) or []:
-            yield from handles(text_of(candidate), relation)
+            yield from handles(candidate, relation)
 
 
 def work_from_the_copy(
@@ -1826,12 +1972,11 @@ def published_web_resources(lido_record, profile):
     a URL whatever the type says.
 
     """
-    handle = handle_pattern(profile)
     for published in lido_record.object_published_id or []:
         text = (text_of(published) or "").strip()
         if not text or not is_absolute_url(text):
             continue
-        if handle is not None and handle.search(text):
+        if issued_by_avefi(published, text, profile):
             continue
         yield text
 
@@ -1852,20 +1997,13 @@ def avefi_identifiers(lido_record, profile, source_key):
     :func:`related_works` and :func:`manifestation_relations`.
 
     """
-    prefix = profile.avefi_handle_prefix
-    if not prefix:
-        return
-    pattern = re.compile(rf"\b({re.escape(prefix)}/[^\s\"'<>]+)")
     seen = set()
     for published in lido_record.object_published_id or []:
-        text = text_of(published)
-        if not text:
+        text = (text_of(published) or "").strip()
+        if not text or not issued_by_avefi(published, text, profile):
             continue
-        match = pattern.search(text)
-        if not match:
-            continue
-        handle = match.group(1)
-        if handle in seen:
+        handle = avefi_handle(text)
+        if not handle or handle in seen:
             continue
         seen.add(handle)
         report_issue(
