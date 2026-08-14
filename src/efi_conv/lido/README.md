@@ -14,23 +14,57 @@ Landeshauptstadt Düsseldorf and doubles as the worked example.
 
 ```mermaid
 flowchart TD
-    IN["lido:lido record"] --> WT{"objectWorkType<br/>a film?"}
-    WT -->|no| SKIP["skipped, reported<br/>accompanying material is out of scope"]
-    WT -->|yes| T["titles<br/>articles moved both ways"]
-    T --> WK{"work key known?<br/>title · director · date"}
+    IN["lido:lido record"] --> SC{"in scope?<br/>recordType, else objectWorkType"}
+    SC -->|no| SKIP["skipped, reported<br/>accompanying material is out of scope"]
+    SC -->|yes| T["titles<br/>brackets read as supplied<br/>articles moved both ways"]
+    T --> RW{"relatedWorkSet<br/>names the film?"}
+    RW -->|yes| STATED["one WorkVariant per stated work<br/>+ its PID and authority links"]
+    RW -->|no| WK{"work key known?<br/>title · director · date"}
     WK -->|yes| REUSE["reuse WorkVariant"]
     WK -->|no| NEW["new WorkVariant<br/>+ production event, genre"]
+    STATED --> MK
     REUSE --> MK
     NEW --> MK{"manifestation key known?<br/>colour · format · language"}
     MK -->|yes| MREUSE["reuse Manifestation"]
     MK -->|no| MNEW["new Manifestation<br/>+ publication event"]
-    MREUSE --> IT["Item<br/>duration, carrier, access status"]
-    MNEW --> IT
-    IT --> OUT["work + manifestation + item"]
+    MREUSE --> MP["PID from the is_item_of relation"]
+    MNEW --> MP
+    MP --> IT["Item<br/>duration, carrier, access status<br/>languages by their label<br/>PID and links from objectPublishedID"]
+    IT --> CK{"every handle in the record<br/>carried by an output record?"}
+    CK -->|no| LOST["reported: a handle would be minted twice"]
+    CK -->|yes| OUT["work + manifestation + item"]
+    LOST --> OUT
     SKIP -.-> REP[("conversion report")]
     T -.-> REP
     IT -.-> REP
+    LOST -.-> REP
 ```
+
+## Identifiers
+
+A record states three kinds of identifier and they are not in the same
+place. `objectPublishedID` is the **copy's**, because a LIDO record
+describes one object and the object is the copy. The **work** and the
+**manifestation** are named in the relations the record has to them:
+`relatedWorkSet` with the profile's `related_work_rel_terms` carries the
+work's handle and its authority links, one with
+`manifestation_rel_terms` carries the manifestation's.
+
+Which identifier of a related record is which follows from the value and
+not from its position, LIDO ordering nothing: a handle with the profile's
+prefix is the AVefi identifier, a value matching an authority's URI
+becomes `same_as`, and what is left is the provider's own key.
+
+A handle is always added **beside** the local identifier and never in
+front of it. `is_item_of` and `is_manifestation_of` refer to a record by
+its first identifier, so a PID put first would leave every reference
+pointing at nothing.
+
+Losing a handle is expensive — one cannot be withdrawn — and silent: the
+run succeeds and the output validates. The conversion therefore compares
+its own input and output and reports any handle the record states that
+no record derived from it carries, naming the relation it stood under.
+That is usually a term missing from the profile.
 
 Grouping matters: several LIDO records commonly describe several copies
 of one film. Emitting a work per record would register identifiers for

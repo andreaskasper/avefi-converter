@@ -35,7 +35,7 @@ from ..core.records import (
 from ..core.report import for_file, report_issue, report_record_skipped
 from ..core.xmlrecords import first, parse_records, text_of
 from .generated.lido_1_1 import Lido
-from .profile import LidoProfile
+from .profile import DEFAULT_AGENT_TYPES, LidoProfile
 
 log = logging.getLogger(__name__)
 
@@ -82,6 +82,40 @@ MAPPING_RULES = (
         "Where the provider states which films a copy is of, that"
         " decides: the work keeps its own identifier and title, and a"
         " copy naming several belongs to several works",
+    ),
+    MappingRule(
+        "work_pid",
+        "Work",
+        "lido:relatedWorkSet[relType in profile terms]/lido:relatedWork"
+        "/lido:object/lido:objectID carrying the AVefi handle prefix",
+        "has_identifier (AVefiResource)",
+        "Profile avefi_handle_prefix",
+        "The local identifier stays and stays first; the handle is"
+        " added beside it, so that a re-import of registered holdings"
+        " updates the work instead of minting a second one for it",
+    ),
+    MappingRule(
+        "work_authority",
+        "Work",
+        "lido:relatedWorkSet[relType in profile terms]/lido:relatedWork"
+        "/lido:object/lido:objectID naming an authority AVefi knows",
+        "same_as",
+        notes="Recognised by the shape of the value rather than by"
+        " lido:source, which a provider writes as it pleases."
+        " Filmportal is the one authority a LIDO export has been seen"
+        " to carry here",
+    ),
+    MappingRule(
+        "manifestation_pid",
+        "Manifestation",
+        "lido:relatedWorkSet[relType in profile"
+        " manifestation_rel_terms]/lido:relatedWork/lido:object"
+        "/lido:objectID carrying the AVefi handle prefix",
+        "has_identifier (AVefiResource)",
+        "Profile manifestation_rel_terms, avefi_handle_prefix",
+        "The only place a record states the identifier of its"
+        " manifestation: the record describes the copy, so"
+        " objectPublishedID is the copy's",
     ),
     MappingRule(
         "work_grouping",
@@ -287,10 +321,38 @@ MAPPING_RULES = (
         " under one heading; a term matching neither is reported",
     ),
     MappingRule(
+        "language_usage",
+        "Item",
+        "lido:classification/lido:term[@lido:label]",
+        "in_language.code, in_language.usage",
+        "Profile language_usage_labels and language_name_map",
+        "The label states what a language is for — Dialogton,"
+        " Untertitel, Zwischentitel — and is the only thing telling"
+        " the terms apart; a term whose label is not configured is"
+        " reported rather than read as the spoken language",
+    ),
+    MappingRule(
         "webresource",
         "Item",
-        "lido:administrativeMetadata/lido:resourceWrap//lido:linkResource",
+        "lido:administrativeMetadata/lido:resourceWrap//lido:linkResource,"
+        " lido:objectPublishedID holding a URL",
         "has_webresource",
+        notes="A published identifier that is a URL and not an AVefi"
+        " handle is the object's page in the provider's system. The"
+        " value decides, not lido:type, which this provider gives as"
+        " a local identifier for a URL",
+    ),
+    MappingRule(
+        "handle_check",
+        "Record",
+        "lido:objectPublishedID, lido:relatedWorkSet//lido:objectID"
+        " carrying the AVefi handle prefix",
+        "—",
+        "Profile avefi_handle_prefix",
+        "Not a mapping but its own check: a handle stated in the"
+        " record and carried by none of the records derived from it"
+        " is reported with the relation it stood under. A handle"
+        " cannot be withdrawn, so losing one is expensive and silent",
     ),
     MappingRule(
         "issuer",
@@ -326,8 +388,13 @@ ASSUMPTIONS = (
     " creation, because a provider may record the people separately"
     " from the making of the copy. The activities are production"
     " activities either way and are attached to the production event.",
+    "A title in square brackets is one the cataloguer supplied, on"
+    " the work as on the copy. It becomes `SuppliedDevisedTitle` with"
+    " the brackets removed, including where the title arrives through"
+    " `lido:displayObject` of a related work.",
     "Whether an agent is a `Person` or a `CorporateBody` is taken from"
-    " `lido:type` and left unset where the source does not say."
+    " `lido:type`, against the profile's vocabulary, and left unset"
+    " where the source does not say."
     " Deriving it from the name is out of scope, and the earlier"
     " default of `Person` for every director was that derivation in"
     " all but name.",
@@ -540,6 +607,217 @@ def new_context(profile: LidoProfile) -> MappingContext:
     return MappingContext(profile=profile)
 
 
+#: Authority an identifier found in a related work belongs to,
+#: recognised by the shape of its value.
+#:
+#: ``lido:source`` names the authority as well, but a provider writes
+#: it as it pleases — "www.filmportal.de", "Filmportal", "filmportal"
+#: — whereas the value is the authority's own URI and says the same
+#: thing without a vocabulary to keep in step.
+RELATED_WORK_AUTHORITIES = (
+    (
+        re.compile(r"filmportal\.de/film/([0-9a-fA-F]{32})"),
+        efi.FilmportalResource,
+    ),
+)
+
+
+@dataclass(frozen=True)
+class RelatedRecord:
+    """What a ``lido:relatedWorkSet`` says about the record it names.
+
+    Attributes
+    ----------
+    local : str or None
+        The provider's own identifier for the related record.
+    title : str
+        Its title, as ``lido:displayObject`` states it.
+    avefi : str or None
+        Its AVefi handle, where the provider carries one. A work and
+        a manifestation are named nowhere else in a LIDO record: the
+        record describes the copy, and ``objectPublishedID`` is
+        therefore the copy's own identifier. Reading the handle here
+        is what turns a re-import of registered holdings into an
+        update of the work rather than a second work for one film.
+    same_as : tuple
+        Authority links stated for it, such as its Filmportal entry.
+
+    """
+
+    local: str | None
+    title: str = ""
+    avefi: str | None = None
+    same_as: tuple = ()
+
+
+def rel_type_names(related_set) -> tuple:
+    """Return the ways a relatedWorkSet names its relation.
+
+    Both the human readable ``lido:term`` and the ``lido:conceptID``
+    identifying the relation, the latter reduced to its last path
+    segment: ``https://www.av-efi.net/av-efi-schema/is_item_of`` is
+    the same statement as the term "is item of", and a provider is
+    free to give either or both.
+
+    """
+    rel = getattr(related_set, "related_work_rel_type", None)
+    if rel is None:
+        return ()
+    names = []
+    text = term_text(rel)
+    if text:
+        names.append(text.strip().lower())
+    for concept in getattr(rel, "concept_id", None) or []:
+        value = (text_of(concept) or "").strip()
+        if not value:
+            continue
+        names.append(value.lower())
+        names.append(value.rstrip("/").rsplit("/", 1)[-1].lower())
+    return tuple(names)
+
+
+def related_sets(descriptive, terms):
+    """Yield the relatedWorkSets whose relation is one of ``terms``."""
+    if not terms:
+        return
+    wrap = getattr(
+        descriptive.object_relation_wrap, "related_works_wrap", None
+    )
+    if wrap is None:
+        return
+    wanted = {str(term).lower() for term in terms}
+    for related_set in wrap.related_work_set or []:
+        if wanted.intersection(rel_type_names(related_set)):
+            yield related_set
+
+
+def object_identifiers(obj, profile):
+    """Return local identifier, AVefi handle and authority links.
+
+    A related record states several identifiers of itself and LIDO
+    does not order them, so which one is which follows from the value
+    rather than from its position: a handle carrying the AVefi prefix
+    is the AVefi identifier, a value matching an authority's URI is a
+    link to that authority, and what remains is the provider's own
+    key. Taking the first one, as this did, worked only as long as
+    the provider happened to write its own first.
+
+    """
+    local = None
+    avefi = None
+    same_as = []
+    handle = handle_pattern(profile)
+    for candidate in getattr(obj, "object_id", None) or []:
+        text = (text_of(candidate) or "").strip()
+        if not text:
+            continue
+        if handle is not None:
+            match = handle.search(text)
+            if match:
+                avefi = avefi or match.group(1)
+                continue
+        for pattern, resource in RELATED_WORK_AUTHORITIES:
+            match = pattern.search(text)
+            if match:
+                link = resource(id=match.group(1))
+                if link not in same_as:
+                    same_as.append(link)
+                break
+        else:
+            if local is None and not is_absolute_url(text):
+                local = local_source_key(text, profile)
+    return local, avefi, tuple(same_as)
+
+
+def handle_pattern(profile):
+    """Return the pattern matching an AVefi handle, if configured."""
+    prefix = profile.avefi_handle_prefix
+    if not prefix:
+        return None
+    return re.compile(rf"\b({re.escape(prefix)}/[^\s\"'<>]+)")
+
+
+def is_absolute_url(text: str) -> bool:
+    """Return True if ``text`` is an http or https URL."""
+    return text.lower().startswith(("http://", "https://"))
+
+
+def apply_stated_identifiers(record, related, source_key, level: str) -> None:
+    """Add the PID and authority links a provider states for a record.
+
+    Only ever added, never replaced: the local identifier stays where
+    it is and stays first, because everything in the delivery refers
+    to a work and a manifestation by it.
+
+    """
+    if related.avefi:
+        others = [
+            identifier.id
+            for identifier in record.has_identifier
+            if identifier.category == "avefi:AVefiResource"
+            and identifier.id != related.avefi
+        ]
+        if others:
+            report_issue(
+                "warning",
+                f"{level} is given a second AVefi identifier by this"
+                " record; both are kept, because a handle cannot be"
+                " withdrawn and which of them is right is for the"
+                " data provider to say",
+                record_id=source_key,
+                source_field="relatedWorkSet/relatedWork/object/objectID",
+                target_field="has_identifier",
+                raw_value=[*others, related.avefi],
+            )
+    if related.avefi and not any(
+        identifier.category == "avefi:AVefiResource"
+        and identifier.id == related.avefi
+        for identifier in record.has_identifier
+    ):
+        record.has_identifier.append(efi.AVefiResource(id=related.avefi))
+        report_issue(
+            "info",
+            f"{level} already carries an AVefi identifier; transferred"
+            " rather than minted again",
+            record_id=source_key,
+            source_field="relatedWorkSet/relatedWork/object/objectID",
+            target_field="has_identifier",
+            raw_value=related.avefi,
+        )
+    known = {(link.category, link.id) for link in record.same_as or []}
+    for link in related.same_as:
+        if (link.category, link.id) in known:
+            continue
+        record.same_as.append(link)
+        known.add((link.category, link.id))
+
+
+def manifestation_relations(descriptive, profile, source_key):
+    """Return what the record says about its own manifestation.
+
+    A copy is related to the manifestation it is one of, and that
+    relation carries the manifestation's AVefi identifier. It is the
+    only place a LIDO record states one: the record describes the
+    copy, so ``objectPublishedID`` is the copy's.
+
+    """
+    for related_set in related_sets(
+        descriptive, profile.manifestation_rel_terms
+    ):
+        related = getattr(related_set, "related_work", None)
+        if related is None:
+            continue
+        obj = getattr(related, "object_value", None) or getattr(
+            related, "object", None
+        )
+        if obj is None:
+            continue
+        local, avefi, same_as = object_identifiers(obj, profile)
+        if avefi or same_as:
+            return RelatedRecord(local, "", avefi, same_as)
+    return None
+
+
 def related_works(lido_record, descriptive, profile, source_key):
     """Yield the works a copy belongs to, as the provider states them.
 
@@ -553,22 +831,21 @@ def related_works(lido_record, descriptive, profile, source_key):
     had to do by hand.
 
     """
-    if not profile.related_work_rel_terms:
-        return
-    wrap = getattr(
-        descriptive.object_relation_wrap, "related_works_wrap", None
-    )
-    if wrap is None:
-        return
     seen = set()
-    for related_set in wrap.related_work_set or []:
-        term = term_text(getattr(related_set, "related_work_rel_type", None))
-        if not term or term.lower() not in profile.related_work_rel_terms:
-            continue
+    for related_set in related_sets(
+        descriptive, profile.related_work_rel_terms
+    ):
         related = getattr(related_set, "related_work", None)
         if related is None:
             continue
-        identifier = related_work_identifier(related, profile)
+        obj = getattr(related, "object_value", None) or getattr(
+            related, "object", None
+        )
+        identifier, avefi, same_as = (
+            object_identifiers(obj, profile)
+            if obj is not None
+            else (None, None, ())
+        )
         title = text_of(first(getattr(related, "display_object", None)))
         if not identifier:
             report_issue(
@@ -584,21 +861,7 @@ def related_works(lido_record, descriptive, profile, source_key):
         if identifier in seen:
             continue
         seen.add(identifier)
-        yield identifier, (title or "").strip()
-
-
-def related_work_identifier(related, profile) -> str | None:
-    """Return the local identifier of a related work."""
-    # xsdata renames the lido:object element, because "object" is
-    # taken; the LIDO path is relatedWork/object/objectID.
-    obj = getattr(related, "object_value", None) or getattr(
-        related, "object", None
-    )
-    for candidate in getattr(obj, "object_id", None) or []:
-        text = text_of(candidate)
-        if text:
-            return local_source_key(text.strip(), profile)
-    return None
+        yield RelatedRecord(identifier, (title or "").strip(), avefi, same_as)
 
 
 def map_record(
@@ -679,6 +942,13 @@ def map_record(
     )
     if is_new:
         new_records.append(manifestation)
+    stated_manifestation = manifestation_relations(
+        descriptive, profile, source_key
+    )
+    if stated_manifestation is not None:
+        apply_stated_identifiers(
+            manifestation, stated_manifestation, source_key, "Manifestation"
+        )
     item.is_item_of = manifestation.has_identifier[0]
     item.has_identifier.append(
         efi.LocalResource(id=local_identifier(source_key))
@@ -688,7 +958,96 @@ def map_record(
     attach_source_key(
         (*works, manifestation, item), profile.issuer_info, source_key
     )
+    report_handles_not_transferred(
+        lido_record,
+        descriptive,
+        (*works, manifestation, item),
+        profile,
+        source_key,
+    )
     return new_records
+
+
+def report_handles_not_transferred(
+    lido_record, descriptive, records, profile, source_key
+) -> None:
+    """Report an AVefi handle in the record that reached no output.
+
+    A handle in the source and not in the output means the next
+    delivery asks for a second identifier for something that already
+    has one, and a handle cannot be withdrawn. It is also a silent
+    failure: the conversion succeeds, the records validate, and only
+    a comparison of input and output shows it — which is how the
+    handles of works and manifestations went unread for weeks.
+
+    So the conversion compares them itself. Every handle the record
+    writes into an identifier is looked for in the records derived
+    from it, and one that is not there is reported together with the
+    relation it was stated under, which is usually what is missing
+    from the profile.
+
+    """
+    pattern = handle_pattern(profile)
+    if pattern is None:
+        return
+    transferred = {
+        identifier.id
+        for record in records
+        for identifier in record.has_identifier
+        if identifier.category == "avefi:AVefiResource"
+    }
+    for handle, relation in stated_handles(lido_record, descriptive, pattern):
+        if handle in transferred:
+            continue
+        report_issue(
+            "warning",
+            "Record states an AVefi identifier that no output record"
+            " carries; the next delivery would ask for a second one."
+            " A relation named here that the profile does not know is"
+            " the usual cause",
+            record_id=source_key,
+            source_field=relation,
+            target_field="has_identifier",
+            raw_value=handle,
+        )
+
+
+def stated_handles(lido_record, descriptive, pattern):
+    """Yield every AVefi handle the record writes into an identifier.
+
+    Identifiers only — ``objectPublishedID`` and the ``objectID`` of
+    any related record, whatever the relation. A handle quoted in a
+    note or a description is somebody talking about a film and not the
+    record claiming an identity.
+
+    """
+    seen = set()
+
+    def handles(text, relation):
+        match = pattern.search(text or "")
+        if match and match.group(1) not in seen:
+            seen.add(match.group(1))
+            yield match.group(1), relation
+
+    for published in lido_record.object_published_id or []:
+        yield from handles(text_of(published), "objectPublishedID")
+    wrap = getattr(
+        descriptive.object_relation_wrap, "related_works_wrap", None
+    )
+    if wrap is None:
+        return
+    for related_set in wrap.related_work_set or []:
+        names = rel_type_names(related_set) or ("—",)
+        relation = f"relatedWorkSet[relType={names[0]}]/objectID"
+        related = getattr(related_set, "related_work", None)
+        obj = (
+            getattr(related, "object_value", None)
+            or getattr(related, "object", None)
+            if related is not None
+            else None
+        )
+        for candidate in getattr(obj, "object_id", None) or []:
+            yield from handles(text_of(candidate), relation)
 
 
 def work_from_the_copy(
@@ -757,40 +1116,52 @@ def works_as_stated(
             record_id=source_key,
             source_field="relatedWorkSet",
             target_field="has_event, has_genre, has_alternative_title",
-            raw_value=[identifier for identifier, _ in stated],
+            raw_value=[related.local for related in stated],
         )
     works = []
-    for identifier, title in stated:
+    for related in stated:
+        # The title of the work as the provider writes it, which is
+        # not the same string as the copy's: it carries the bracket
+        # notation for a title somebody supplied just as any other
+        # title does, and reading it as a plain string was why a work
+        # kept its brackets while its copies did not.
+        stated_title = source_title(
+            related.title,
+            profile,
+            source_key,
+            "has_primary_title.has_ordering_name",
+        )
 
-        def new_work(title=title, identifier=identifier):
+        def new_work(stated_title=stated_title, related=related):
             if single:
                 work = build_work(
                     descriptive, primary, alternatives, profile, source_key
                 )
                 if production is not None:
                     work.has_event.append(production)
-                if title and title != primary.display:
+                if stated_title and stated_title.display != primary.display:
                     # The record's own title is the carrier's; the
                     # related work is what the film is called.
                     work.has_primary_title = as_title(
-                        SourceTitle(title, None, False), "PreferredTitle"
+                        stated_title, "PreferredTitle"
                     )
                 return work
             return efi.WorkVariant(
                 type=efi.WorkVariantTypeEnum("Monographic"),
                 has_primary_title=as_title(
-                    SourceTitle(title or identifier, None, False),
+                    stated_title or SourceTitle(related.local, None, False),
                     "PreferredTitle",
                 ),
             )
 
-        work, is_new = context.work_for(identifier, new_work)
+        work, is_new = context.work_for(related.local, new_work)
         if is_new:
             new_records.append(work)
         elif single:
             merge_alternative_titles(work, alternatives)
+        apply_stated_identifiers(work, related, source_key, "Work")
         works.append(work)
-    return works, make_key(*(identifier for identifier, _ in stated))
+    return works, make_key(*(related.local for related in stated))
 
 
 def in_scope(lido_record, descriptive, profile, source_key) -> bool:
@@ -934,7 +1305,8 @@ def make_manifestation_key(work_key: str, item) -> str:
         ",".join(sorted(str(fmt.type) for fmt in item.has_format or [])),
         ",".join(
             sorted(
-                f"{language.code}:{','.join(sorted(language.usage or []))}"
+                f"{language.code or ''}"
+                f":{','.join(sorted(language.usage or []))}"
                 for language in item.in_language or []
             )
         ),
@@ -1110,7 +1482,7 @@ def collect_activities(descriptive, profile, source_key):
                     raw_value=role or name,
                 )
                 continue
-            agent = build_agent(in_role, name)
+            agent = build_agent(in_role, name, profile)
             activity = by_role.get(activity_type)
             if activity is None:
                 # has_agent is required, so the activity cannot exist
@@ -1126,7 +1498,7 @@ def collect_activities(descriptive, profile, source_key):
     yield from by_role.values()
 
 
-def build_agent(in_role, name: str):
+def build_agent(in_role, name: str, profile=None):
     """Return the Agent for an actorInRole element.
 
     Whether the actor is a person or an organisation is read off
@@ -1137,7 +1509,7 @@ def build_agent(in_role, name: str):
     """
     actor = getattr(in_role, "actor", None)
     agent = efi.Agent(has_name=name)
-    agent_type = agent_type_of(actor)
+    agent_type = agent_type_of(actor, profile)
     if agent_type:
         agent.type = efi.AgentTypeEnum(agent_type)
     for authority in authority_resources(actor):
@@ -1145,22 +1517,30 @@ def build_agent(in_role, name: str):
     return agent
 
 
-def agent_type_of(actor) -> str | None:
-    """Return Person or CorporateBody as stated by lido:type."""
+def agent_type_of(actor, profile=None) -> str | None:
+    """Return the kind of agent ``lido:type`` states, if it states one.
+
+    LIDO leaves the value to the provider, so the vocabulary is
+    configuration: ``DEFAULT_AGENT_TYPES`` collects the spellings seen
+    so far and a profile adds its own. Left unset where the source
+    says nothing — deriving the kind from the name is out of scope,
+    and the earlier default of Person for every actor was that
+    derivation in all but name.
+
+    """
     stated = str(getattr(actor, "type_value", "") or "").strip().lower()
-    if stated in ("person", "personal"):
-        return "Person"
-    if stated in (
-        "corporatebody",
-        "corporate body",
-        "koerperschaft",
-        "körperschaft",
-        "organisation",
-        "organization",
-        "group",
-    ):
-        return "CorporateBody"
-    return None
+    if not stated:
+        return None
+    known = dict(DEFAULT_AGENT_TYPES)
+    known.update(
+        {
+            str(key).lower(): value
+            for key, value in (
+                getattr(profile, "agent_type_map", None) or {}
+            ).items()
+        }
+    )
+    return known.get(stated)
 
 
 #: Authority file to the AVefi resource class carrying its identifiers,
@@ -1420,10 +1800,40 @@ def build_item(lido_record, descriptive, primary, profile, source_key):
     # about a copy that carries an identifier.
     for identifier in avefi_identifiers(lido_record, profile, source_key):
         item.has_identifier.append(identifier)
+    # Before the keyword routing, so that a language the record has
+    # already placed by its label is not placed a second time as the
+    # spoken one.
+    apply_language_usages(item, descriptive, profile, source_key)
     apply_keyword_classifications(item, descriptive, profile, source_key)
-    for link in web_resources(lido_record):
-        item.has_webresource.append(link)
+    for link in (
+        *web_resources(lido_record),
+        *published_web_resources(lido_record, profile),
+    ):
+        if link not in item.has_webresource:
+            item.has_webresource.append(link)
     return item
+
+
+def published_web_resources(lido_record, profile):
+    """Yield the published addresses of the object itself.
+
+    ``lido:objectPublishedID`` holds whatever the provider publishes
+    the object under, which is a mixture: the AVefi handle, read as
+    the copy's identifier, and the address of the object's page in the
+    provider's own system, which is a link to it and nothing else.
+    The value tells them apart. Its ``lido:type`` does not — this
+    provider types the page address as a local identifier, and it is
+    a URL whatever the type says.
+
+    """
+    handle = handle_pattern(profile)
+    for published in lido_record.object_published_id or []:
+        text = (text_of(published) or "").strip()
+        if not text or not is_absolute_url(text):
+            continue
+        if handle is not None and handle.search(text):
+            continue
+        yield text
 
 
 def avefi_identifiers(lido_record, profile, source_key):
@@ -1435,9 +1845,11 @@ def avefi_identifiers(lido_record, profile, source_key):
     for a copy that has one, and a handle cannot be withdrawn once it
     is out. Reading them turns a re-import into an update.
 
-    They are only ever found on the copy. Work and manifestation
-    identifiers exist too, but no LIDO record states them: a record
-    describes one object, and the object is the copy.
+    Here they are only ever the copy's: a record describes one object,
+    and the object is the copy, so ``objectPublishedID`` is the copy's
+    identifier. The work and the manifestation carry one as well, and
+    a record states them in the relations it has to them; see
+    :func:`related_works` and :func:`manifestation_relations`.
 
     """
     prefix = profile.avefi_handle_prefix
@@ -1518,6 +1930,31 @@ def local_source_key(text: str, profile=None) -> str:
     if not match:
         return text
     return match.group(1) if match.groups() else match.group(0)
+
+
+def source_title(raw, profile, source_key, target_field) -> SourceTitle | None:
+    """Return a title as the source states it, or None if it is empty.
+
+    One reading of one string, so that a title arriving through the
+    related work is understood the same way as one in the titleWrap.
+    Square brackets mark a title the cataloguer supplied rather than
+    read off the film, here as everywhere, and an article is moved for
+    the ordering name here as everywhere.
+
+    """
+    value = (raw or "").strip()
+    supplied = value.startswith("[") and value.endswith("]")
+    if supplied:
+        value = value[1:-1].strip()
+    if not value:
+        return None
+    display, ordering = normalise_title(
+        value,
+        profile.default_language,
+        record_id=source_key,
+        target_field=target_field,
+    )
+    return SourceTitle(display, ordering, supplied)
 
 
 def collect_titles(descriptive, profile, source_key) -> list[SourceTitle]:
@@ -1604,15 +2041,21 @@ def consumed_classification_types(profile) -> set:
 def classification_terms(descriptive, profile):
     """Yield classification terms not consumed by a vocabulary rule."""
     consumed = consumed_classification_types(profile)
+    labelled = labelled_language_terms(profile)
     for classification in classifications(descriptive):
         type_value = str(
             getattr(classification, "type_value", "") or ""
         ).lower()
         if type_value in consumed:
             continue
-        text = term_text(classification)
-        if text:
-            yield text
+        for term in classification.term or []:
+            if term_label(term) in labelled:
+                # A language of the copy, not a genre of the film.
+                continue
+            text = text_of(term)
+            if text:
+                yield text
+            break
 
 
 def mapped_classification(
@@ -1646,6 +2089,85 @@ def mapped_classification(
     return None
 
 
+def term_label(term) -> str:
+    """Return the lido:label of a term, lower case."""
+    return str(getattr(term, "label", "") or "").strip().lower()
+
+
+def language_usage_terms(descriptive, profile):
+    """Yield the language terms whose lido:label states their usage.
+
+    A provider records the languages of a copy as terms and writes on
+    the term what each one is for — "Dialogton", "Untertitel",
+    "Zwischentitel". The label is the only thing that tells them
+    apart: the terms themselves all say "Englisch" or "Deutsch", and
+    without reading it an English subtitle track arrives as an English
+    soundtrack.
+
+    Every classification is looked at, whatever it is called. Which
+    heading a provider files its languages under is its own business
+    and says nothing about them; the label does.
+
+    """
+    if not profile.language_usage_labels:
+        return
+    labels = {
+        str(key).lower(): value
+        for key, value in profile.language_usage_labels.items()
+    }
+    for classification in classifications(descriptive):
+        for term in classification.term or []:
+            label = term_label(term)
+            if not label:
+                continue
+            text = (text_of(term) or "").strip()
+            if not text:
+                continue
+            yield label, labels.get(label), text
+
+
+def labelled_language_terms(profile) -> set:
+    """Return the labels a language usage is configured for."""
+    return {str(key).lower() for key in profile.language_usage_labels}
+
+
+def apply_language_usages(item, descriptive, profile, source_key):
+    """Record the languages of a copy with the usage stated for them."""
+    for label, usage, text in language_usage_terms(descriptive, profile):
+        key = text.lower()
+        if usage is None:
+            if key in profile.language_name_map or key in (
+                profile.no_dialogue_terms
+            ):
+                report_issue(
+                    "warning",
+                    "No AVefi language usage configured for this label,"
+                    " so the language is not transferred",
+                    record_id=source_key,
+                    source_field="classification/term[@lido:label]",
+                    target_field="in_language.usage",
+                    raw_value=f"{label}: {text}",
+                )
+            continue
+        if key in profile.no_dialogue_terms:
+            # "Ohne Sprache" under a dialogue label is a statement
+            # about the copy, not a language of it.
+            add_language(item, None, "NoDialogue")
+            continue
+        code = profile.language_name_map.get(key)
+        if code is None:
+            report_issue(
+                "warning",
+                "No ISO 639-2/B code configured for this language name",
+                record_id=source_key,
+                source_field="classification/term[@lido:label]",
+                target_field="in_language.code",
+                raw_value=f"{label}: {text}",
+            )
+            continue
+        add_language(item, code, usage)
+
+
 def apply_keyword_classifications(item, descriptive, profile, source_key):
     """Route the terms of a keyword classification by what they say.
 
@@ -1667,6 +2189,7 @@ def apply_keyword_classifications(item, descriptive, profile, source_key):
     }
     if not wanted:
         return
+    labelled = labelled_language_terms(profile)
     for classification in classifications(descriptive):
         type_value = str(
             getattr(classification, "type_value", "") or ""
@@ -1674,6 +2197,9 @@ def apply_keyword_classifications(item, descriptive, profile, source_key):
         if type_value not in wanted:
             continue
         for term in classification.term or []:
+            if term_label(term) in labelled:
+                # The label already said what this language is for.
+                continue
             text = text_of(term)
             if not text:
                 continue
@@ -1696,7 +2222,7 @@ def apply_keyword_term(item, text: str, profile, source_key) -> bool:
     """Place one keyword, returning True if it found a field."""
     key = text.lower()
     if key in profile.no_dialogue_terms:
-        add_language(item, "zxx", "NoDialogue")
+        add_language(item, None, "NoDialogue")
         return True
     code = profile.language_name_map.get(key)
     if code:
@@ -1744,19 +2270,24 @@ def has_avefi_identifier(item) -> bool:
     )
 
 
-def add_language(item, code: str, usage: str) -> None:
-    """Add a language to a copy, without repeating one it has."""
+def add_language(item, code: str | None, usage: str) -> None:
+    """Add a language to a copy, without repeating one it has.
+
+    ``code`` may be None. "No dialogue" is a statement about the copy
+    and not about a language, and the schema lets the code stand
+    empty; putting zxx there, as this did, answers a question the
+    source did not ask.
+
+    """
     for existing in item.in_language:
         if existing.code == code:
             if usage not in (existing.usage or []):
                 existing.usage.append(efi.LanguageUsageEnum(usage))
             return
-    item.in_language.append(
-        efi.Language(
-            code=efi.LanguageCodeEnum(code),
-            usage=[efi.LanguageUsageEnum(usage)],
-        )
-    )
+    language = efi.Language(usage=[efi.LanguageUsageEnum(usage)])
+    if code:
+        language.code = efi.LanguageCodeEnum(code)
+    item.in_language.append(language)
 
 
 def measurements(descriptive):

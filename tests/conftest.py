@@ -130,6 +130,14 @@ LIDO_PUBLISHED_ID = """\
       lido:source="www.av-efi.net">{handle}</lido:objectPublishedID>
 """
 
+#: What a provider publishes the object under that is not a handle:
+#: the address of its page in the provider's own system. Typed as a
+#: local identifier, which is what the Düsseldorf export does.
+LIDO_PUBLISHED_URL = """\
+    <lido:objectPublishedID lido:type="http://terminology.lido-schema.org/lido00100"
+      >{url}</lido:objectPublishedID>
+"""
+
 LIDO_PLACE = """\
             <lido:eventPlace lido:type="Produktionsland">
               <lido:place>
@@ -162,10 +170,38 @@ LIDO_RELATED_WORK_SET = """\
               <lido:displayObject>{title}</lido:displayObject>
               <lido:object>
                 <lido:objectID lido:type="local">{work_id}</lido:objectID>
+{extra_ids}\
               </lido:object>
             </lido:relatedWork>
             <lido:relatedWorkRelType>
               <lido:term xml:lang="de">{rel}</lido:term>
+            </lido:relatedWorkRelType>
+          </lido:relatedWorkSet>
+"""
+
+#: A further identifier of a related record, as the provider writes
+#: them: the value is a URI and lido:source names the authority.
+LIDO_RELATED_WORK_ID = """\
+                <lido:objectID lido:type="http://terminology.lido-schema.org/lido00099"
+                  lido:source="{source}">{value}</lido:objectID>
+"""
+
+#: The manifestation a copy is one of. The relation is named by a
+#: conceptID rather than by a term, and the set carries the AVefi
+#: identifier of the manifestation, which nothing else in the record
+#: states.
+LIDO_ITEM_OF_SET = """\
+          <lido:relatedWorkSet>
+            <lido:relatedWork>
+              <lido:object>
+                <lido:objectID lido:type="http://terminology.lido-schema.org/lido00099"
+                  lido:source="www.av-efi.net">{handle}</lido:objectID>
+              </lido:object>
+            </lido:relatedWork>
+            <lido:relatedWorkRelType>
+              <lido:conceptID lido:type="http://terminology.lido-schema.org/lido00099"
+                lido:source="www.av-efi.net">https://www.av-efi.net/av-efi-schema/is_item_of</lido:conceptID>
+              <lido:term xml:lang="en">is item of</lido:term>
             </lido:relatedWorkRelType>
           </lido:relatedWorkSet>
 """
@@ -257,6 +293,27 @@ LIDO_DOCUMENT = """\
 """
 
 
+def _keyword_term(entry) -> str:
+    """Return one keyword term, with a lido:label where one is given.
+
+    A keyword is either a plain string or a ``(term, label)`` pair.
+    The label is what says whether a language is spoken on the copy,
+    subtitled or written into it as an intertitle.
+
+    """
+    if isinstance(entry, str):
+        term, label = entry, None
+    else:
+        term, label = entry
+    attributes = ' xml:lang="de"'
+    if label is not None:
+        attributes += (
+            f' lido:label="{label}" lido:addedSearchTerm="no"'
+            ' lido:pref="alternate"'
+        )
+    return f"            <lido:term{attributes}>{term}</lido:term>\n"
+
+
 def make_lido_record(
     record_id,
     title="Die Brücke",
@@ -267,6 +324,8 @@ def make_lido_record(
     genre="",
     work_type="Filmrolle",
     handle="",
+    published_urls=(),
+    manifestation_handle="",
     role="Regie",
     actor_type="",
     gnd="",
@@ -295,16 +354,38 @@ def make_lido_record(
         related=(
             LIDO_RELATED_WORK.format(
                 sets="".join(
-                    LIDO_RELATED_WORK_SET.format(
-                        work_id=work_id, title=work_title, rel=related_rel
+                    [
+                        LIDO_RELATED_WORK_SET.format(
+                            work_id=entry[0],
+                            title=entry[1],
+                            rel=related_rel,
+                            extra_ids="".join(
+                                LIDO_RELATED_WORK_ID.format(
+                                    source=source, value=value
+                                )
+                                for source, value in (
+                                    entry[2] if len(entry) > 2 else ()
+                                )
+                            ),
+                        )
+                        for entry in related
+                    ]
+                    + (
+                        [LIDO_ITEM_OF_SET.format(handle=manifestation_handle)]
+                        if manifestation_handle
+                        else []
                     )
-                    for work_id, work_title in related
                 )
             )
-            if related
+            if related or manifestation_handle
             else ""
         ),
-        published=(LIDO_PUBLISHED_ID.format(handle=handle) if handle else ""),
+        published=(
+            (LIDO_PUBLISHED_ID.format(handle=handle) if handle else "")
+            + "".join(
+                LIDO_PUBLISHED_URL.format(url=url) for url in published_urls
+            )
+        ),
         title=title,
         colour=colour,
         date=date,
@@ -319,11 +400,7 @@ def make_lido_record(
         ),
         keywords=(
             LIDO_KEYWORDS.format(
-                terms="".join(
-                    f'            <lido:term xml:lang="de">{term}'
-                    f"</lido:term>\n"
-                    for term in keywords
-                )
+                terms="".join(_keyword_term(entry) for entry in keywords)
             )
             if keywords
             else ""

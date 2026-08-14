@@ -81,8 +81,28 @@ Die wichtigsten Felder für LIDO:
 | `materials_tech_map` | Hausschreibweise → AVefi-Wert für die technische Beschreibung |
 | `keyword_classification_types` | Klassifikationen, die nach Begriff sortiert werden |
 | `language_name_map` | Sprachname → ISO-639-2/B-Code |
+| `language_usage_labels` | `lido:label` einer Sprache → wofür sie da ist, etwa `{"untertitel" = "Subtitles"}` |
+| `agent_type_map` | `lido:type` am Akteur → `Person`, `CorporateBody`, `Family`, `PersonGroup` |
+| `related_work_rel_terms` | Beziehungen, die das Werk benennen, zu dem ein Exemplar gehört |
+| `manifestation_rel_terms` | Beziehungen, die die Fassung benennen — dort steht deren PID |
 | `duration_units` | Einheit einer Messung, wenn die Angabe im Datensatz nicht stimmt |
 | `avefi_handle_prefix` | Handle-Präfix, unter dem PIDs vergeben werden |
+
+## Zwei Felder, die man leicht übersieht
+
+`language_usage_labels` und `manifestation_rel_terms` haben eine
+Voreinstellung, die für die bisher gesehenen Exporte passt. Sie zu ergänzen
+kostet nichts, sie zu vergessen dagegen etwas:
+
+- Ohne das passende Label wird jede Sprache als **gesprochene** gelesen. Aus
+  einer englischen Untertitelspur wird dann eine englische Tonspur. Ein
+  unbekanntes Label wird gemeldet und die Sprache nicht übernommen — die
+  Meldung ist der Hinweis, dass hier ein Eintrag fehlt.
+- Ohne `manifestation_rel_terms` kommt die PID der Fassung nicht an. Der Lauf
+  meldet das inzwischen von selbst: „Record states an AVefi identifier that
+  no output record carries", zusammen mit dem Namen der Beziehung, unter der
+  sie stand. Diese Meldung heißt fast immer, dass ein Begriff im Profil
+  fehlt.
 
 ## Rollen benennen, nicht Klassen
 

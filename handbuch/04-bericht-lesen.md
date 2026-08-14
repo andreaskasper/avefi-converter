@@ -42,6 +42,20 @@ beantworten kann: Gibt es für „Festplatte" ein Format im Schema? Ist ein
 **`error`** — der Datensatz ist gescheitert. Ohne einen Titel gibt es nichts,
 worüber der Datensatz handeln könnte.
 
+## Die eine Warnung, die keine Frage ans Haus ist
+
+> `Record states an AVefi identifier that no output record carries`
+
+Alle anderen Warnungen sagen: „Ihr Haus hat einen Wert, für den das Schema
+keinen Platz hat." Diese hier sagt: „Die Konvertierung hat etwas übersehen."
+Der Datensatz nennt ein Handle, und keiner der daraus gebauten Datensätze
+trägt es — die nächste Lieferung würde also eine zweite Identität für etwas
+anfordern, das längst eine hat, und ein Handle lässt sich nicht zurücknehmen.
+
+Die Meldung nennt die Beziehung, unter der das Handle stand. Fast immer fehlt
+der entsprechende Begriff im Profil (`related_work_rel_terms`,
+`manifestation_rel_terms`). Diese Warnung gehört zu Andreas, nicht zu Ihnen.
+
 ## Was ein guter Bericht aussieht
 
 Viele `info`, überschaubar viele `warning`, keine `error`. Ein Bericht ohne

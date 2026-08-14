@@ -43,6 +43,23 @@
     "access_status_map": {
       "benutzungskopie": "Viewing",
       "archivkopie": "Archive"
-    }
+    },
+    "language_usage_labels": {
+      "dialogton": "SpokenLanguage",
+      "untertitel": "Subtitles",
+      "zwischentitel": "Intertitles",
+      "gesangssprache": "SungLanguage"
+    },
+    "agent_type_map": {
+      "corporation": "CorporateBody",
+      "person": "Person"
+    },
+    "related_work_rel_terms": [
+      "film"
+    ],
+    "manifestation_rel_terms": [
+      "is item of",
+      "is_item_of"
+    ]
   }
 }
