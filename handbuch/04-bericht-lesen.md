@@ -34,16 +34,21 @@ Sprache gelesen. Nichts davon ist ein Problem, aber alles davon ist eine
 Annahme, die Sie sehen sollen.
 
 **`warning`** — ein Wert konnte nicht abgebildet werden und ist nicht in den
-Daten gelandet. Der Datensatz steht trotzdem. **Das ist die Liste, die Sie
-durchgehen sollten.** Meist steht dahinter eine Frage, die nur Ihr Haus
-beantworten kann: Gibt es für „Festplatte" ein Format im Schema? Ist ein
-„Negativ" das Bild- oder das Tonnegativ?
+Daten gelandet. Der Datensatz steht trotzdem. Meist steht dahinter eine
+Frage, die nur Ihr Haus beantworten kann: Gibt es für „Festplatte" ein Format
+im Schema? Ist ein „Negativ" das Bild- oder das Tonnegativ?
+
+> [!TIP]
+> Die Warnungen sind die Liste, die Sie durchgehen sollten — und sie sind
+> kürzer, als ihre Zahl vermuten lässt. Gruppieren Sie sie nach dem Rohwert,
+> und aus 395 Meldungen werden drei Fragen (siehe unten).
 
 **`error`** — der Datensatz ist gescheitert. Ohne einen Titel gibt es nichts,
 worüber der Datensatz handeln könnte.
 
 ## Die eine Warnung, die keine Frage ans Haus ist
 
+> [!IMPORTANT]
 > `The input states an AVefi identifier that no record of the output carries`
 
 Alle anderen Warnungen sagen: „Ihr Haus hat einen Wert, für den das Schema
@@ -98,3 +103,7 @@ for wert, anzahl in w.most_common(20):
     print(f'{anzahl:5d}  {wert}')
 "
 ```
+
+---
+
+← [3 · Profile](03-profile.md) · [Übersicht](README.md) · [5 · Prüfen und vergleichen](05-pruefen-und-vergleichen.md) →
