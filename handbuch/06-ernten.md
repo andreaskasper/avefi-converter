@@ -38,3 +38,7 @@ tun hat.
 `oai_dc` ist der einzige Präfix, den jede OAI-Schnittstelle anbieten muss,
 aber Dublin Core ist das schwächste der unterstützten Formate. Wenn Ihr
 Endpunkt auch LIDO, EN 15907 oder MARC21 ausliefert, nehmen Sie das.
+
+---
+
+← [5 · Prüfen und vergleichen](05-pruefen-und-vergleichen.md) · [Übersicht](README.md) · [7 · Filmmuseum Düsseldorf](07-filmmuseum-duesseldorf.md) →
