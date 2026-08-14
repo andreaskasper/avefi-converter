@@ -88,6 +88,31 @@ Beide werden **neben** den lokalen Identifier gestellt, nicht an seine
 Stelle: `is_item_of` und `is_manifestation_of` verweisen über den lokalen
 Identifier, und der bleibt deshalb der erste.
 
+Erkannt wird eine AVefi-PID an `lido:source="www.av-efi.net"` und nicht am
+Präfix `21.11155`. AVefi wird unter weiteren Präfixen registrieren, und ein
+Datensatz, der den Aussteller eines Identifikators nennt, hat die Frage schon
+beantwortet, für die das Präfix stellvertretend stand. Das Präfix bleibt als
+Rückfallebene für Datensätze ohne `lido:source`.
+
+## Die Fassungs-PID entscheidet, welche Exemplare zusammengehören
+
+Mehrere Exemplare gehören zu einer Fassung. Wer das entscheidet, war bisher
+ein aus dem Exemplar abgeleiteter Schlüssel — Farbe, Format, Sprachen. Zwei
+unterschiedlich beschriebene Kopien wurden damit zu zwei Fassungen, und beide
+bekamen die eine PID, die das Haus für sie nennt. `efi-conv check` weist das
+zurück, und zu Recht: Ein Identifikator, der zwei Datensätze benennt, benennt
+keinen.
+
+Nennt der Datensatz die PID der Fassung, entscheidet sie. Der abgeleitete
+Schlüssel bleibt als zweiter Zugang, damit eine Kopie ohne PID dieselbe
+Fassung findet. Der lokale Identifier wird weiterhin aus dem abgeleiteten
+Schlüssel gebildet — er ist das, was ein Mensch wiedererkennt, und ein Handle
+darin würde dasselbe zweimal sagen.
+
+Hängen zwei Kopien derselben Fassung an unterschiedlichen Werken, wird das
+gemeldet und die Fassung behält die Werke des Datensatzes, der sie eingeführt
+hat. Eine Fassung gehört zu einem Film, nicht zu zweien.
+
 Warum das wichtig ist: Ohne diese Übernahme fordert jede Nachlieferung eine
 zweite Identität für Werke, Fassungen und Kopien, die längst eine haben. Ein
 Handle lässt sich nicht zurücknehmen.
@@ -104,8 +129,16 @@ noch der Filmportal-Identifier des Werks:
 
 Er wird zu `same_as` am Werk, als `avefi:FilmportalResource` mit der bloßen
 ID — nicht mit der URL, in der sie geschrieben steht. Erkannt wird er an
-der Form des Werts und nicht an `lido:source`: wie ein Haus die Normdatei
-benennt, ist seine Sache, die URI der Normdatei ist es nicht.
+`lido:source`; welche Quellbezeichnung welche Normdatei meint, steht im
+Profil unter `related_authority_sources`.
+
+Die ID ist das **letzte Segment** des Werts. Filmportal schreibt dieselbe ID
+unter zwei Pfaden, und beide lösen zum selben Werk auf:
+
+```
+https://www.filmportal.de/film/4029730364e64a1a9bc0d3f5fd3534f4
+https://www.filmportal.de/4029730364e64a1a9bc0d3f5fd3534f4
+```
 
 ## Die Objektseite ist eine Webressource
 

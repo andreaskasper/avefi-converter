@@ -331,8 +331,23 @@ class GroupingContext:
         self.works[key] = work
         return work, True
 
-    def manifestation_for(self, key: str, factory):
+    def manifestation_for(self, key: str, factory, local_id: str = ""):
         """Return the manifestation for ``key``, creating it if new.
+
+        Parameters
+        ----------
+        key : str
+            What identifies one manifestation for the converter. Where
+            a provider states a persistent identifier for it, that is
+            the better key: two copies of one manifestation are one
+            manifestation whatever else the records say about them.
+        factory : callable
+            Builds the manifestation when the key is new.
+        local_id : str, optional
+            Basis of the local identifier, where it is not the key.
+            The key may be a persistent identifier the provider
+            issued, and a local identifier derived from it would say
+            the same thing twice while reading worse.
 
         Returns
         -------
@@ -345,7 +360,9 @@ class GroupingContext:
             return manifestation, False
         manifestation = factory()
         manifestation.has_identifier.append(
-            efi.LocalResource(id=f"{local_identifier(key)}_manifestation")
+            efi.LocalResource(
+                id=f"{local_identifier(local_id or key)}_manifestation"
+            )
         )
         self.manifestations[key] = manifestation
         return manifestation, True
