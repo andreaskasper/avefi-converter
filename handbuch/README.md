@@ -1,9 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="bilder/avefi-logo-dunkel.png">
-  <img src="bilder/avefi-logo.png" alt="AVefi" width="200">
-</picture>
+<img src="https://gwdg.de/img/logos/avefi-logo.png" alt="AVefi" width="200">
 
 # Handbuch
 
