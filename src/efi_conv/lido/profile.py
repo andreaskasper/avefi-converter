@@ -201,6 +201,12 @@ class LidoProfile:
         Source term (lower case) to AVefi ColourTypeEnum value.
     access_status_map : dict
         Source term (lower case) to AVefi ItemAccessStatusEnum value.
+    access_status_priority : tuple
+        AVefi access statuses that decide the field wherever they
+        occur in the source, in order. ``has_access_status`` holds one
+        value and a record may state several, so which one wins has to
+        be said rather than left to the order they happen to be
+        written in. Anything not listed follows that order.
     format_map : dict
         Source term (lower case) to AVefi FormatFilmTypeEnum value.
     element_type_map : dict
@@ -325,6 +331,11 @@ class LidoProfile:
     subject_role_terms: frozenset = frozenset()
     colour_type_map: dict = field(default_factory=dict)
     access_status_map: dict = field(default_factory=dict)
+    #: A copy the institution has given up is that before it is
+    #: anything else: it is the one status that says the record is
+    #: about something no longer held, and it does not stop being true
+    #: because a lending note was written down first.
+    access_status_priority: tuple = ("Removed",)
     format_map: dict = field(default_factory=dict)
     element_type_map: dict = field(default_factory=dict)
     materials_tech_map: dict = field(default_factory=dict)

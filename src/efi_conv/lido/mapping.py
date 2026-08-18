@@ -327,7 +327,10 @@ MAPPING_RULES = (
         "Profile language_name_map and access_status_map",
         "Routed by the term rather than by the type, because a"
         " provider may file language, access status and working notes"
-        " under one heading; a term matching neither is reported",
+        " under one heading; a term matching neither is reported."
+        " Where several access statuses are stated, the profile's"
+        " access_status_priority decides and the rest follow source"
+        " order",
     ),
     MappingRule(
         "language_usage",
@@ -479,6 +482,10 @@ ASSUMPTIONS = (
     " language, which is the common case and what the CSV importer"
     " for the same institution records. The assumption is reported"
     " per occurrence rather than left implied.",
+    "`has_access_status` holds one value where a record may state"
+    " several. A status named in `access_status_priority` decides"
+    " wherever it occurs, so the result does not depend on the order"
+    " the terms were written in; the rest follow that order.",
     "`Removed` is set only for a copy that carries an AVefi"
     " identifier. It states that something registered is gone, which"
     " says nothing about a copy that was never registered; such a"
@@ -2385,6 +2392,7 @@ def apply_keyword_classifications(item, descriptive, profile, source_key):
     if not wanted:
         return
     labelled = labelled_language_terms(profile)
+    access_terms = []
     for classification in classifications(descriptive):
         type_value = str(
             getattr(classification, "type_value", "") or ""
@@ -2401,7 +2409,9 @@ def apply_keyword_classifications(item, descriptive, profile, source_key):
             text = text.strip()
             if text.lower() in profile.empty_terms:
                 continue
-            if apply_keyword_term(item, text, profile, source_key):
+            if apply_keyword_term(
+                item, text, profile, source_key, access_terms
+            ):
                 continue
             report_issue(
                 "warning",
@@ -2411,10 +2421,18 @@ def apply_keyword_classifications(item, descriptive, profile, source_key):
                 target_field="—",
                 raw_value=text,
             )
+    apply_access_status(item, access_terms, profile, source_key)
 
 
-def apply_keyword_term(item, text: str, profile, source_key) -> bool:
-    """Place one keyword, returning True if it found a field."""
+def apply_keyword_term(
+    item, text: str, profile, source_key, access_terms
+) -> bool:
+    """Place one keyword, returning True if it found a field.
+
+    An access status is collected rather than set, because the field
+    holds one value and a record may state several.
+
+    """
     key = text.lower()
     if key in profile.no_dialogue_terms:
         add_language(item, None, "NoDialogue")
@@ -2433,26 +2451,7 @@ def apply_keyword_term(item, text: str, profile, source_key) -> bool:
         return True
     access = profile.access_status_map.get(key)
     if access:
-        if access == "Removed" and not has_avefi_identifier(item):
-            # Removed says that something registered is gone. About a
-            # copy that was never registered it says nothing, and
-            # efi-conv check rejects the combination. Whether such a
-            # copy belongs in a delivery at all is the provider's
-            # decision, so the record is kept and the fact reported.
-            report_issue(
-                "warning",
-                "Copy is marked as deaccessioned but carries no AVefi"
-                " identifier, so no access status is set; whether it"
-                " belongs in the delivery is for the data provider to"
-                " decide",
-                record_id=source_key,
-                source_field="classification/term",
-                target_field="has_access_status",
-                raw_value=text,
-            )
-            return True
-        if item.has_access_status is None:
-            item.has_access_status = efi.ItemAccessStatusEnum(access)
+        access_terms.append((access, text))
         return True
     return False
 
@@ -2463,6 +2462,65 @@ def has_avefi_identifier(item) -> bool:
         identifier.category == "avefi:AVefiResource"
         for identifier in item.has_identifier
     )
+
+
+def apply_access_status(item, access_terms, profile, source_key) -> None:
+    """Set the one access status a copy has, out of those it states.
+
+    ``has_access_status`` is not a repeatable field, and a record can
+    say more than one thing: a copy is filed as a lending print and
+    also marked as given up. Taking whichever came first makes the
+    result depend on the order the cataloguer typed in, which is not a
+    statement about the copy.
+
+    The profile names the statuses that decide wherever they occur.
+    Everything else follows source order, so the common case — one
+    status, or a status and a working note — is unchanged.
+
+    """
+    if not access_terms or item.has_access_status is not None:
+        return
+    chosen, raw = access_terms[0]
+    for priority in profile.access_status_priority:
+        stated = next(
+            (entry for entry in access_terms if entry[0] == priority), None
+        )
+        if stated is None:
+            continue
+        if stated is not access_terms[0]:
+            report_issue(
+                "info",
+                f"Copy states {len(access_terms)} access statuses;"
+                f" {stated[1]!r} takes precedence over {raw!r}",
+                record_id=source_key,
+                source_field="classification/term",
+                target_field="has_access_status",
+                raw_value=[entry[1] for entry in access_terms],
+            )
+        chosen, raw = stated
+        break
+    if chosen == "Removed" and not has_avefi_identifier(item):
+        # Removed says that something registered is gone. About a copy
+        # that was never registered it says nothing, and efi-conv
+        # check rejects the combination. Whether such a copy belongs
+        # in a delivery at all is the provider's decision, so the
+        # record is kept and the fact reported.
+        remaining = [entry for entry in access_terms if entry[0] != "Removed"]
+        report_issue(
+            "warning",
+            "Copy is marked as deaccessioned but carries no AVefi"
+            " identifier, so that status is not set; whether it"
+            " belongs in the delivery is for the data provider to"
+            " decide",
+            record_id=source_key,
+            source_field="classification/term",
+            target_field="has_access_status",
+            raw_value=raw,
+        )
+        if not remaining:
+            return
+        chosen = remaining[0][0]
+    item.has_access_status = efi.ItemAccessStatusEnum(chosen)
 
 
 def add_language(item, code: str | None, usage: str) -> None:

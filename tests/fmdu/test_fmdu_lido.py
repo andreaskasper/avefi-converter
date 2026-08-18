@@ -937,3 +937,102 @@ class TestExtent:
             if "disagree" in entry.message
             and entry.target_field == "has_extent.has_value"
         ]
+
+
+class TestOneAccessStatusOutOfSeveral:
+    """A copy can be filed under more than one usage note.
+
+    has_access_status is not repeatable, so one of them decides, and
+    which one has to be said rather than left to the order the
+    cataloguer happened to type in. A copy given up is that before it
+    is anything else, and it does not stop being true because a
+    lending note was written down first.
+
+    """
+
+    HANDLE = "21.11155/F68FEFE5-205A-4090-8A31-60C6F87875BB"
+
+    def item_with(self, lido_page, lido_record, *keywords, handle=HANDLE):
+        source = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001", keywords=keywords, handle=handle),
+        )
+        return next(
+            r
+            for r in fmdu_lido.efi_import(source)
+            if r.category == "avefi:Item"
+        )
+
+    def test_deaccession_wins_when_stated_second(self, lido_page, lido_record):
+        item = self.item_with(
+            lido_page, lido_record, "Verleihkopie", "Deakzession"
+        )
+        assert item.has_access_status == "Removed"
+
+    def test_and_when_stated_first(self, lido_page, lido_record):
+        item = self.item_with(
+            lido_page, lido_record, "Deakzession", "Verleihkopie"
+        )
+        assert item.has_access_status == "Removed"
+
+    def test_otherwise_the_first_one_decides(self, lido_page, lido_record):
+        item = self.item_with(
+            lido_page, lido_record, "Verleihkopie", "Archivkopie"
+        )
+        assert item.has_access_status == "Distribution"
+
+    def test_the_precedence_is_reported(self, lido_page, lido_record):
+        """Silently preferring one over another is a decision hidden."""
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            self.item_with(
+                lido_page, lido_record, "Verleihkopie", "Deakzession"
+            )
+        assert [
+            entry
+            for entry in report.entries
+            if entry.target_field == "has_access_status"
+            and "precedence" in entry.message
+        ]
+
+    def test_a_single_status_says_nothing(self, lido_page, lido_record):
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            item = self.item_with(lido_page, lido_record, "Archivkopie")
+        assert item.has_access_status == "Archive"
+        assert not [
+            entry for entry in report.entries if "precedence" in entry.message
+        ]
+
+    def test_without_a_pid_the_other_status_is_used(
+        self, lido_page, lido_record
+    ):
+        """Removed says a registered copy is gone; this one is not.
+
+        The lending note is still true about it, so the record keeps
+        that rather than nothing at all, and the deaccession is
+        reported.
+
+        """
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            item = self.item_with(
+                lido_page,
+                lido_record,
+                "Verleihkopie",
+                "Deakzession",
+                handle="",
+            )
+        assert item.has_access_status == "Distribution"
+        assert [
+            entry
+            for entry in report.entries
+            if entry.severity == "warning"
+            and entry.target_field == "has_access_status"
+        ]
