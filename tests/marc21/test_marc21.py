@@ -4,7 +4,6 @@ import pathlib
 import pytest
 
 from efi_conv.core import avefi, check, from_
-from efi_conv.core.normalise import NormalisationError
 from efi_conv.core.records import local_identifier
 from efi_conv.core.report import ConversionReport, collecting
 import efi_conv.marc21 as marc21
@@ -350,24 +349,45 @@ def broken_copy(tmp_path, input_path, name):
     return broken
 
 
-def test_unmappable_date_raises(tmp_path, input_path):
-    """A date that cannot be mapped must not be silently dropped."""
-    broken = broken_copy(tmp_path, input_path, "broken.xml")
-    with pytest.raises(NormalisationError):
-        marc21.efi_import(broken)
+class TestAnUnreadableDate:
+    """A date nobody can read costs the field, not the record.
 
+    Everything else the record says — its title, its carrier, its
+    identifiers — is still there and still true, and has_date is
+    optional in the schema, so what remains is a valid record rather
+    than a broken one. Discarding it would cost the work and every
+    manifestation and item derived from it.
 
-def test_one_bad_record_does_not_cost_the_whole_file(tmp_path, input_path):
-    """File level containment would lose every record of an export."""
-    broken = broken_copy(tmp_path, input_path, "partly_broken.xml")
-    report = ConversionReport()
-    with collecting(report):
-        records = marc21.efi_import(broken, continue_on_error=True)
-    assert records, "The remaining records must survive"
-    assert any(
-        entry.severity == "error" and entry.record_id == "(DE-101)0000012345"
-        for entry in report.entries
-    )
+    A real export of 268 records contains "circa Ende der 1940er-Jahre"
+    in one of them, and used to take all 268 down with it.
+
+    """
+
+    def test_the_record_survives(self, tmp_path, input_path):
+        broken = broken_copy(tmp_path, input_path, "broken.xml")
+        assert marc21.efi_import(broken)
+
+    def test_the_date_is_left_unset_and_reported(self, tmp_path, input_path):
+        broken = broken_copy(tmp_path, input_path, "broken.xml")
+        report = ConversionReport()
+        with collecting(report):
+            records = marc21.efi_import(broken)
+        works = [r for r in records if r.category == "avefi:WorkVariant"]
+        assert works
+        assert [
+            entry
+            for entry in report.entries
+            if entry.target_field == "has_event.has_date"
+            and entry.severity == "warning"
+        ]
+
+    def test_the_rest_of_the_file_is_unaffected(self, tmp_path, input_path):
+        """The other records convert exactly as they did."""
+        broken = broken_copy(tmp_path, input_path, "partly_broken.xml")
+        report = ConversionReport()
+        with collecting(report):
+            records = marc21.efi_import(broken)
+        assert records, "The remaining records must survive"
 
 
 def test_a_single_record_document_is_read(tmp_path, input_path):

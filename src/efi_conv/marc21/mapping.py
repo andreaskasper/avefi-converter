@@ -20,10 +20,9 @@ import re
 from avefi_schema import model_pydantic_v2 as efi
 
 from ..core.normalise import (
-    NormalisationError,
     language_code,
+    mapped_date,
     mapped_duration,
-    normalise_date,
     normalise_title,
 )
 from ..core.records import (
@@ -738,18 +737,39 @@ def map_record(
 
 
 def record_identifier(marc_record, profile: Marc21Profile) -> str | None:
-    """Return the local identifier of a MARC record, if it has one."""
+    """Return the local identifier of a MARC record, if it has one.
+
+    MARC names the assigning agency in 003 alongside the number in
+    001, and both together are what identifies a record beyond the
+    agency that wrote it. A provider whose own systems use the number
+    alone needs the two to agree, or the same copy carries one key
+    here and another there and nothing can be matched between them;
+    ``source_key_pattern`` in the profile says which part to keep.
+
+    """
     for tag in profile.identifier_fields:
         if tag == "001":
             control = (marc_record.control_field("001") or "").strip()
             if control:
                 agency = (marc_record.control_field("003") or "").strip()
-                return f"({agency}){control}" if agency else control
+                built = f"({agency}){control}" if agency else control
+                return selected_source_key(built, profile)
             continue
         value = marc_record.subfield(tag, "a")
         if value:
-            return value.strip()
+            return selected_source_key(value.strip(), profile)
     return None
+
+
+def selected_source_key(text: str, profile) -> str:
+    """Return the part of a record identifier the profile keeps."""
+    pattern = getattr(profile, "source_key_pattern", None)
+    if not pattern:
+        return text
+    match = re.search(pattern, text)
+    if not match:
+        return text
+    return match.group(1) if match.groups() else match.group(0)
 
 
 def carrier_types(marc_record) -> list:
@@ -1284,27 +1304,26 @@ def interval_expression(
 
 
 def iso_date(text, profile, record_id, source_field) -> str | None:
-    """Return ``text`` as an ISODate, reporting what cannot be mapped."""
+    """Return ``text`` as an ISODate, or None if it cannot be read.
+
+    A date expression nobody can read costs the field rather than the
+    record, for the reason set out in :func:`efi_conv.core.normalise
+    .mapped_date`: it says nothing about the title, the carrier or the
+    identifiers, has_date is optional in the schema, and discarding
+    the record would cost the work and every manifestation and item
+    derived from it. A real export contains "circa Ende der
+    1940er-Jahre" in one record and used to take all 268 down with it.
+
+    """
     if not text:
         return None
-    try:
-        return normalise_date(
-            text,
-            record_id=record_id,
-            source_field=source_field,
-            target_field="has_event.has_date",
-            map_decades=profile.map_decades,
-        )
-    except NormalisationError as e:
-        report_issue(
-            "error",
-            str(e),
-            record_id=record_id,
-            source_field=source_field,
-            target_field="has_event.has_date",
-            raw_value=text,
-        )
-        raise
+    return mapped_date(
+        text,
+        record_id=record_id,
+        source_field=source_field,
+        target_field="has_event.has_date",
+        map_decades=profile.map_decades,
+    )
 
 
 # --- fixed field carrier data -----------------------------------------

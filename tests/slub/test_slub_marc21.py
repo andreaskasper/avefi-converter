@@ -36,6 +36,16 @@ class TestTheProfile:
         """A record naming nobody must not have identifiers minted."""
         assert "unspecified" not in slub.ISSUER_INFO["has_issuer_id"]
 
+    def test_the_source_key_is_the_number_the_library_uses(self):
+        """MARC builds "(DE-627)1919666257"; the PPN is the number.
+
+        Keeping the whole string gives one record two different keys
+        depending on which converter read it, and nothing can be
+        matched between the two results.
+
+        """
+        assert slub.PROFILE.source_key_pattern
+
     def test_the_house_relator_codes_are_known(self):
         """Codes this house uses beyond the common ones."""
         activities = slub.PROFILE.relator_activities
@@ -76,7 +86,7 @@ class TestTheExportInPractice:
             )
             for key in (described.has_source_key or [])
         }
-        assert "(DE-627)1000000004" not in keys
+        assert "1000000004" not in keys
 
     def test_the_linked_editions_are_one_work(self, input_path):
         """The reel and the digitised version are one film.
@@ -95,8 +105,8 @@ class TestTheExportInPractice:
             w for w in works if len(w.described_by[0].has_source_key) > 1
         )
         assert sorted(linked.described_by[0].has_source_key) == [
-            "(DE-627)1000000001",
-            "(DE-627)1000000002",
+            "1000000001",
+            "1000000002",
         ]
 
     def test_each_edition_keeps_its_own_manifestation(self, input_path):

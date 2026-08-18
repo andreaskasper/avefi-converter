@@ -49,6 +49,10 @@ ISSUER_INFO = {
 RELATOR_ACTIVITIES_SLUB = {
     **RELATOR_ACTIVITIES,
     "adp": ("WritingActivity", "Adaptation"),
+    "aue": ("WritingActivity", "Writer"),
+    "fmd": ("DirectingActivity", "Director"),
+    "pro": ("ProducingActivity", "Producer"),
+    "prf": ("CastActivity", "CastMember"),
     "prn": ("ProducingActivity", "ProductionCompany"),
     "pat": ("ProducingActivity", "Sponsor"),
     # Reported by the provider as a low confidence reading: ctb is the
@@ -58,8 +62,31 @@ RELATOR_ACTIVITIES_SLUB = {
     "ctb": ("ProducingActivity", "Cooperation"),
 }
 
-#: Authorities the subject and genre headings cite.
-GENRE_SOURCE_VOCABULARIES = frozenset({"gnd", "lcgft", "rvk"})
+#: The part of the record identifier this house uses.
+#:
+#: MARC builds "(DE-627)1919666257" out of 003 and 001, and the number
+#: alone is the PPN the library's own systems know. Keeping the whole
+#: string would give one record two different source keys depending on
+#: which converter ran — exactly the problem it took a while to find in
+#: the Düsseldorf delivery.
+SOURCE_KEY_PATTERN = r"([^)]+)$"
+
+#: The vocabulary the genre headings cite. This house names the GND
+#: subset rather than the file, and the two subsets say different
+#: things: gnd-content is what the film is, gnd-carrier what it is on.
+#: Only the first is a genre — "DVD-Video" is a carrier and belongs in
+#: the format, which is read from the fixed fields anyway.
+GENRE_SOURCE_VOCABULARIES = frozenset({"gnd", "gnd-content", "lcgft", "rvk"})
+
+#: 007/00 codes accepted as a moving image on top of the usual m and v.
+#:
+#: This house catalogues the online edition of a film as an electronic
+#: resource, 007/00 = c, which the generic default does not accept —
+#: rightly, because on its own it says nothing about film. Here it is
+#: reached only after the leader has called the record a projected
+#: medium, and 165 of the 268 records in a real export are exactly
+#: that: films published online. Without this they are all skipped.
+MOVING_IMAGE_CATEGORIES = frozenset({"m", "v", "c"})
 
 #: Profile class a profile file is read into.
 PROFILE_CLASS = Marc21Profile
@@ -70,6 +97,8 @@ PROFILE = Marc21Profile(
     default_language="ger",
     relator_activities=RELATOR_ACTIVITIES_SLUB,
     genre_source_vocabularies=GENRE_SOURCE_VOCABULARIES,
+    moving_image_categories=MOVING_IMAGE_CATEGORIES,
+    source_key_pattern=SOURCE_KEY_PATTERN,
 )
 
 

@@ -183,6 +183,13 @@ class Marc21Profile:
     agent_fields : tuple
         Fields carrying an agent together with a relator, in the order
         in which they are consulted.
+    source_key_pattern : str or None
+        Regular expression selecting the local identifier out of the
+        one built from the record. The first group is taken, or the
+        whole match where there is none. MARC names the assigning
+        agency alongside the record number, and a provider whose own
+        systems use the number alone needs the two to agree — the same
+        copy must not carry one key here and another there.
     linking_fields : tuple
         Fields whose ``$w`` names another record describing the same
         work — 776 in standard practice, where a library catalogues
@@ -245,6 +252,7 @@ class Marc21Profile:
     default_language: str | None = None
     identifier_fields: tuple = ("001", "035")
     agent_fields: tuple = ("100", "110", "700", "710")
+    source_key_pattern: str | None = None
     linking_fields: tuple = ("776",)
     work_key_fields: tuple = ("primary_title", "director", "date")
     moving_image_leader_types: frozenset = frozenset({"g"})

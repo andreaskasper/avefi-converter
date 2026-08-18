@@ -6,8 +6,8 @@
         "has_issuer_id": "https://w3id.org/isil/DE-14",
         "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
         "has_source_key": [
-          "(DE-627)1000000001",
-          "(DE-627)1000000002"
+          "1000000001",
+          "1000000002"
         ]
       }
     ],
@@ -64,7 +64,7 @@
       "has_issuer_id": "https://w3id.org/isil/DE-14",
       "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
       "has_source_key": [
-        "(DE-627)1000000001"
+        "1000000001"
       ]
     },
     "has_event": [
@@ -83,7 +83,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "1000000001___DE-627_1000000001~517a553f_manifestation"
+        "id": "1000000001__1000000001_manifestation"
       }
     ],
     "has_primary_title": {
@@ -104,13 +104,13 @@
       "has_issuer_id": "https://w3id.org/isil/DE-14",
       "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
       "has_source_key": [
-        "(DE-627)1000000001"
+        "1000000001"
       ]
     },
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "DE-627_1000000001~ddcb8c9c"
+        "id": "1000000001"
       }
     ],
     "has_primary_title": {
@@ -129,7 +129,7 @@
     ],
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "1000000001___DE-627_1000000001~517a553f_manifestation"
+      "id": "1000000001__1000000001_manifestation"
     }
   },
   {
@@ -138,7 +138,7 @@
       "has_issuer_id": "https://w3id.org/isil/DE-14",
       "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
       "has_source_key": [
-        "(DE-627)1000000002"
+        "1000000002"
       ]
     },
     "has_event": [
@@ -157,7 +157,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "1000000001___DE-627_1000000002~7dc23fde_manifestation"
+        "id": "1000000001__1000000002_manifestation"
       }
     ],
     "has_primary_title": {
@@ -178,13 +178,13 @@
       "has_issuer_id": "https://w3id.org/isil/DE-14",
       "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
       "has_source_key": [
-        "(DE-627)1000000002"
+        "1000000002"
       ]
     },
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "DE-627_1000000002~f4e56e7a"
+        "id": "1000000002"
       }
     ],
     "has_primary_title": {
@@ -194,7 +194,7 @@
     },
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "1000000001___DE-627_1000000002~7dc23fde_manifestation"
+      "id": "1000000001__1000000002_manifestation"
     }
   },
   {
@@ -204,7 +204,7 @@
         "has_issuer_id": "https://w3id.org/isil/DE-14",
         "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
         "has_source_key": [
-          "(DE-627)1000000003"
+          "1000000003"
         ]
       }
     ],
@@ -229,7 +229,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Werkstattbericht_______DE-627_1000000003~07e8ea08_work"
+        "id": "Werkstattbericht______1000000003_work"
       }
     ],
     "has_primary_title": {
@@ -244,7 +244,7 @@
       "has_issuer_id": "https://w3id.org/isil/DE-14",
       "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
       "has_source_key": [
-        "(DE-627)1000000003"
+        "1000000003"
       ]
     },
     "has_event": [
@@ -257,7 +257,7 @@
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "Werkstattbericht_______DE-627_1000000003~ed78c3fd_manifestation"
+        "id": "Werkstattbericht______1000000003_________manifestation"
       }
     ],
     "has_primary_title": {
@@ -267,7 +267,7 @@
     "is_manifestation_of": [
       {
         "category": "avefi:LocalResource",
-        "id": "Werkstattbericht_______DE-627_1000000003~07e8ea08_work"
+        "id": "Werkstattbericht______1000000003_work"
       }
     ]
   },
@@ -277,13 +277,13 @@
       "has_issuer_id": "https://w3id.org/isil/DE-14",
       "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
       "has_source_key": [
-        "(DE-627)1000000003"
+        "1000000003"
       ]
     },
     "has_identifier": [
       {
         "category": "avefi:LocalResource",
-        "id": "DE-627_1000000003~55a85793"
+        "id": "1000000003"
       }
     ],
     "has_primary_title": {
@@ -292,7 +292,7 @@
     },
     "is_item_of": {
       "category": "avefi:LocalResource",
-      "id": "Werkstattbericht_______DE-627_1000000003~ed78c3fd_manifestation"
+      "id": "Werkstattbericht______1000000003_________manifestation"
     }
   }
 ]
