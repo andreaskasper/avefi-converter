@@ -88,6 +88,37 @@ GENRE_SOURCE_VOCABULARIES = frozenset({"gnd", "gnd-content", "lcgft", "rvk"})
 #: that: films published online. Without this they are all skipped.
 MOVING_IMAGE_CATEGORIES = frozenset({"m", "v", "c"})
 
+#: What 300 $b says about a copy, in words.
+#:
+#: This house catalogues to RDA and describes the copy here rather
+#: than in the fixed field positions that used to carry it. The values
+#: are German and free text, and only the ones that state something
+#: the schema has a field for are listed — the codec, the container,
+#: the frame rate and the film base are recorded too and have no
+#: counterpart.
+PHYSICAL_DESCRIPTION_MAP = {
+    "schwarz-weiß": "BlackAndWhite",
+    "schwarz-weiss": "BlackAndWhite",
+    "s/w": "BlackAndWhite",
+    "sw": "BlackAndWhite",
+    "farbig": "Colour",
+    "farb.": "Colour",
+    "farbe": "Colour",
+    "stumm": "Silent",
+    "ton": "Sound",
+    "positiv": "Positive",
+    "negativ": "ImageNegative",
+    "umkehr-positiv": "OriginalPositiveReversalFilm",
+    "umkehrfilm": "OriginalPositiveReversalFilm",
+}
+
+#: The access status an action note states. This house records that a
+#: copy is kept for the long term in 583 rather than as a status.
+ACTION_NOTE_ACCESS_MAP = {
+    "archivierung/langzeitarchivierung gewährleistet": "Archive",
+    "archivierung/langzeitarchivierung gewaehrleistet": "Archive",
+}
+
 #: Profile class a profile file is read into.
 PROFILE_CLASS = Marc21Profile
 
@@ -99,6 +130,8 @@ PROFILE = Marc21Profile(
     genre_source_vocabularies=GENRE_SOURCE_VOCABULARIES,
     moving_image_categories=MOVING_IMAGE_CATEGORIES,
     source_key_pattern=SOURCE_KEY_PATTERN,
+    physical_description_map=PHYSICAL_DESCRIPTION_MAP,
+    action_note_access_map=ACTION_NOTE_ACCESS_MAP,
 )
 
 

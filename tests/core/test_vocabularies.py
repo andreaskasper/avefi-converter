@@ -65,3 +65,57 @@ def test_vocabulary_keys_are_lower_case(name):
             assert not wrong, (
                 f"{label}.{field} has non lower case keys: {wrong}"
             )
+
+
+class TestWhereATechnicalValueBelongs:
+    """The value says which field it is destined for.
+
+    Colour, sound, element type and the format vocabularies share no
+    value between them, which is what lets a provider write all four
+    into one field and the mapping still tell them apart.
+
+    """
+
+    def test_every_value_has_exactly_one_home(self):
+        from efi_conv.core.vocabulary import TECHNICAL_TARGETS
+
+        ambiguous = {
+            value: [name for name, _, _ in targets]
+            for value, targets in TECHNICAL_TARGETS.items()
+            if len(targets) > 1
+        }
+        # DV is a digital file and a video format both; the schema
+        # says so and a caller has to resolve it.
+        assert set(ambiguous) <= {"DV"}, ambiguous
+
+    def test_black_and_white_and_colour_combine(self):
+        """A copy that is both is not a copy that is one of them.
+
+        Taking whichever was stated first throws away half of what the
+        record says, and the schema has a value for the combination.
+
+        """
+        from avefi_schema import model_pydantic_v2 as efi
+
+        from efi_conv.core.vocabulary import place_technical_value
+
+        item = efi.Item(
+            is_item_of=efi.LocalResource(id="x"),
+            has_primary_title=efi.Title(has_name="x", type="TitleProper"),
+        )
+        place_technical_value(item, "has_colour_type", "BlackAndWhite", None)
+        place_technical_value(item, "has_colour_type", "Colour", None)
+        assert item.has_colour_type == "ColourBlackAndWhite"
+
+    def test_a_repeated_value_changes_nothing(self):
+        from avefi_schema import model_pydantic_v2 as efi
+
+        from efi_conv.core.vocabulary import place_technical_value
+
+        item = efi.Item(
+            is_item_of=efi.LocalResource(id="x"),
+            has_primary_title=efi.Title(has_name="x", type="TitleProper"),
+        )
+        place_technical_value(item, "has_colour_type", "Colour", None)
+        place_technical_value(item, "has_colour_type", "Colour", None)
+        assert item.has_colour_type == "Colour"

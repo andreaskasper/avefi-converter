@@ -36,6 +36,7 @@ from ..core.records import (
     work_key,
 )
 from ..core.report import for_file, report_issue, report_record_skipped
+from ..core.vocabulary import TECHNICAL_TARGETS, place_technical_value
 from .marcxml import as_blank, fixed_position, is_fill, iter_records
 from .profile import Marc21Profile
 
@@ -1832,9 +1833,76 @@ def build_item(marc_record, primary, profile, source_key, carrier):
         item.has_extent = extent
     for language in item_languages(marc_record, source_key):
         item.in_language.append(language)
+    apply_physical_description(item, marc_record, profile, source_key)
+    apply_action_notes(item, marc_record, profile, source_key)
+    for link in web_resources(marc_record, profile):
+        if link not in item.has_webresource:
+            item.has_webresource.append(link)
     for note in item_notes(marc_record, source_key):
         item.has_note.append(note)
     return item
+
+
+def apply_physical_description(item, marc_record, profile, source_key):
+    """Read what 300 ``$b`` says about the copy.
+
+    A record catalogued to RDA describes the copy in words rather than
+    in the fixed field positions that used to carry it: "schwarz-weiß,
+    stumm, positiv" instead of a 007 whose meaning depends on the
+    category of carrier. Where the fixed fields already answered, they
+    keep their answer — this fills what they left empty.
+
+    """
+    if not profile.physical_description_map:
+        return
+    for value in marc_record.subfields("300", "b"):
+        for term in value.split(","):
+            term = term.strip()
+            if not term:
+                continue
+            mapped = profile.physical_description_map.get(term.lower())
+            if mapped is None:
+                continue
+            candidates = TECHNICAL_TARGETS.get(mapped)
+            if not candidates:
+                report_issue(
+                    "warning",
+                    "No AVefi field takes this value of the physical"
+                    " description",
+                    record_id=source_key,
+                    source_field="300$b",
+                    target_field="—",
+                    raw_value=f"{term} -> {mapped}",
+                )
+                continue
+            _, target, wrapper = candidates[0]
+            place_technical_value(item, target, mapped, wrapper)
+
+
+def apply_action_notes(item, marc_record, profile, source_key):
+    """Read the access status an action note states.
+
+    A library records that a copy is kept for the long term as an
+    action note rather than as an access status, and 583 is where it
+    puts it.
+
+    """
+    if not profile.action_note_access_map or item.has_access_status:
+        return
+    for value in marc_record.subfields("583", "a"):
+        status = profile.action_note_access_map.get(value.strip().lower())
+        if status:
+            item.has_access_status = efi.ItemAccessStatusEnum(status)
+            return
+
+
+def web_resources(marc_record, profile):
+    """Yield the addresses at which a copy can be reached."""
+    for tag in profile.web_resource_fields:
+        for value in marc_record.subfields(tag, "u"):
+            link = (value or "").strip()
+            if link:
+                yield link
 
 
 def format_for(class_name: str, type_value: str):

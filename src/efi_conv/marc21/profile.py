@@ -183,6 +183,18 @@ class Marc21Profile:
     agent_fields : tuple
         Fields carrying an agent together with a relator, in the order
         in which they are consulted.
+    physical_description_map : dict
+        Term of the physical description (300 ``$b``, lower case) to
+        the AVefi value it denotes. The value decides which field it
+        lands in, because colour, sound, element type and the format
+        vocabularies share none between them. A record catalogued to
+        RDA describes the copy in words here — "schwarz-weiß",
+        "stumm", "positiv" — where an older one used the fixed fields.
+    action_note_access_map : dict
+        Term of an action note (583 ``$a``, lower case) to the AVefi
+        access status it states.
+    web_resource_fields : tuple
+        Fields whose ``$u`` names a web resource of the copy.
     source_key_pattern : str or None
         Regular expression selecting the local identifier out of the
         one built from the record. The first group is taken, or the
@@ -252,6 +264,9 @@ class Marc21Profile:
     default_language: str | None = None
     identifier_fields: tuple = ("001", "035")
     agent_fields: tuple = ("100", "110", "700", "710")
+    physical_description_map: dict = field(default_factory=dict)
+    action_note_access_map: dict = field(default_factory=dict)
+    web_resource_fields: tuple = ("856",)
     source_key_pattern: str | None = None
     linking_fields: tuple = ("776",)
     work_key_fields: tuple = ("primary_title", "director", "date")

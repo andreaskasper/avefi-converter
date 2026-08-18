@@ -33,6 +33,12 @@ from ..core.records import (
     work_key,
 )
 from ..core.report import for_file, report_issue, report_record_skipped
+from ..core.vocabulary import (
+    OUT_OF_SCOPE as TECHNICAL_OUT_OF_SCOPE,
+)
+from ..core.vocabulary import (
+    TECHNICAL_TARGETS,
+)
 from ..core.xmlrecords import first, parse_records, text_of
 from .generated.lido_1_1 import Lido
 from .profile import DEFAULT_AGENT_TYPES, LidoProfile
@@ -1824,45 +1830,6 @@ def build_publication_event(descriptive, profile, source_key):
     if not (event.has_date or event.located_in):
         return None
     return event
-
-
-#: Where a value of the technical description belongs. The colour, the
-#: sound, the element type and the six format vocabularies share no
-#: value between them, so the value itself says which field it is
-#: destined for and a provider does not have to keep the two in step.
-TECHNICAL_TARGETS = {}
-for _enum_name in dir(efi):
-    if _enum_name == "ColourTypeEnum":
-        _target, _wrapper = "has_colour_type", None
-    elif _enum_name == "ItemElementTypeEnum":
-        _target, _wrapper = "element_type", None
-    elif _enum_name == "SoundTypeEnum":
-        _target, _wrapper = "has_sound_type", None
-    elif _enum_name.startswith("Format") and _enum_name.endswith("TypeEnum"):
-        _target = "has_format"
-        _wrapper = getattr(
-            efi, _enum_name[len("Format") : -len("TypeEnum")], None
-        )
-        if _wrapper is None:
-            continue
-    else:
-        continue
-    for _member in getattr(efi, _enum_name):
-        TECHNICAL_TARGETS.setdefault(_member.value, []).append(
-            (_enum_name, _target, _wrapper)
-        )
-del _enum_name, _target, _wrapper, _member
-
-#: Vocabularies this provider writes into the same field, which the
-#: mapping recognises but does not act on. Deriving a publication or a
-#: preservation event from a note about the material would be a
-#: statement about the film that the note does not make, so the value
-#: is reported and the decision left to the data provider.
-TECHNICAL_OUT_OF_SCOPE = {
-    member.value: name
-    for name in ("PublicationEventTypeEnum", "PreservationEventTypeEnum")
-    for member in getattr(efi, name)
-}
 
 
 def technical_terms(descriptive):

@@ -116,3 +116,31 @@ class TestTheExportInPractice:
             if r.category == "avefi:Manifestation"
         ]
         assert len(manifestations) == 3
+
+
+class TestThePhysicalDescription:
+    """The copy is described in words here, not in fixed fields.
+
+    "schwarz-weiß, stumm, positiv" in 300 $b instead of a 007 whose
+    meaning depends on the category of carrier. Reading only the fixed
+    fields leaves colour, sound and element type empty for the whole
+    export.
+
+    """
+
+    def test_the_map_covers_the_terms_the_export_uses(self):
+        terms = slub.PROFILE.physical_description_map
+        for term in ("schwarz-weiß", "farbig", "stumm", "positiv"):
+            assert term in terms
+
+    def test_an_action_note_states_the_access_status(self):
+        """A library keeps a copy for the long term and says so in 583."""
+        assert (
+            slub.PROFILE.action_note_access_map[
+                "archivierung/langzeitarchivierung gewährleistet"
+            ]
+            == "Archive"
+        )
+
+    def test_the_web_resource_field_is_read(self):
+        assert "856" in slub.PROFILE.web_resource_fields
