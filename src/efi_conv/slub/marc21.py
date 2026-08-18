@@ -71,6 +71,20 @@ RELATOR_ACTIVITIES_SLUB = {
 #: the Düsseldorf delivery.
 SOURCE_KEY_PATTERN = r"([^)]+)$"
 
+#: Relationships in 776 $i that make two records one work.
+#:
+#: This house links a film to the collection it belongs to in the same
+#: field it uses for the other editions of the film, and states the
+#: relationship only for the latter. Following every link merged 74
+#: films of the Sorbian Institute into a single work.
+LINKING_RELATIONSHIP_TERMS = frozenset(
+    {
+        "erscheint auch als",
+        "elektronische reproduktion",
+        "elektronische reproduktion von",
+    }
+)
+
 #: The vocabulary the genre headings cite. This house names the GND
 #: subset rather than the file, and the two subsets say different
 #: things: gnd-content is what the film is, gnd-carrier what it is on.
@@ -138,6 +152,7 @@ PROFILE = Marc21Profile(
     genre_source_vocabularies=GENRE_SOURCE_VOCABULARIES,
     moving_image_categories=MOVING_IMAGE_CATEGORIES,
     source_key_pattern=SOURCE_KEY_PATTERN,
+    linking_relationship_terms=LINKING_RELATIONSHIP_TERMS,
     web_resource_fields=(),
     web_resource_template=WEB_RESOURCE_TEMPLATE,
     physical_description_map=PHYSICAL_DESCRIPTION_MAP,

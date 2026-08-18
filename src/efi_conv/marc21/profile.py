@@ -215,6 +215,11 @@ class Marc21Profile:
         separate records and links them. Records connected through
         them become one work. Set to an empty tuple to ignore the
         links and group by ``work_key_fields`` alone.
+    linking_relationship_terms : frozenset or None
+        Relationships in ``$i`` that make a linking field count, folded
+        to lower case. ``None`` accepts every link. A library that also
+        points at the collection a film belongs to needs this, or the
+        whole collection collapses into a single work.
     work_key_fields : tuple
         Fields whose combination identifies a work, so that several
         copies of one film share one WorkVariant. Set to an empty tuple
@@ -276,6 +281,7 @@ class Marc21Profile:
     web_resource_template: str | None = None
     source_key_pattern: str | None = None
     linking_fields: tuple = ("776",)
+    linking_relationship_terms: frozenset | None = None
     work_key_fields: tuple = ("primary_title", "director", "date")
     moving_image_leader_types: frozenset = frozenset({"g"})
     moving_image_categories: frozenset = frozenset({"m", "v"})

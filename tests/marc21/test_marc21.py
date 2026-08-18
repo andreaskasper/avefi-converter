@@ -1,3 +1,4 @@
+from dataclasses import replace
 import json
 import pathlib
 
@@ -688,6 +689,41 @@ class TestRecordsTheLibraryHasLinked:
         assert mapping.bare_identifier("(DE-627)FILM") == "FILM"
         assert mapping.bare_identifier("FILM") == "FILM"
 
+    def test_a_link_without_a_stated_relationship_can_be_ignored(
+        self, tmp_path
+    ):
+        """A library may link the collection a film sits in.
+
+        It writes that in the same field it uses for the other
+        editions, and states the relationship only for the latter.
+        Following every link then merges a whole collection into one
+        work, so a profile can ask for the relationship to be named.
+
+        """
+        document = LINKED_COLLECTION.replace(
+            """    <datafield tag="338" ind1=" " ind2=" ">
+      <subfield code="b">vd</subfield>
+    </datafield>""",
+            """    <datafield tag="338" ind1=" " ind2=" ">
+      <subfield code="b">vd</subfield>
+    </datafield>
+    <datafield tag="776" ind1="1" ind2=" ">
+      <subfield code="w">(DE-627)FILM</subfield>
+    </datafield>""",
+        )
+        target = tmp_path / "collection.xml"
+        target.write_text(document, encoding="utf-8")
+        assert len(self.works(marc21.efi_import(target))) == 1
+
+        selective = replace(
+            marc21.PROFILE,
+            linking_relationship_terms=frozenset({"erscheint auch als"}),
+        )
+        records = mapping.efi_import(
+            target, selective, context=mapping.new_context(selective)
+        )
+        assert len(self.works(records)) == 2
+
     def test_the_links_are_followed_transitively(self, tmp_path):
         """A chain is one work however the export orders it."""
         document = LINKED_COLLECTION.replace(
@@ -704,3 +740,42 @@ class TestRecordsTheLibraryHasLinked:
         target = tmp_path / "chain.xml"
         target.write_text(document, encoding="utf-8")
         assert len(self.works(marc21.efi_import(target))) == 1
+
+
+VIDEO_WITH_SOUND_LEADER = """<?xml version="1.0" encoding="UTF-8"?>
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+  <record>
+    <leader>01234njm a2200349 a 4500</leader>
+    <controlfield tag="001">KONZERT</controlfield>
+    <controlfield tag="007">vd uvuuuu</controlfield>
+    <datafield tag="245" ind1="1" ind2="0">
+      <subfield code="a">Ein Konzertmitschnitt</subfield>
+    </datafield>
+  </record>
+</collection>
+"""
+
+
+class TestWhatTheRecordSaysAboutItsMedium:
+    """The physical description decides, not the type of content.
+
+    A library catalogues a concert on a videodisc as a musical sound
+    recording, because that is what it is about, and states the disc
+    in 007. Reading the leader first threw the record away before the
+    more specific field was ever consulted.
+
+    """
+
+    def test_007_outweighs_the_leader(self, tmp_path):
+        target = tmp_path / "konzert.xml"
+        target.write_text(VIDEO_WITH_SOUND_LEADER, encoding="utf-8")
+        records = marc21.efi_import(target)
+        assert [r.category for r in records].count("avefi:Item") == 1
+
+    def test_a_record_without_007_still_needs_the_leader(self, tmp_path):
+        document = VIDEO_WITH_SOUND_LEADER.replace(
+            '    <controlfield tag="007">vd uvuuuu</controlfield>\n', ""
+        )
+        target = tmp_path / "ohne007.xml"
+        target.write_text(document, encoding="utf-8")
+        assert marc21.efi_import(target) == []

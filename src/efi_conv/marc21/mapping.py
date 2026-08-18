@@ -550,13 +550,34 @@ def bare_identifier(value: str | None) -> str:
     return AGENCY_PREFIX.sub("", (value or "").strip())
 
 
+def states_relationship(data_field, terms) -> bool:
+    """Say whether the field names one of the wanted relationships.
+
+    The relationship is written out in ``$i`` — "Erscheint auch als",
+    "Elektronische Reproduktion von". A linking field without one says
+    only that the two records belong together somehow, which a library
+    may well use for the collection a film sits in rather than for
+    another edition of the same film.
+    """
+    return any(
+        value.strip().casefold() in terms
+        for value in data_field.subfield_values("i")
+    )
+
+
 def linking_references(marc_record, profile):
     """Yield the records this one names as the same work."""
+    terms = profile.linking_relationship_terms
     for tag in profile.linking_fields:
-        for value in marc_record.subfields(tag, "w"):
-            reference = bare_identifier(value)
-            if reference:
-                yield reference
+        for data_field in marc_record.fields(tag):
+            if terms is not None and not states_relationship(
+                data_field, terms
+            ):
+                continue
+            for value in data_field.subfield_values("w"):
+                reference = bare_identifier(value)
+                if reference:
+                    yield reference
 
 
 def link_groups(input_file, profile) -> dict:
@@ -800,6 +821,25 @@ def is_moving_image_record(marc_record, profile, source_key) -> bool:
     file, and none of them may become a film work.
 
     """
+    categories = [
+        fixed_position(value, 0)
+        for value in marc_record.control_field_values("007")
+    ]
+    categories = [code for code in categories if not is_fill(code)]
+    if categories:
+        if any(code in profile.moving_image_categories for code in categories):
+            return True
+        report_issue(
+            "info",
+            "Record skipped: 007 says the physical medium is neither a"
+            " motion picture nor a videorecording",
+            record_id=source_key,
+            source_field="007/00",
+            target_field="—",
+            raw_value=categories,
+        )
+        return False
+
     leader_type = fixed_position(marc_record.leader, 6)
     forms = [
         fixed_position(value, 0)
@@ -816,25 +856,6 @@ def is_moving_image_record(marc_record, profile, source_key) -> bool:
             source_field="leader/06",
             target_field="—",
             raw_value=leader_type,
-        )
-        return False
-
-    categories = [
-        fixed_position(value, 0)
-        for value in marc_record.control_field_values("007")
-    ]
-    categories = [code for code in categories if not is_fill(code)]
-    if categories:
-        if any(code in profile.moving_image_categories for code in categories):
-            return True
-        report_issue(
-            "info",
-            "Record skipped: 007 describes a projected medium that is"
-            " neither a motion picture nor a videorecording",
-            record_id=source_key,
-            source_field="007/00",
-            target_field="—",
-            raw_value=categories,
         )
         return False
 
