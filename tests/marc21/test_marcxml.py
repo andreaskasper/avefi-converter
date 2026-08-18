@@ -561,3 +561,68 @@ class TestTitleFromField:
 
     def test_a_field_without_title_subfields_yields_nothing(self):
         assert self.title(self.field("0", ("c", "Bernhard Wicki."))) is None
+
+
+RDA_RECORD = """<?xml version="1.0" encoding="UTF-8"?>
+<record xmlns="http://www.loc.gov/MARC21/slim">
+  <leader>01234ngm a2200349 a 4500</leader>
+  <controlfield tag="001">RDA-1</controlfield>
+  <datafield tag="245" ind1="1" ind2="0">
+    <subfield code="a">Die Testaufnahme</subfield>
+  </datafield>
+  <datafield tag="338" ind1=" " ind2=" ">
+    <subfield code="b">{carrier}</subfield>
+  </datafield>
+</record>
+"""
+
+
+class TestCarrierTypeDecidesWhereTheFixedFieldsDoNot:
+    """A library that has moved to RDA states the carrier in 338.
+
+    It may then leave the fixed fields 338 replaces empty. The SLUB
+    export is one such: a leader calling the record a projected
+    medium, no 007, no usable 008/33, and a 338 saying mr for a film
+    reel or cr for the online edition. Read only the fixed fields and
+    every record of it is skipped — which is what happened.
+
+    """
+
+    def record(self, carrier):
+        return marcxml.parse_record(
+            RDA_RECORD.format(carrier=carrier).encode("utf-8")
+        )
+
+    @pytest.mark.parametrize("carrier", ["mr", "vd", "cr", "MR", " mr "])
+    def test_a_moving_image_carrier_is_accepted(self, carrier):
+        report = ConversionReport()
+        with collecting(report):
+            assert mapping.is_moving_image_record(
+                self.record(carrier), PROFILE, "RDA-1"
+            )
+
+    def test_another_carrier_is_not(self):
+        """The leader is not enough on its own to say yes."""
+        report = ConversionReport()
+        with collecting(report):
+            assert not mapping.is_moving_image_record(
+                self.record("nc"), PROFILE, "RDA-1"
+            )
+        assert [
+            entry for entry in report.entries if entry.source_field == "338$b"
+        ]
+
+    def test_the_fixed_fields_still_decide_where_they_speak(self):
+        """338 is consulted only where 007 and 008/33 say nothing.
+
+        A record that states both is not reinterpreted; this is an
+        addition, not a change of the existing reading.
+
+        """
+        record = marcxml.parse_record(SINGLE_RECORD.encode("utf-8"))
+        report = ConversionReport()
+        with collecting(report):
+            assert mapping.is_moving_image_record(record, PROFILE, "12345")
+
+    def test_carrier_types_are_read_from_the_field(self):
+        assert mapping.carrier_types(self.record("mr")) == ["mr"]

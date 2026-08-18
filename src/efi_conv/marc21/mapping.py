@@ -122,7 +122,10 @@ MAPPING_RULES = (
         "leader/06, 006/00, 007/00, 008/33",
         "—",
         "Profile vocabulary",
-        "Only projected medium and videorecording records are in"
+        "Read from leader/06 and 006, then 007, then 008/33, then"
+        " 338 $b for a record catalogued to RDA that leaves the fixed"
+        " fields empty. Only projected medium and videorecording"
+        " records are in"
         " scope. A record describing a filmstrip, a slide set or a"
         " book is skipped and reported, and so is a projected medium"
         " record that says nothing about which medium it is",
@@ -664,6 +667,25 @@ def record_identifier(marc_record, profile: Marc21Profile) -> str | None:
     return None
 
 
+def carrier_types(marc_record) -> list:
+    """Return the RDA carrier type codes stated in 338 ``$b``.
+
+    A record catalogued to RDA says what the thing physically is in
+    338, and a library that has moved to RDA may leave the fixed
+    fields it replaces empty. The SLUB export is one: its records
+    carry a leader calling them a projected medium, no 007 and no
+    usable 008/33, and a 338 saying ``mr`` for a film reel, ``vd`` for
+    a videodisc and ``cr`` for the online edition. Without reading it,
+    every one of them is skipped.
+
+    """
+    return [
+        code.strip().lower()
+        for code in marc_record.subfields("338", "b")
+        if code and code.strip()
+    ]
+
+
 def is_moving_image_record(marc_record, profile, source_key) -> bool:
     """Return True if the record describes a moving image.
 
@@ -714,12 +736,28 @@ def is_moving_image_record(marc_record, profile, source_key) -> bool:
     if material in profile.moving_image_material_types:
         return True
     if is_fill(material):
+        carriers = carrier_types(marc_record)
+        if carriers:
+            if any(
+                code in profile.moving_image_carrier_types for code in carriers
+            ):
+                return True
+            report_issue(
+                "info",
+                "Record skipped: 338 describes a carrier that is not a"
+                " moving image",
+                record_id=source_key,
+                source_field="338$b",
+                target_field="—",
+                raw_value=carriers,
+            )
+            return False
         report_issue(
             "warning",
-            "Record skipped: neither 007 nor 008/33 says whether this"
-            " projected medium is a moving image",
+            "Record skipped: neither 007, 008/33 nor 338 says whether"
+            " this projected medium is a moving image",
             record_id=source_key,
-            source_field="007/00, 008/33",
+            source_field="007/00, 008/33, 338$b",
             target_field="—",
             raw_value=leader_type,
         )

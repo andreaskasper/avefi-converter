@@ -5,7 +5,7 @@ do not edit by hand.
 
 | Rule | Level | MARC21 source | AVefi target | Normalisation | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `moving_image_filter` | Record | `leader/06, 006/00, 007/00, 008/33` | `—` | Profile vocabulary | Only projected medium and videorecording records are in scope. A record describing a filmstrip, a slide set or a book is skipped and reported, and so is a projected medium record that says nothing about which medium it is |
+| `moving_image_filter` | Record | `leader/06, 006/00, 007/00, 008/33` | `—` | Profile vocabulary | Read from leader/06 and 006, then 007, then 008/33, then 338 $b for a record catalogued to RDA that leaves the fixed fields empty. Only projected medium and videorecording records are in scope. A record describing a filmstrip, a slide set or a book is skipped and reported, and so is a projected medium record that says nothing about which medium it is |
 | `record_id` | Item | `001, prefixed with the assigning agency in 003, else 035$a` | `has_identifier, described_by.has_source_key` | — | Written as (agency)number, the form MARC itself uses in 035$a. A record without any identifier is skipped and reported, because its records could not be referred to |
 | `work_type` | Work | `leader/07` | `type` | Profile bibliographic_level_map | Bibliographic level; an unmapped level falls back to Monographic and is reported |
 | `work_grouping` | Work | `primary title, director, production date` | `has_identifier (work)` | Profile work_key_fields | Several copies of one film share one WorkVariant; set work_key_fields to () for one work per record |

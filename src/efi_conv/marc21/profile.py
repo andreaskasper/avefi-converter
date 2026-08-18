@@ -192,6 +192,11 @@ class Marc21Profile:
     moving_image_categories : frozenset
         Field 007 position 00 values in scope, that is motion picture
         and videorecording.
+    moving_image_carrier_types : frozenset
+        RDA carrier type codes in 338 ``$b`` denoting a moving image.
+        Consulted where the fixed fields do not decide: a record
+        catalogued to RDA states the carrier there and may carry
+        neither 007 nor a usable 008/33.
     moving_image_material_types : frozenset
         Field 008 position 33 values in scope, consulted when a record
         carries no 007.
@@ -237,6 +242,25 @@ class Marc21Profile:
     moving_image_leader_types: frozenset = frozenset({"g"})
     moving_image_categories: frozenset = frozenset({"m", "v"})
     moving_image_material_types: frozenset = frozenset({"m", "v"})
+    #: Film carriers mc mf mo mr mz, video carriers vc vd vf vr vz, and
+    #: cr for an online resource — which says nothing on its own, but
+    #: is only reached once the leader has called the record a
+    #: projected medium.
+    moving_image_carrier_types: frozenset = frozenset(
+        {
+            "mc",
+            "mf",
+            "mo",
+            "mr",
+            "mz",
+            "vc",
+            "vd",
+            "vf",
+            "vr",
+            "vz",
+            "cr",
+        }
+    )
     bibliographic_level_map: dict = field(
         default_factory=lambda: dict(BIBLIOGRAPHIC_LEVEL_MAP)
     )
