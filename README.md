@@ -332,6 +332,7 @@ stands:
 | [`fmdu.lido`](./src/efi_conv/fmdu/README.md) | Filmmuseum der Landeshauptstadt Düsseldorf | XML, [LIDO 1.1](./src/efi_conv/lido/README.md) |
 | `mdigital.lido` | [museum-digital](./src/efi_conv/mdigital/README.md) | XML, LIDO 1.1 |
 | `ddb.lido` | [Deutsche Digitale Bibliothek](./src/efi_conv/ddb/README.md) | XML, LIDO 1.1 |
+| [`slub.marc21`](./src/efi_conv/slub/README.md) | SLUB Dresden | XML, MARC21 slim |
 
 A **format converter** reads a standard rather than one institution's
 export. It cannot know whose collection it is pointed at, so it ships

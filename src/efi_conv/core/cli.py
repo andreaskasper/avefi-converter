@@ -36,6 +36,7 @@ IMPORTERS = [
     "marc21",
     "mdigital.lido",
     "pbcore",
+    "slub.marc21",
 ]
 log = logging.getLogger(__name__)
 
