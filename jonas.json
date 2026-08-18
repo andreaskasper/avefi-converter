@@ -1,0 +1,306 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/isil/DE-14",
+        "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+        "has_source_key": [
+          "(DE-627)TEST-ONLINE",
+          "TEST-FILM"
+        ]
+      }
+    ],
+    "has_alternative_title": [
+      {
+        "has_name": "Testfilm : abweichender Titel",
+        "type": "AlternativeTitle"
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Förster, Werner",
+                "type": "Person"
+              }
+            ],
+            "type": "Filmmaker"
+          },
+          {
+            "category": "avefi:ProducingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Beispiel Filmproduktion",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "ProductionCompany"
+          }
+        ],
+        "has_date": "1950~",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "[Dresden]"
+          }
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "TEST-FILM_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Testaufnahme : Untertitel = The test recording",
+      "has_ordering_name": "Testaufnahme : Untertitel = The test recording, Die",
+      "type": "PreferredTitle"
+    },
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/isil/DE-14",
+        "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+        "has_source_key": [
+          "TEST-DVD"
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "zweiter_Film_Ein______TEST-DVD~98a3807b_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Ein zweiter Film",
+      "has_ordering_name": "zweiter Film, Ein",
+      "type": "PreferredTitle"
+    },
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "TEST-FILM"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "TEST-FILM__TEST-FILM_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Testaufnahme",
+      "has_ordering_name": "Testaufnahme, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "TEST-FILM_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "(DE-627)TEST-ONLINE"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_date": "2024",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Dresden"
+          }
+        ],
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "TEST-FILM___DE-627_TEST-ONLINE~77ef88f3_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Testaufnahme : Untertitel = The test recording",
+      "has_ordering_name": "Testaufnahme : Untertitel = The test recording, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Edition: [bearbeitete digitale Ausgabe]"
+    ],
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "TEST-FILM_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "TEST-DVD"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "zweiter_Film_Ein______TEST-DVD~aa553632_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Ein zweiter Film",
+      "has_ordering_name": "zweiter Film, Ein",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "zweiter_Film_Ein______TEST-DVD~98a3807b_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "(DE-627)TEST-ONLINE"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "DE-627_TEST-ONLINE~9805ad25"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Testaufnahme : Untertitel = The test recording",
+      "has_ordering_name": "Testaufnahme : Untertitel = The test recording, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Physical description: 1 Online-Ressource (17 min 15 s) 16 B/s, positiv, schwarz-weiß, farbig, stumm, Container: Quicktime.mov",
+      "Amateurfilm. Filmbericht. Deutschland. 1950",
+      "Language: Mit Zwischentexttafeln in deutscher Sprache"
+    ],
+    "has_duration": {
+      "has_value": "PT00H17M00S"
+    },
+    "in_language": [
+      {
+        "code": "ger",
+        "usage": [
+          "SpokenLanguage"
+        ]
+      },
+      {
+        "code": "zxx",
+        "usage": [
+          "NoDialogue"
+        ]
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "TEST-FILM___DE-627_TEST-ONLINE~77ef88f3_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "TEST-DVD"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "TEST-DVD"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Ein zweiter Film",
+      "has_ordering_name": "zweiter Film, Ein",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Physical description: 1 DVD-R (33 + 20 Min.) farbig, Ton ca. 12 cm"
+    ],
+    "has_duration": {
+      "has_value": "PT00H20M00S"
+    },
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "zweiter_Film_Ein______TEST-DVD~aa553632_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "TEST-FILM"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "TEST-FILM"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Testaufnahme",
+      "has_ordering_name": "Testaufnahme, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Physical description: 1 Filmspule (17 min 15 s) Umkehrfilm, schwarz-weiß, stumm 8 mm",
+      "Beschriftung auf dem Material: Test"
+    ],
+    "has_duration": {
+      "has_value": "PT00H17M00S"
+    },
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "8mmFilm"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "TEST-FILM__TEST-FILM_manifestation"
+    }
+  }
+]

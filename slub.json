@@ -1,0 +1,298 @@
+[
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/isil/DE-14",
+        "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+        "has_source_key": [
+          "(DE-627)1000000001",
+          "(DE-627)1000000002"
+        ]
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:DirectingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Förster, Werner",
+                "type": "Person"
+              }
+            ],
+            "type": "Director"
+          },
+          {
+            "category": "avefi:ProducingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "DEFA-Studio für Dokumentarfilme",
+                "type": "CorporateBody"
+              }
+            ],
+            "type": "ProductionCompany"
+          }
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "1000000001_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Elbwiesen im Frühjahr",
+      "has_ordering_name": "Elbwiesen im Frühjahr, Die",
+      "type": "PreferredTitle"
+    },
+    "has_genre": [
+      {
+        "has_name": "Dokumentarfilm"
+      }
+    ],
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:WorkVariant",
+    "described_by": [
+      {
+        "has_issuer_id": "https://w3id.org/isil/DE-14",
+        "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+        "has_source_key": [
+          "(DE-627)1000000003"
+        ]
+      }
+    ],
+    "has_event": [
+      {
+        "category": "avefi:ProductionEvent",
+        "has_activity": [
+          {
+            "category": "avefi:WritingActivity",
+            "has_agent": [
+              {
+                "category": "avefi:Agent",
+                "has_name": "Kern, Anita",
+                "type": "Person"
+              }
+            ],
+            "type": "Adaptation"
+          }
+        ]
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Werkstattbericht_______DE-627_1000000003~07e8ea08_work"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Werkstattbericht",
+      "type": "PreferredTitle"
+    },
+    "type": "Monographic"
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "(DE-627)1000000001"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_date": "1974",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Dresden"
+          }
+        ],
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "1000000001___DE-627_1000000001~517a553f_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Elbwiesen im Frühjahr",
+      "has_ordering_name": "Elbwiesen im Frühjahr, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "1000000001_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "(DE-627)1000000002"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_date": "1974",
+        "located_in": [
+          {
+            "category": "avefi:GeographicName",
+            "has_name": "Dresden"
+          }
+        ],
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "1000000001___DE-627_1000000002~7dc23fde_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Elbwiesen im Frühjahr : digitalisierte Fassung",
+      "has_ordering_name": "Elbwiesen im Frühjahr : digitalisierte Fassung, Die",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "1000000001_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Manifestation",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "(DE-627)1000000003"
+      ]
+    },
+    "has_event": [
+      {
+        "category": "avefi:PublicationEvent",
+        "has_date": "1981",
+        "type": "ReleaseEvent"
+      }
+    ],
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Werkstattbericht_______DE-627_1000000003~ed78c3fd_manifestation"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Werkstattbericht",
+      "type": "TitleProper"
+    },
+    "is_manifestation_of": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "Werkstattbericht_______DE-627_1000000003~07e8ea08_work"
+      }
+    ]
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "(DE-627)1000000001"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "DE-627_1000000001~ddcb8c9c"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Elbwiesen im Frühjahr",
+      "has_ordering_name": "Elbwiesen im Frühjahr, Die",
+      "type": "TitleProper"
+    },
+    "has_note": [
+      "Physical description: 1 Filmrolle 16 mm"
+    ],
+    "has_format": [
+      {
+        "category": "avefi:Film",
+        "type": "16mmFilm"
+      }
+    ],
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "1000000001___DE-627_1000000001~517a553f_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "(DE-627)1000000002"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "DE-627_1000000002~f4e56e7a"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Die Elbwiesen im Frühjahr : digitalisierte Fassung",
+      "has_ordering_name": "Elbwiesen im Frühjahr : digitalisierte Fassung, Die",
+      "type": "TitleProper"
+    },
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "1000000001___DE-627_1000000002~7dc23fde_manifestation"
+    }
+  },
+  {
+    "category": "avefi:Item",
+    "described_by": {
+      "has_issuer_id": "https://w3id.org/isil/DE-14",
+      "has_issuer_name": "Sächsische Landesbibliothek – Staats- und Universitätsbibliothek Dresden (SLUB)",
+      "has_source_key": [
+        "(DE-627)1000000003"
+      ]
+    },
+    "has_identifier": [
+      {
+        "category": "avefi:LocalResource",
+        "id": "DE-627_1000000003~55a85793"
+      }
+    ],
+    "has_primary_title": {
+      "has_name": "Werkstattbericht",
+      "type": "TitleProper"
+    },
+    "is_item_of": {
+      "category": "avefi:LocalResource",
+      "id": "Werkstattbericht_______DE-627_1000000003~ed78c3fd_manifestation"
+    }
+  }
+]

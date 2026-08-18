@@ -54,6 +54,20 @@ Sammlungsgrenzen hinweg eindeutig benannt werden kann.
 Die GWDG ist an allen Arbeitspaketen beteiligt und verantwortet Aufbau und
 Betrieb der technischen Infrastruktur sowie die Middle-Layer-Software.
 
+**Beauftragt war einer, geworden sind es mehr**
+
+Beauftragt war ein Importer: LIDO für das Filmmuseum der Landeshauptstadt
+Düsseldorf — das ist `efi_conv.lido` mit dem Profil `efi_conv.fmdu`.
+
+Alles Weitere ist daraus entstanden und mit dabei. Die Abbildung musste
+generisch geschrieben werden, um etwas zu taugen, und bedient damit auch
+museum-digital und die Deutsche Digitale Bibliothek. Die Formatkonverter
+für EN 15907, MARC21, PBCore, EBUCore und Dublin Core haben dieselbe
+Form, und `slub.marc21` zeigt, wie das Profil einer Bibliothek darauf
+aussieht. `harvest` holt die Daten, `check` und `diff` machen aus einer
+Konvertierung etwas Nachprüfbares — ein Konverter taugt wenig, solange
+niemand belegen kann, was er mit den Daten gemacht hat.
+
 **Förderung**
 
 Gefördert von der Deutschen Forschungsgemeinschaft (DFG),

@@ -658,6 +658,22 @@ unambiguously across collection boundaries.
 - Gesellschaft für wissenschaftliche Datenverarbeitung mbH Göttingen (GWDG)
 - Filmmuseum der Landeshauptstadt Düsseldorf (FMDU)
 
+**What was commissioned, and what came with it**
+
+The commission was one importer: LIDO for the Filmmuseum der
+Landeshauptstadt Düsseldorf, which is `efi_conv.lido` together with the
+`efi_conv.fmdu` profile.
+
+Everything else here grew out of that and is included. The mapping had
+to be written generically to be worth having, so it serves
+museum-digital and the Deutsche Digitale Bibliothek as well. The format
+converters for EN 15907, MARC21, PBCore, EBUCore and Dublin Core follow
+the same shape, and `slub.marc21` is what a library's profile looks like
+on top of one. `harvest` fetches the records, and `check` and `diff` are
+what make a conversion something one can verify rather than believe —
+a converter is not worth much until somebody can prove what it did to
+the data.
+
 **Funding**
 
 Funded by the Deutsche Forschungsgemeinschaft (DFG, German Research
