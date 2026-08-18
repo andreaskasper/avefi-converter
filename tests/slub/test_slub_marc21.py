@@ -142,5 +142,21 @@ class TestThePhysicalDescription:
             == "Archive"
         )
 
-    def test_the_web_resource_field_is_read(self):
-        assert "856" in slub.PROFILE.web_resource_fields
+    def test_the_copy_is_reachable_through_the_union_catalogue(self):
+        """Agreed with the library: the catalogue page, not 856.
+
+        The addresses in 856 point at the digitised copy in the
+        house's own media library, which is a different thing and not
+        what was asked for.
+
+        """
+        assert slub.PROFILE.web_resource_fields == ()
+        assert "{identifier}" in slub.PROFILE.web_resource_template
+
+    def test_the_address_is_built_from_the_record_identifier(self, input_path):
+        records = from_.import_file(slub, input_path("sample_data.xml"))
+        item = next(r for r in records if r.category == "avefi:Item")
+        assert item.has_webresource == [
+            "https://opac.k10plus.de/DB=2.299/PPN?PPN="
+            + item.described_by.has_source_key[0]
+        ]

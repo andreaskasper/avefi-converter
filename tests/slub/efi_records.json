@@ -121,6 +121,9 @@
     "has_note": [
       "Physical description: 1 Filmrolle 16 mm"
     ],
+    "has_webresource": [
+      "https://opac.k10plus.de/DB=2.299/PPN?PPN=1000000001"
+    ],
     "has_format": [
       {
         "category": "avefi:Film",
@@ -192,6 +195,9 @@
       "has_ordering_name": "Elbwiesen im Frühjahr : digitalisierte Fassung, Die",
       "type": "TitleProper"
     },
+    "has_webresource": [
+      "https://opac.k10plus.de/DB=2.299/PPN?PPN=1000000002"
+    ],
     "is_item_of": {
       "category": "avefi:LocalResource",
       "id": "1000000001__1000000002_manifestation"
@@ -290,6 +296,9 @@
       "has_name": "Werkstattbericht",
       "type": "TitleProper"
     },
+    "has_webresource": [
+      "https://opac.k10plus.de/DB=2.299/PPN?PPN=1000000003"
+    ],
     "is_item_of": {
       "category": "avefi:LocalResource",
       "id": "Werkstattbericht______1000000003_________manifestation"

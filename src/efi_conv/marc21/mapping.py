@@ -1835,7 +1835,7 @@ def build_item(marc_record, primary, profile, source_key, carrier):
         item.in_language.append(language)
     apply_physical_description(item, marc_record, profile, source_key)
     apply_action_notes(item, marc_record, profile, source_key)
-    for link in web_resources(marc_record, profile):
+    for link in web_resources(marc_record, profile, source_key):
         if link not in item.has_webresource:
             item.has_webresource.append(link)
     for note in item_notes(marc_record, source_key):
@@ -1896,13 +1896,24 @@ def apply_action_notes(item, marc_record, profile, source_key):
             return
 
 
-def web_resources(marc_record, profile):
-    """Yield the addresses at which a copy can be reached."""
+def web_resources(marc_record, profile, source_key):
+    """Yield the addresses at which a copy can be reached.
+
+    Two sources, and a provider may want either. The record names
+    addresses in 856, and a union catalogue gives every record a page
+    of its own that can be built from the identifier. Which of them
+    belongs in the data is the provider's decision, not something to
+    be worked out from the record.
+
+    """
     for tag in profile.web_resource_fields:
         for value in marc_record.subfields(tag, "u"):
             link = (value or "").strip()
             if link:
                 yield link
+    template = profile.web_resource_template
+    if template and source_key:
+        yield template.format(identifier=source_key)
 
 
 def format_for(class_name: str, type_value: str):

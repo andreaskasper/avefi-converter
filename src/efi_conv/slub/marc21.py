@@ -119,6 +119,14 @@ ACTION_NOTE_ACCESS_MAP = {
     "archivierung/langzeitarchivierung gewaehrleistet": "Archive",
 }
 
+#: Where a copy can be looked up.
+#:
+#: Agreed with the library: the catalogue page in the union catalogue,
+#: built from the PPN, and not the addresses the records name in 856.
+#: Those point at the digitised copy in the house's own media library,
+#: which is a different thing and not what was asked for.
+WEB_RESOURCE_TEMPLATE = "https://opac.k10plus.de/DB=2.299/PPN?PPN={identifier}"
+
 #: Profile class a profile file is read into.
 PROFILE_CLASS = Marc21Profile
 
@@ -130,6 +138,8 @@ PROFILE = Marc21Profile(
     genre_source_vocabularies=GENRE_SOURCE_VOCABULARIES,
     moving_image_categories=MOVING_IMAGE_CATEGORIES,
     source_key_pattern=SOURCE_KEY_PATTERN,
+    web_resource_fields=(),
+    web_resource_template=WEB_RESOURCE_TEMPLATE,
     physical_description_map=PHYSICAL_DESCRIPTION_MAP,
     action_note_access_map=ACTION_NOTE_ACCESS_MAP,
 )

@@ -194,7 +194,13 @@ class Marc21Profile:
         Term of an action note (583 ``$a``, lower case) to the AVefi
         access status it states.
     web_resource_fields : tuple
-        Fields whose ``$u`` names a web resource of the copy.
+        Fields whose ``$u`` names a web resource of the copy. An empty
+        tuple reads none.
+    web_resource_template : str or None
+        Address of the copy, built from its record identifier with
+        ``{identifier}``. A union catalogue gives every record a page
+        of its own, and a provider may want that rather than the
+        addresses its records happen to name.
     source_key_pattern : str or None
         Regular expression selecting the local identifier out of the
         one built from the record. The first group is taken, or the
@@ -267,6 +273,7 @@ class Marc21Profile:
     physical_description_map: dict = field(default_factory=dict)
     action_note_access_map: dict = field(default_factory=dict)
     web_resource_fields: tuple = ("856",)
+    web_resource_template: str | None = None
     source_key_pattern: str | None = None
     linking_fields: tuple = ("776",)
     work_key_fields: tuple = ("primary_title", "director", "date")

@@ -31,6 +31,13 @@ from title, director and year finds them again only when all the titles
 agree, and they do not: the record for a digitised version carries that
 in its title and the reel does not.
 
+### Where a copy can be looked up
+
+The catalogue page in the union catalogue, built from the PPN. Agreed
+with the library, and deliberately not the addresses the records name
+in 856: those point at the digitised copy in the house's own media
+library, which is a different thing.
+
 ## Still open
 
 The data provider documented a set of readings for its own conversion
