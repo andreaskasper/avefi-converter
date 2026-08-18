@@ -560,3 +560,127 @@ class TestDegenerateWorkKey:
         assert len(works) < len(
             [r for r in records if r.category == "avefi:Item"]
         )
+
+
+LINKED_COLLECTION = """<?xml version="1.0" encoding="UTF-8"?>
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="001">FILM</controlfield>
+    <datafield tag="245" ind1="1" ind2="0">
+      <subfield code="a">Die Testaufnahme</subfield>
+    </datafield>
+    <datafield tag="338" ind1=" " ind2=" ">
+      <subfield code="b">mr</subfield>
+    </datafield>
+  </record>
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="001">ONLINE</controlfield>
+    <controlfield tag="003">DE-627</controlfield>
+    <datafield tag="245" ind1="1" ind2="0">
+      <subfield code="a">Die Testaufnahme : Untertitel</subfield>
+    </datafield>
+    <datafield tag="338" ind1=" " ind2=" ">
+      <subfield code="b">cr</subfield>
+    </datafield>
+    <datafield tag="776" ind1="0" ind2="8">
+      <subfield code="i">Erscheint auch als</subfield>
+      <subfield code="w">(DE-627)FILM</subfield>
+    </datafield>
+  </record>
+  <record>
+    <leader>01234ngm a2200349 a 4500</leader>
+    <controlfield tag="001">OTHER</controlfield>
+    <datafield tag="245" ind1="1" ind2="0">
+      <subfield code="a">Ein zweiter Film</subfield>
+    </datafield>
+    <datafield tag="338" ind1=" " ind2=" ">
+      <subfield code="b">vd</subfield>
+    </datafield>
+  </record>
+</collection>
+"""
+
+
+class TestRecordsTheLibraryHasLinked:
+    """One film catalogued as a reel, a disc and an online edition.
+
+    A library records those as separate documents and links them
+    through 776. They are one work in three manifestations, and the
+    library has said so. Deriving the work from title, director and
+    year finds them again only if the three titles agree — and they do
+    not, because the record for the online edition carries a subtitle
+    that the reel does not.
+
+    """
+
+    @pytest.fixture
+    def collection(self, tmp_path):
+        target = tmp_path / "linked.xml"
+        target.write_text(LINKED_COLLECTION, encoding="utf-8")
+        return target
+
+    def works(self, records):
+        return [r for r in records if r.category == "avefi:WorkVariant"]
+
+    def test_linked_records_share_one_work(self, collection):
+        records = marc21.efi_import(collection)
+        assert len(self.works(records)) == 2
+
+    def test_the_work_names_every_record_it_came_from(self, collection):
+        records = marc21.efi_import(collection)
+        work = next(
+            w
+            for w in self.works(records)
+            if len(w.described_by[0].has_source_key) > 1
+        )
+        assert sorted(work.described_by[0].has_source_key) == [
+            "(DE-627)ONLINE",
+            "FILM",
+        ]
+
+    def test_each_record_still_gets_its_own_manifestation(self, collection):
+        records = marc21.efi_import(collection)
+        assert (
+            len([r for r in records if r.category == "avefi:Manifestation"])
+            == 3
+        )
+
+    def test_an_unlinked_record_is_grouped_as_before(self, collection):
+        """Enabling the links only ever merges what was linked.
+
+        A record naming no other keeps the key derived from its own
+        title, director and year, so nothing that used to group stops
+        grouping.
+
+        """
+        records = marc21.efi_import(collection)
+        alone = next(
+            w
+            for w in self.works(records)
+            if w.has_primary_title.has_name == "Ein zweiter Film"
+        )
+        assert alone.described_by[0].has_source_key == ["OTHER"]
+
+    def test_the_agency_prefix_does_not_prevent_a_match(self):
+        """A record states its identifier bare and refers to it prefixed."""
+        assert mapping.bare_identifier("(DE-627)FILM") == "FILM"
+        assert mapping.bare_identifier("FILM") == "FILM"
+
+    def test_the_links_are_followed_transitively(self, tmp_path):
+        """A chain is one work however the export orders it."""
+        document = LINKED_COLLECTION.replace(
+            """    <datafield tag="338" ind1=" " ind2=" ">
+      <subfield code="b">vd</subfield>
+    </datafield>""",
+            """    <datafield tag="338" ind1=" " ind2=" ">
+      <subfield code="b">vd</subfield>
+    </datafield>
+    <datafield tag="776" ind1="0" ind2="8">
+      <subfield code="w">(DE-627)ONLINE</subfield>
+    </datafield>""",
+        )
+        target = tmp_path / "chain.xml"
+        target.write_text(document, encoding="utf-8")
+        assert len(self.works(marc21.efi_import(target))) == 1

@@ -183,6 +183,13 @@ class Marc21Profile:
     agent_fields : tuple
         Fields carrying an agent together with a relator, in the order
         in which they are consulted.
+    linking_fields : tuple
+        Fields whose ``$w`` names another record describing the same
+        work — 776 in standard practice, where a library catalogues
+        the film reel, the videodisc and the online edition as
+        separate records and links them. Records connected through
+        them become one work. Set to an empty tuple to ignore the
+        links and group by ``work_key_fields`` alone.
     work_key_fields : tuple
         Fields whose combination identifies a work, so that several
         copies of one film share one WorkVariant. Set to an empty tuple
@@ -238,6 +245,7 @@ class Marc21Profile:
     default_language: str | None = None
     identifier_fields: tuple = ("001", "035")
     agent_fields: tuple = ("100", "110", "700", "710")
+    linking_fields: tuple = ("776",)
     work_key_fields: tuple = ("primary_title", "director", "date")
     moving_image_leader_types: frozenset = frozenset({"g"})
     moving_image_categories: frozenset = frozenset({"m", "v"})

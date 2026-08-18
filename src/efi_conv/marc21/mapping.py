@@ -154,7 +154,9 @@ MAPPING_RULES = (
         "primary title, director, production date",
         "has_identifier (work)",
         "Profile work_key_fields",
-        "Several copies of one film share one WorkVariant; set"
+        "Records the provider has linked through 776 become one work"
+        " whatever their titles say; where nothing is linked, several"
+        " copies of one film share one WorkVariant; set"
         " work_key_fields to () for one work per record",
     ),
     MappingRule(
@@ -481,6 +483,11 @@ class MappingContext(GroupingContext):
     """State shared by all records of one conversion."""
 
     profile: Marc21Profile | None = None
+    #: Record identifier to the work it belongs to, for records the
+    #: provider has linked to one another. Filled by a pass over the
+    #: file before it is converted, because a record may name a work
+    #: through a record that comes later in the export.
+    work_groups: dict = field(default_factory=dict)
 
 
 def efi_import(
@@ -517,6 +524,8 @@ def efi_import(
         context = new_context(profile)
     with for_file(input_file):
         report_placeholder_issuer(profile)
+        if profile.linking_fields:
+            context.work_groups.update(link_groups(input_file, profile))
         for marc_record in iter_records(input_file):
             try:
                 with context.attempt():
@@ -528,6 +537,77 @@ def efi_import(
                     e, record_id=record_identifier(marc_record, profile)
                 )
     return records
+
+
+#: The agency prefix MARC writes in front of a record identifier,
+#: "(DE-627)1234567". A record states its own without it and refers to
+#: another with it, so both are compared without.
+AGENCY_PREFIX = re.compile(r"^\([^)]*\)")
+
+
+def bare_identifier(value: str | None) -> str:
+    """Return a record identifier without its agency prefix."""
+    return AGENCY_PREFIX.sub("", (value or "").strip())
+
+
+def linking_references(marc_record, profile):
+    """Yield the records this one names as the same work."""
+    for tag in profile.linking_fields:
+        for value in marc_record.subfields(tag, "w"):
+            reference = bare_identifier(value)
+            if reference:
+                yield reference
+
+
+def link_groups(input_file, profile) -> dict:
+    """Return the work each record belongs to, by following the links.
+
+    A library commonly catalogues the film reel, the videodisc and the
+    online edition of one film as separate records and links them
+    through 776. They are one work in three manifestations, and the
+    library has said so; deriving the work from title, director and
+    year instead only finds them again if all three titles agree,
+    which they do not — a record for an online edition carries the
+    subtitle where the reel does not.
+
+    The links are followed transitively, so a chain of records is one
+    work however the export happens to order them. A record nobody
+    links to and that links to nobody forms a group of its own, which
+    the caller reads as "no statement" and falls back on.
+
+    """
+    parent: dict[str, str] = {}
+
+    def find(key: str) -> str:
+        parent.setdefault(key, key)
+        while parent[key] != key:
+            parent[key] = parent[parent[key]]
+            key = parent[key]
+        return key
+
+    def union(left: str, right: str) -> None:
+        left, right = find(left), find(right)
+        if left != right:
+            # The lower identifier wins, so that the group has the same
+            # name whatever order the records arrive in.
+            if right < left:
+                left, right = right, left
+            parent[right] = left
+
+    for marc_record in iter_records(input_file):
+        own = bare_identifier(record_identifier(marc_record, profile))
+        if not own:
+            continue
+        find(own)
+        for reference in linking_references(marc_record, profile):
+            union(own, reference)
+    groups: dict[str, str] = {}
+    sizes: dict[str, int] = {}
+    for key in parent:
+        root = find(key)
+        groups[key] = root
+        sizes[root] = sizes.get(root, 0) + 1
+    return {key: root for key, root in groups.items() if sizes[root] > 1}
 
 
 def new_context(profile: Marc21Profile) -> MappingContext:
@@ -594,7 +674,10 @@ def map_record(
     )
 
     new_records = []
-    work_key = make_work_key(profile, source_key, primary, production)
+    stated_group = bool(
+        getattr(context, "work_groups", {}).get(bare_identifier(source_key))
+    )
+    work_key = make_work_key(profile, source_key, primary, production, context)
 
     def new_work():
         work = build_work(
@@ -613,7 +696,9 @@ def map_record(
 
     carrier = carrier_from_007(marc_record, profile, source_key)
     item = build_item(marc_record, primary, profile, source_key, carrier)
-    manifestation_key = make_manifestation_key(work_key, item)
+    manifestation_key = make_manifestation_key(
+        work_key, item, source_key if stated_group else None
+    )
 
     def new_manifestation():
         manifestation = efi.Manifestation(
@@ -773,8 +858,22 @@ def is_moving_image_record(marc_record, profile, source_key) -> bool:
     return False
 
 
-def make_work_key(profile, source_key, primary, production) -> str:
-    """Return the key identifying the work a record belongs to."""
+def make_work_key(
+    profile, source_key, primary, production, context=None
+) -> str:
+    """Return the key identifying the work a record belongs to.
+
+    A group the provider has stated decides. Where it has stated
+    nothing — a record linked to no other — the key is derived from
+    the record as before, so enabling the links only ever merges
+    records that were said to belong together.
+
+    """
+    stated = getattr(context, "work_groups", {}).get(
+        bare_identifier(source_key)
+    )
+    if stated:
+        return stated
     if not profile.work_key_fields:
         return source_key
     parts = {}
@@ -807,8 +906,25 @@ def director_names(production) -> str:
     return ", ".join(names)
 
 
-def make_manifestation_key(work_key: str, item) -> str:
-    """Return the key identifying the manifestation of an item."""
+def make_manifestation_key(
+    work_key: str, item, own_key: str | None = None
+) -> str:
+    """Return the key identifying the manifestation of an item.
+
+    Copies agreeing on the characteristics the manifestation level
+    carries belong to the same manifestation, and the derived key says
+    which those are.
+
+    Not where the provider has linked the records itself. A library
+    cataloguing the film reel, the videodisc and the online edition of
+    one film as three documents has said that they are three
+    manifestations; merging two of them again because neither record
+    happens to state a colour would be reading the silence as
+    agreement.
+
+    """
+    if own_key is not None:
+        return make_key(work_key, own_key)
     parts = [
         work_key,
         str(item.has_colour_type or ""),
