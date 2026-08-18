@@ -48,9 +48,12 @@ IGNORED_FIELDS = frozenset({"category"})
 def diff(reference, candidate, output, output_format, ignore):
     """Compare CANDIDATE against REFERENCE and report the deviations.
 
-    Records are matched on their identifiers, so the order of the two
-    files does not matter. Exits non-zero when anything present in
-    REFERENCE is missing from CANDIDATE.
+    Records are matched on a shared persistent identifier where both
+    sides carry one and on a shared local identifier otherwise, so the
+    order of the two files does not matter and two exports of one
+    collection can be compared even though their local identifiers
+    differ. Exits non-zero when anything present in REFERENCE is
+    missing from CANDIDATE.
 
     """
     result = compare(
@@ -72,42 +75,114 @@ def diff(reference, candidate, output, output_format, ignore):
         raise SystemExit(1)
 
 
-def index_by_identifier(records) -> dict:
-    """Return a mapping of identifier to record dump."""
-    index = {}
-    for record in records:
-        dump = record.model_dump(exclude_none=True)
-        for identifier in record.has_identifier or []:
-            index[identifier.id] = dump
-    return index
+#: Identifier category holding a registered persistent identifier.
+PERSISTENT_CATEGORY = "avefi:AVefiResource"
+
+
+class Entry:
+    """One record, with the identifiers it can be recognised by."""
+
+    __slots__ = ("dump", "persistent", "local", "label")
+
+    def __init__(self, record):
+        self.dump = record.model_dump(exclude_none=True)
+        self.persistent = {
+            identifier.id
+            for identifier in record.has_identifier or []
+            if identifier.category == PERSISTENT_CATEGORY
+        }
+        self.local = {
+            identifier.id
+            for identifier in record.has_identifier or []
+            if identifier.category != PERSISTENT_CATEGORY
+        }
+        self.label = next(
+            iter(sorted(self.persistent) or sorted(self.local)), "—"
+        )
+
+
+def match_records(reference_records, candidate_records):
+    """Pair the records of two files, and say what is left over.
+
+    A record is matched as a whole rather than once per identifier it
+    carries, and a shared persistent identifier settles it before a
+    shared local one does.
+
+    That order is what makes a comparison across two exports of one
+    collection possible at all. Local identifiers are derived from the
+    data, so two converters reading the same holdings out of different
+    source formats produce different ones: of 2218 works held in both
+    the CSV and the LIDO delivery of one museum, not a single local
+    identifier agreed and 2217 registered identifiers did. Matching on
+    the local one reported every record as both missing and added.
+
+    Returns
+    -------
+    tuple
+        Pairs of matched entries, then the unmatched reference and
+        candidate entries.
+
+    """
+    reference = [Entry(record) for record in reference_records]
+    candidate = [Entry(record) for record in candidate_records]
+    pairs = []
+    for attribute in ("persistent", "local"):
+        index = {}
+        for entry in candidate:
+            for identifier in getattr(entry, attribute):
+                index.setdefault(identifier, []).append(entry)
+        taken = set()
+        remaining = []
+        for entry in reference:
+            partner = next(
+                (
+                    other
+                    for identifier in sorted(getattr(entry, attribute))
+                    for other in index.get(identifier, [])
+                    if id(other) not in taken
+                ),
+                None,
+            )
+            if partner is None:
+                remaining.append(entry)
+                continue
+            taken.add(id(partner))
+            pairs.append((entry, partner))
+        reference = remaining
+        candidate = [entry for entry in candidate if id(entry) not in taken]
+    return pairs, reference, candidate
 
 
 def compare(reference_records, candidate_records, ignored=IGNORED_FIELDS):
     """Return a structured comparison of two sets of records."""
-    reference = index_by_identifier(reference_records)
-    candidate = index_by_identifier(candidate_records)
-
-    missing = sorted(set(reference) - set(candidate))
-    added = sorted(set(candidate) - set(reference))
+    pairs, unmatched_reference, unmatched_candidate = match_records(
+        reference_records, candidate_records
+    )
     changed = []
     removed_values = 0
-    for identifier in sorted(set(reference) & set(candidate)):
+    for reference_entry, candidate_entry in pairs:
         differences = [
             difference
             for difference in diff_values(
-                reference[identifier], candidate[identifier]
+                reference_entry.dump, candidate_entry.dump
             )
             if difference["field"].split(".")[0] not in ignored
         ]
         if differences:
-            changed.append({"id": identifier, "differences": differences})
+            changed.append(
+                {"id": reference_entry.label, "differences": differences}
+            )
             removed_values += sum(
                 1 for d in differences if d["kind"] == "removed"
             )
+    changed.sort(key=lambda entry: entry["id"])
+    missing = sorted(entry.label for entry in unmatched_reference)
+    added = sorted(entry.label for entry in unmatched_candidate)
     return {
         "summary": {
-            "reference_records": len(reference),
-            "candidate_records": len(candidate),
+            "reference_records": len(reference_records),
+            "candidate_records": len(candidate_records),
+            "matched": len(pairs),
             "missing": len(missing),
             "added": len(added),
             "changed": len(changed),
@@ -215,12 +290,13 @@ def render_markdown(result, reference_name, candidate_name) -> str:
         "# AVefi record comparison",
         "",
         f"* Reference: `{reference_name}`"
-        f" ({summary['reference_records']} identifiers)",
+        f" ({summary['reference_records']} records)",
         f"* Candidate: `{candidate_name}`"
-        f" ({summary['candidate_records']} identifiers)",
+        f" ({summary['candidate_records']} records)",
         "",
         "| Outcome | Count |",
         "| --- | ---: |",
+        f"| Matched | {summary['matched']} |",
         f"| Missing from candidate | {summary['missing']} |",
         f"| Only in candidate | {summary['added']} |",
         f"| Changed | {summary['changed']} |",

@@ -450,10 +450,13 @@ report end to end.
 ## Comparing against AVefi
 
 To find out what a conversion changes with respect to data already held
-in AVefi, compare the two files. Records are matched on their
-identifiers, so the order of the files does not matter, and entries of
-a list are paired up so that a single altered attribute is not reported
-as a whole object being replaced:
+in AVefi, compare the two files. Records are matched on a shared
+registered identifier where both sides carry one and on a shared local
+identifier otherwise, so the order of the files does not matter and two
+exports of one collection can be compared even though the local
+identifiers derived from them differ. Entries of a list are paired up,
+so that a single altered attribute is not reported as a whole object
+being replaced:
 
 ```console
 $ uv run efi-conv diff reference.json efi_records.json

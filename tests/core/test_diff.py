@@ -103,3 +103,94 @@ class TestRenderMarkdown:
         # Four cells, so five unescaped delimiters; the pipe inside the
         # value must be escaped and therefore not count as one.
         assert row.count("|") - row.count("\\|") == 5
+
+
+PID = "21.11155/8C5A0C79-7A6C-44EC-8920-01C8A158BFBC"
+
+
+def with_identifiers(*identifiers):
+    """Return the sample work carrying these identifiers instead."""
+    work = copy.deepcopy(WORK)
+    work["has_identifier"] = list(identifiers)
+    return work
+
+
+def local(value):
+    return {"category": "avefi:LocalResource", "id": value}
+
+
+def persistent(value=PID):
+    return {"category": "avefi:AVefiResource", "id": value}
+
+
+class TestMatchingAcrossTwoExports:
+    """Two converters reading one collection out of different formats.
+
+    Local identifiers are derived from the data, so the same work
+    comes out under a different one from each. Of 2218 works held in
+    both the CSV and the LIDO delivery of one museum, not a single
+    local identifier agreed and 2217 registered identifiers did.
+    Matching on the local one reported every record as both missing
+    and added, which is a comparison nobody can read.
+
+    """
+
+    def test_a_shared_pid_matches_records_with_different_local_ids(self):
+        result = compare(
+            records(with_identifiers(local("derived_work"), persistent())),
+            records(with_identifiers(local("955613_work"), persistent())),
+        )
+        assert result["summary"]["matched"] == 1
+        assert result["summary"]["missing"] == 0
+        assert result["summary"]["added"] == 0
+
+    def test_the_local_identifier_still_matches_without_a_pid(self):
+        result = compare(
+            records(with_identifiers(local("record_work"))),
+            records(with_identifiers(local("record_work"))),
+        )
+        assert result["summary"]["matched"] == 1
+
+    def test_a_pid_beats_a_local_identifier(self):
+        """Where the two disagree, the registered one is the answer.
+
+        A local identifier can be reused for something else after the
+        data changes; a handle cannot.
+
+        """
+        reference = records(
+            with_identifiers(local("shared"), persistent()),
+        )
+        candidate = records(
+            with_identifiers(local("shared"), persistent("21.11155/OTHER")),
+            with_identifiers(local("elsewhere"), persistent()),
+        )
+        result = compare(reference, candidate)
+        assert result["summary"]["matched"] == 1
+        assert result["added"] == ["21.11155/OTHER"]
+
+    def test_a_record_is_counted_once_not_once_per_identifier(self):
+        """The summary is about records, which is what a reader counts."""
+        result = compare(
+            records(with_identifiers(local("a_work"), persistent())),
+            records(),
+        )
+        assert result["summary"]["reference_records"] == 1
+        assert result["summary"]["missing"] == 1
+
+    def test_an_unmatched_record_is_named_by_its_pid(self):
+        result = compare(
+            records(with_identifiers(local("a_work"), persistent())),
+            records(),
+        )
+        assert result["missing"] == [PID]
+
+    def test_one_reference_record_matches_one_candidate(self):
+        """Two copies of a work must not both pair with the same one."""
+        reference = records(
+            with_identifiers(local("a")), with_identifiers(local("b"))
+        )
+        candidate = records(with_identifiers(local("a")))
+        result = compare(reference, candidate)
+        assert result["summary"]["matched"] == 1
+        assert result["missing"] == ["b"]

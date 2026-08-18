@@ -32,9 +32,16 @@ $ uv run efi-conv diff referenz.json neu.json
 ```
 
 Vergleicht zwei Ergebnisdateien und schreibt die Abweichungen als Markdown
-oder JSON. Zugeordnet wird über die Identifikatoren, die Reihenfolge der
-Dateien spielt also keine Rolle. Der Befehl endet mit einem Fehlercode,
-wenn etwas aus der Referenz im Kandidaten fehlt.
+oder JSON. Die Reihenfolge der Dateien spielt keine Rolle. Der Befehl endet
+mit einem Fehlercode, wenn etwas aus der Referenz im Kandidaten fehlt.
+
+**Wie zugeordnet wird:** zuerst über eine gemeinsame registrierte PID, dann
+über einen gemeinsamen lokalen Identifikator. Diese Reihenfolge ist der
+Grund, warum sich zwei Exportwege überhaupt vergleichen lassen — lokale
+Identifikatoren werden aus den Daten abgeleitet, fallen also je Quellformat
+anders aus. Bei einem Museumsbestand stimmte auf Werksebene **kein einziger**
+lokaler Identifikator überein und 2217 von 2218 PIDs. Über die lokale ID
+zugeordnet galt jeder Datensatz gleichzeitig als fehlend und als zusätzlich.
 
 Wofür das gut ist:
 
