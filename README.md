@@ -612,6 +612,14 @@ that a broken export does not pass unnoticed. Use `--continue-on-error`
 to skip it, record it in the report and carry on; the command still
 exits non-zero at the end.
 
+**A copy the institution no longer holds.** Its status is written as
+`Removed` whatever else the record says, and `efi-conv check` refuses
+that status on a copy with no registered identifier. That is deliberate:
+it is how a delivery that would ask for identifiers for objects nobody
+holds any more is noticed. `efi-conv from --skip-removed` leaves those
+copies out instead, together with the works and manifestations left
+with nothing, and reports each one.
+
 **The run exits non-zero although records were written.** Something was
 lost: `summary.records_skipped` in the report counts the source records
 that could not be converted, and the entries say why.

@@ -13,7 +13,7 @@ import json
 from click.testing import CliRunner
 import pytest
 
-from efi_conv.core import from_
+from efi_conv.core import avefi, from_
 from efi_conv.lido import mapping as lido_mapping
 
 # Importing efi_conv.main is what registers the subcommands.
@@ -336,3 +336,106 @@ class TestNothingRecognised:
         result, report = self.run(runner, tmp_path, source)
         assert result.exit_code == 0, result.output
         assert report["summary"]["files_unrecognised"] == 0
+
+
+class TestCopiesNoLongerHeld:
+    """A copy the institution has given up is described all the same.
+
+    Its status says what became of it, and efi-conv check refuses to
+    see that status on a copy without a registered identifier. That
+    refusal is the point: a delivery that would ask for identifiers
+    for objects nobody holds any more has to be noticed. Whoever would
+    rather not deliver such a copy leaves it out on purpose.
+
+    """
+
+    @pytest.fixture
+    def export(self, lido_page, lido_record):
+        return lido_page(
+            "export.xml",
+            lido_record("FMDU-0001"),
+            lido_record("FMDU-0002", keywords=("Deakzession",)),
+        )
+
+    def convert(self, runner, tmp_path, export, *flags):
+        target = tmp_path / "out.json"
+        result = runner.invoke(
+            cli_main,
+            [
+                "from",
+                "-f",
+                "fmdu.lido",
+                *flags,
+                "-o",
+                str(target),
+                str(export),
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        return avefi.load(target)
+
+    def test_the_status_is_written_by_default(self, runner, tmp_path, export):
+        records = self.convert(runner, tmp_path, export)
+        assert [
+            r
+            for r in records
+            if r.category == "avefi:Item" and r.has_access_status == "Removed"
+        ]
+
+    def test_even_without_an_identifier_to_remove(
+        self, runner, tmp_path, export
+    ):
+        """Writing another status instead would hide the problem."""
+        records = self.convert(runner, tmp_path, export)
+        removed = next(
+            r
+            for r in records
+            if r.category == "avefi:Item" and r.has_access_status == "Removed"
+        )
+        assert not [
+            i
+            for i in removed.has_identifier
+            if i.category == "avefi:AVefiResource"
+        ]
+
+    def test_the_flag_leaves_it_out(self, runner, tmp_path, export):
+        records = self.convert(runner, tmp_path, export, "--skip-removed")
+        assert not [
+            r
+            for r in records
+            if r.category == "avefi:Item" and r.has_access_status == "Removed"
+        ]
+
+    def test_the_other_copies_are_untouched(self, runner, tmp_path, export):
+        records = self.convert(runner, tmp_path, export, "--skip-removed")
+        assert [r for r in records if r.category == "avefi:Item"]
+
+    def test_what_is_left_with_nothing_goes_too(
+        self, runner, tmp_path, lido_page, lido_record
+    ):
+        """A work whose only copy has gone refers to nothing.
+
+        Leaving it behind would fail the same check the flag is meant
+        to get past.
+
+        """
+        export = lido_page(
+            "export.xml",
+            lido_record(
+                "FMDU-0001", title="Einzelstück", keywords=("Deakzession",)
+            ),
+        )
+        target = tmp_path / "out.json"
+        runner.invoke(
+            cli_main,
+            [
+                "from",
+                "-f",
+                "fmdu.lido",
+                "--skip-removed",
+                "-o",
+                str(target),
+                str(export),
+            ],
+        )
+        assert not target.exists(), "nothing is left, so nothing is written"

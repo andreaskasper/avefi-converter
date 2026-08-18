@@ -13,6 +13,7 @@ $ uv run efi-conv from -f FORMAT -o AUSGABE.json EINGABE [EINGABE …]
 | `--report DATEI` | Schreibt das Protokoll als JSON |
 | `--profile DATEI` | Bindet den Lauf an ein → [Profil](03-profile.md) |
 | `--continue-on-error` | Macht mit der nächsten Datei weiter, wenn eine nicht lesbar ist |
+| `--skip-removed` | Lässt Exemplare weg, die die Einrichtung nicht mehr besitzt |
 | `-v` / `-q` | Mehr beziehungsweise nur Fehler auf dem Bildschirm |
 
 > [!TIP]
@@ -52,6 +53,19 @@ Trägt ein Exemplar in Ihrem Export bereits eine AVefi-PID, wird sie
 übernommen (siehe [Kapitel 7](07-filmmuseum-duesseldorf.md#die-pid-kommt-zurück)).
 Das ist der Unterschied zwischen einer Nachlieferung und einer zweiten
 Registrierung derselben Kopie.
+
+## Exemplare, die es nicht mehr gibt
+
+Ist ein Exemplar als deakzessioniert erfasst, steht im Ergebnis
+`has_access_status: Removed` — unabhängig davon, ob es schon eine PID hat.
+Bei einem Exemplar ohne PID beanstandet `efi-conv check` das, und zwar
+absichtlich: So fällt auf, wenn eine Lieferung PIDs für Objekte anfordern
+würde, die niemand mehr besitzt.
+
+Wer solche Exemplare gar nicht erst ausliefern will, nimmt
+`--skip-removed`. Dann fallen sie weg, zusammen mit Werken und Fassungen,
+die dadurch auf nichts mehr verweisen. Jeder weggelassene Datensatz steht
+im Bericht.
 
 ## Ein Lauf mit Meldungen ist kein misslungener Lauf
 

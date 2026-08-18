@@ -492,11 +492,12 @@ ASSUMPTIONS = (
     " several. A status named in `access_status_priority` decides"
     " wherever it occurs, so the result does not depend on the order"
     " the terms were written in; the rest follow that order.",
-    "`Removed` is set only for a copy that carries an AVefi"
-    " identifier. It states that something registered is gone, which"
-    " says nothing about a copy that was never registered; such a"
-    " record is kept without an access status and reported, because"
-    " whether it belongs in a delivery is the provider's decision.",
+    "`Removed` is written wherever the source states it, whether or"
+    " not the copy carries a registered identifier. A copy without one"
+    " is the case that matters: `efi-conv check` refuses that"
+    " combination, and the refusal is how a delivery that would ask"
+    " for identifiers for objects nobody holds any more is noticed."
+    " `efi-conv from --skip-removed` leaves such copies out instead.",
     "LIDO does not prescribe the `lido:type` values marking a colour,"
     " format or access status classification. The profile names them,"
     " and a classification of any other type becomes a genre.",
@@ -2423,14 +2424,6 @@ def apply_keyword_term(
     return False
 
 
-def has_avefi_identifier(item) -> bool:
-    """Return True if the copy carries a registered AVefi identifier."""
-    return any(
-        identifier.category == "avefi:AVefiResource"
-        for identifier in item.has_identifier
-    )
-
-
 def apply_access_status(item, access_terms, profile, source_key) -> None:
     """Set the one access status a copy has, out of those it states.
 
@@ -2466,27 +2459,14 @@ def apply_access_status(item, access_terms, profile, source_key) -> None:
             )
         chosen, raw = stated
         break
-    if chosen == "Removed" and not has_avefi_identifier(item):
-        # Removed says that something registered is gone. About a copy
-        # that was never registered it says nothing, and efi-conv
-        # check rejects the combination. Whether such a copy belongs
-        # in a delivery at all is the provider's decision, so the
-        # record is kept and the fact reported.
-        remaining = [entry for entry in access_terms if entry[0] != "Removed"]
-        report_issue(
-            "warning",
-            "Copy is marked as deaccessioned but carries no AVefi"
-            " identifier, so that status is not set; whether it"
-            " belongs in the delivery is for the data provider to"
-            " decide",
-            record_id=source_key,
-            source_field="classification/term",
-            target_field="has_access_status",
-            raw_value=raw,
-        )
-        if not remaining:
-            return
-        chosen = remaining[0][0]
+    # Removed is set whatever else the record says and whether or not
+    # the copy carries an identifier. A copy the institution has given
+    # up is that, and saying so is the point: efi-conv check refuses
+    # the combination of Removed and no registered identifier, which
+    # is how a delivery that would mint identifiers for objects nobody
+    # holds any more becomes visible. Writing a different status
+    # instead would hide it, and --skip-removed is there for anyone
+    # who would rather not deliver such a copy at all.
     item.has_access_status = efi.ItemAccessStatusEnum(chosen)
 
 

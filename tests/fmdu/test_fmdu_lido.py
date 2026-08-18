@@ -482,26 +482,18 @@ class TestDeaccession:
         item = self.item_with(lido_page, lido_record, self.HANDLE)
         assert item.has_access_status == "Removed"
 
-    def test_an_unregistered_one_is_not(self, lido_page, lido_record):
+    def test_an_unregistered_one_says_so_too(self, lido_page, lido_record):
+        """The status is written whether or not there is a PID.
+
+        A copy without one is where it matters most: efi-conv check
+        refuses that combination, which is how a delivery that would
+        ask for identifiers for objects nobody holds any more comes to
+        somebody's attention. Writing a different status instead, or
+        none, would hide exactly that.
+
+        """
         item = self.item_with(lido_page, lido_record, "")
-        assert item.has_access_status is None
-
-    def test_and_the_record_survives_with_a_warning(
-        self, lido_page, lido_record
-    ):
-        """Dropping it is the provider's call, not the converter's."""
-        from efi_conv.core.report import ConversionReport, collecting
-
-        report = ConversionReport()
-        with collecting(report):
-            item = self.item_with(lido_page, lido_record, "")
-        assert item is not None
-        assert [
-            entry
-            for entry in report.entries
-            if entry.target_field == "has_access_status"
-            and entry.severity == "warning"
-        ]
+        assert item.has_access_status == "Removed"
 
 
 class TestPlaces:
@@ -1008,31 +1000,18 @@ class TestOneAccessStatusOutOfSeveral:
             entry for entry in report.entries if "precedence" in entry.message
         ]
 
-    def test_without_a_pid_the_other_status_is_used(
-        self, lido_page, lido_record
-    ):
-        """Removed says a registered copy is gone; this one is not.
+    def test_it_wins_without_a_pid_as_well(self, lido_page, lido_record):
+        """No exception for a copy that was never registered.
 
-        The lending note is still true about it, so the record keeps
-        that rather than nothing at all, and the deaccession is
-        reported.
+        That is the case the data provider most wants to see, so the
+        status is written and efi-conv check gets to object to it.
 
         """
-        from efi_conv.core.report import ConversionReport, collecting
-
-        report = ConversionReport()
-        with collecting(report):
-            item = self.item_with(
-                lido_page,
-                lido_record,
-                "Verleihkopie",
-                "Deakzession",
-                handle="",
-            )
-        assert item.has_access_status == "Distribution"
-        assert [
-            entry
-            for entry in report.entries
-            if entry.severity == "warning"
-            and entry.target_field == "has_access_status"
-        ]
+        item = self.item_with(
+            lido_page,
+            lido_record,
+            "Verleihkopie",
+            "Deakzession",
+            handle="",
+        )
+        assert item.has_access_status == "Removed"
