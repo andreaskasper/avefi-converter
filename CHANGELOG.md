@@ -29,6 +29,26 @@ Zeitzone Europe/Berlin.
 
 ---
 
+## 2026-09-03 — Elias Oltmanns, Kommentar zu PR #34
+
+Gemeldet im Pull Request: im Wurzelverzeichnis lagen versehentlich mehrere
+`*.json`-Dateien und `diff.md`.
+
+Entfernt wurden `a.json`, `b.json`, `arep.json`, `brep.json`, `rep.json`,
+`csv.json`, `diff.json`, `lido.json`, `jonas.json`, `slub.json` und `diff.md`,
+zusammen rund 97 MB. Es waren Konvertierungsergebnisse aus Testläufen, kein
+Liefergegenstand; kein Modul und kein Test greift auf sie zu. Damit sie nicht
+wiederkommen, fängt die `.gitignore` jetzt `*.json` und `diff.md` im Wurzel-
+verzeichnis ab — Dateien in `src/`, `tests/` und `examples/` bleiben unberührt.
+
+Die Historie wurde nicht umgeschrieben. Elias hatte einen Rebase angeboten,
+ihn aber ausdrücklich nicht verlangt. Gepackt wiegen die Dateien im Objekt-
+speicher rund 5 MB, ein frischer Klon bleibt damit klein; das rechtfertigt
+keinen Force-Push auf einen Branch mit 53 Commits, gegen den gerade getestet
+wird.
+
+---
+
 ## 2026-08-18 — Elias Oltmanns, zweite Reviewrunde
 
 Commits `c8176f8`, `07c247e`.
@@ -254,11 +274,6 @@ als Beitrag von Andreas Kasper vermerkt. Deutlich vor dem Werkvertrag.
 - **Der Pull Request auf `AV-EFI/efi-conv` fehlt.** Vertraglich geschuldet und
   unter den Liefergegenständen genannt. Die eigentliche Frage ist der Zuschnitt,
   siehe oben. In der Mail vom 01.09.2026 zur Abstimmung gestellt.
-- **Rund 80 MB Arbeitsdateien liegen auf `main`.** `a.json`, `b.json`,
-  `lido.json`, `diff.json`, `diff.md`, `arep.json`, `brep.json`, `csv.json`,
-  `rep.json`, `jonas.json`, `slub.json` — Konvertierungsergebnisse aus Testläufen,
-  keine Liefergegenstände. Die `.gitignore` fängt sie nicht ab. Muss vor dem
-  Pull Request weg.
 - **Uneindeutige Identifier auf Werksebene** im großen Testdatensatz. Kein
   Codeproblem; wird von Elias Oltmanns mit Düsseldorf geklärt. Die Konvertierung
   kann die Dubletten benennen, falls das hilft.

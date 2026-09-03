@@ -56,3 +56,7 @@ __pypackages__/
 
 # backup files
 *~
+
+# Konvertierungsergebnisse aus Testläufen gehören nicht ins Repository
+/*.json
+/diff.md
