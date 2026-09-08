@@ -1297,6 +1297,70 @@ def work_from_the_copy(
     return [work], work_key
 
 
+#: Work fields only one record can win, with a reader for each. Lists
+#: are left out on purpose: two records naming different genres give the
+#: work both, and nothing is lost. These do lose something.
+WORK_AGREEMENT_FIELDS = (
+    (
+        "has_primary_title",
+        lambda work: getattr(work.has_primary_title, "has_name", None),
+    ),
+    ("type", lambda work: str(work.type) if work.type is not None else None),
+    ("production date", lambda work: _production_date(work)),
+    ("directors", lambda work: _production_directors(work)),
+)
+
+
+def _production_event(work):
+    """Return the work's production event, or None."""
+    for event in work.has_event or []:
+        if str(getattr(event, "category", "")) == "avefi:ProductionEvent":
+            return event
+    return None
+
+
+def _production_date(work):
+    event = _production_event(work)
+    if event is None or not event.has_date:
+        return None
+    return str(event.has_date)
+
+
+def _production_directors(work):
+    return director_names(_production_event(work)) or None
+
+
+def report_work_disagreement(existing, proposed, work_local, source_key):
+    """Report where a second record contradicts the work it joins.
+
+    Two records naming the same work identifier are two statements
+    about one film, and the identifier is the provider saying they
+    belong together. Where they then disagree about the title or the
+    production date, only the first record's value can stand, and which
+    record came first is the order of the file — nothing the cataloguer
+    can see.
+
+    The merge is not refused. Refusing would produce two works carrying
+    the same stated identifier, which is the duplicate the grouping
+    exists to prevent. The value is kept and the disagreement reported,
+    so the decision stays with the archive.
+
+    """
+    for name, read in WORK_AGREEMENT_FIELDS:
+        kept, dropped = read(existing), read(proposed)
+        if dropped is None or kept is None or kept == dropped:
+            continue
+        report_issue(
+            "warning",
+            f"Another record states work {work_local} with a different"
+            f" {name}: {kept!r} is kept, {dropped!r} is not carried over",
+            record_id=source_key,
+            source_field="relatedWorkSet/relatedWork/objectID",
+            target_field=name,
+            raw_value=dropped,
+        )
+
+
 def works_as_stated(
     stated,
     descriptive,
@@ -1376,6 +1440,9 @@ def works_as_stated(
         if is_new:
             new_records.append(work)
         elif single:
+            report_work_disagreement(
+                work, new_work(), related.local, source_key
+            )
             merge_alternative_titles(work, alternatives)
         apply_stated_identifiers(work, related, source_key, "Work")
         works.append(work)

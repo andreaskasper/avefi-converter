@@ -1230,3 +1230,68 @@ class TestTheHandleCheckWaitsForTheWholeConversion:
         """That is what tells a reader which term the profile lacks."""
         report = self.report_for(lido_page, self.refers_to_it(lido_record))
         assert "gehört zu" in self.lost(report)[0].source_field
+
+
+def _work(title, date=None, director=None):
+    """Build a WorkVariant with just enough on it to compare."""
+    work = mapping.efi.WorkVariant(
+        type=mapping.efi.WorkVariantTypeEnum("Monographic"),
+        has_primary_title=mapping.efi.Title(
+            has_name=title,
+            type=mapping.efi.TitleTypeEnum("PreferredTitle"),
+        ),
+    )
+    if date or director:
+        event = mapping.efi.ProductionEvent(
+            category="avefi:ProductionEvent",
+            has_date=date,
+        )
+        if director:
+            event.has_activity.append(
+                mapping.efi.DirectingActivity(
+                    has_agent=[mapping.efi.Agent(has_name=director)]
+                )
+            )
+        work.has_event.append(event)
+    return work
+
+
+def _disagreements(existing, proposed):
+    report = ConversionReport()
+    with collecting(report):
+        mapping.report_work_disagreement(
+            existing, proposed, "FMDU-W-1", "FMDU-0002"
+        )
+    return list(report.entries)
+
+
+def test_records_agreeing_on_a_work_are_not_reported():
+    """The ordinary case: two prints of one film, saying the same thing."""
+    assert _disagreements(_work("Die Brücke"), _work("Die Brücke")) == []
+
+
+def test_a_second_record_contradicting_the_title_is_reported():
+    """Only one title can stand, and which one is the order of the file.
+
+    Requested by Elias Oltmanns (avefi-converter#5): where two records
+    state the same work identifier, check that the remaining mapped work
+    fields agree.
+    """
+    issues = _disagreements(_work("Die Brücke"), _work("Die Bruecke (1959)"))
+    assert len(issues) == 1
+    assert issues[0].severity == "warning"
+    assert "Die Brücke" in issues[0].message
+    assert "Die Bruecke (1959)" in issues[0].message
+
+
+def test_a_contradicting_production_date_is_reported():
+    issues = _disagreements(
+        _work("Die Brücke", date="1959"), _work("Die Brücke", date="1960")
+    )
+    assert [i.target_field for i in issues] == ["production date"]
+
+
+def test_a_field_the_second_record_leaves_empty_is_not_a_contradiction():
+    """Saying nothing is not disagreeing."""
+    existing = _work("Die Brücke", date="1959")
+    assert _disagreements(existing, _work("Die Brücke")) == []
