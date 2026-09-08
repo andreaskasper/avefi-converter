@@ -27,6 +27,7 @@ from ..core.normalise import (
     mapped_duration,
     normalise_date,
     normalise_title,
+    supplied_in_brackets,
 )
 from ..core.records import (
     GroupingContext,
@@ -1033,11 +1034,9 @@ def collect_titles(
             value = text_of(raw)
             if not value:
                 continue
-            supplied = value.startswith("[") and value.endswith("]")
-            if supplied:
-                value = value[1:-1].strip()
-                if not value:
-                    continue
+            value, supplied = supplied_in_brackets(value)
+            if not value:
+                continue
             preferred = relation in profile.preferred_title_relations
             if relation in profile.supplied_title_relations:
                 supplied = True

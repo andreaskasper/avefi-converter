@@ -119,6 +119,48 @@ class NormalisationError(ValueError):
     """Raised when a value cannot be mapped to a schema compliant form."""
 
 
+def supplied_in_brackets(raw: str | None) -> tuple[str, bool]:
+    """Split a value into its content and whether the cataloguer supplied it.
+
+    Square brackets around the *whole* value mark something the
+    cataloguer supplied rather than read off the object. The brackets are
+    notation, not content, so they are dropped and the caller is told
+    what they meant.
+
+    The nesting is checked, and that is the point of having this in one
+    place. Every module used to write::
+
+        supplied = value.startswith("[") and value.endswith("]")
+
+    which is true of ``[a] und [b]`` as well — a value made of two
+    bracketed parts, not one bracketed whole. Stripping the outer
+    characters turned it into ``a] und [b`` and marked it supplied. Such
+    a value is now left alone.
+
+    An empty pair keeps the old behaviour: ``[]`` yields ``("", True)``
+    and every caller drops empty values. Only the nesting case changes.
+
+    """
+    text = (raw or "").strip()
+    if not (text.startswith("[") and text.endswith("]")):
+        return text, False
+    depth = 0
+    for index, char in enumerate(text):
+        if char == "[":
+            depth += 1
+        elif char == "]":
+            depth -= 1
+            if depth < 0:
+                return text, False
+            # The first bracket closes before the end: two bracketed
+            # parts side by side, not one bracketed whole.
+            if depth == 0 and index < len(text) - 1:
+                return text, False
+    if depth != 0:
+        return text, False
+    return text[1:-1].strip(), True
+
+
 def language_code(tag: str | None) -> str | None:
     """Return the ISO 639-2/B code for an xml:lang tag, if known."""
     if not tag:
@@ -292,12 +334,13 @@ def normalise_date(
             )
         return None
 
-    if text.startswith("[") and text.endswith("]"):
+    inner, supplied = supplied_in_brackets(text)
+    if supplied:
         # Square brackets mark a date the cataloguer supplied rather
         # than read off the object. That says where the date came
         # from, not how sure anybody is of it, so the brackets are
         # dropped and the date is taken as stated.
-        text = text[1:-1].strip()
+        text = inner
         report_issue(
             "info",
             "Date was supplied by the cataloguer; brackets dropped",

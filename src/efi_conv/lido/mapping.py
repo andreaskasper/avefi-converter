@@ -21,6 +21,7 @@ from ..core.normalise import (
     mapped_date,
     mapped_duration,
     normalise_title,
+    supplied_in_brackets,
 )
 from ..core.records import (
     GroupingContext,
@@ -2112,10 +2113,7 @@ def source_title(raw, profile, source_key, target_field) -> SourceTitle | None:
     the ordering name here as everywhere.
 
     """
-    value = (raw or "").strip()
-    supplied = value.startswith("[") and value.endswith("]")
-    if supplied:
-        value = value[1:-1].strip()
+    value, supplied = supplied_in_brackets(raw)
     if not value:
         return None
     display, ordering = normalise_title(
@@ -2138,8 +2136,7 @@ def collect_titles(descriptive, profile, source_key) -> list[SourceTitle]:
             raw = text_of(appellation)
             if not raw:
                 continue
-            supplied = raw.startswith("[") and raw.endswith("]")
-            value = raw[1:-1].strip() if supplied else raw
+            value, supplied = supplied_in_brackets(raw)
             if not value:
                 continue
             language = (

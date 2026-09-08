@@ -29,6 +29,7 @@ from ..core.normalise import (
     mapped_duration,
     normalise_date,
     normalise_title,
+    supplied_in_brackets,
 )
 from ..core.records import (
     GroupingContext,
@@ -925,8 +926,7 @@ def parse_title_elements(
         raw = text_of(element)
         if not raw:
             continue
-        supplied = raw.startswith("[") and raw.endswith("]")
-        value = raw[1:-1].strip() if supplied else raw
+        value, supplied = supplied_in_brackets(raw)
         if not value:
             continue
         language = (

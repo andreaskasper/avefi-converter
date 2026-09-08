@@ -24,6 +24,7 @@ from ..core.normalise import (
     mapped_date,
     mapped_duration,
     normalise_title,
+    supplied_in_brackets,
 )
 from ..core.records import (
     GroupingContext,
@@ -1130,9 +1131,8 @@ def title_from_field(
     if not text:
         return None
 
-    supplied = text.startswith("[") and text.endswith("]")
+    text, supplied = supplied_in_brackets(text)
     if supplied:
-        text = text[1:-1].strip()
         nonfiling = max(0, nonfiling - 1)
     if not text:
         return None

@@ -29,6 +29,7 @@ from ..core.normalise import (
     mapped_duration,
     normalise_date,
     normalise_title,
+    supplied_in_brackets,
 )
 from ..core.records import (
     GroupingContext,
@@ -962,8 +963,7 @@ def collect_titles(
                 raw_value=element.title_type,
             )
             mapped = "AlternativeTitle"
-        supplied = raw.startswith("[") and raw.endswith("]")
-        value = raw[1:-1].strip() if supplied else raw
+        value, supplied = supplied_in_brackets(raw)
         if not value:
             continue
         is_preferred = (
