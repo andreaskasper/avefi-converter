@@ -22,10 +22,67 @@ Abnahme verantwortet.
 
 Zeitzone Europe/Berlin.
 
-> **Offen und vertraglich geschuldet:** Die Leistungsbeschreibung verlangt Paket
-> A ausdrücklich als **Pull Request auf `AV-EFI/efi-conv`**, Modulname
-> `efi_conv.fmdu.lido`, und nennt ihn unter den Liefergegenständen. Dieser PR
-> existiert bis heute nicht. Siehe „Offene Punkte" am Ende.
+> **Pull Request:** Die Leistungsbeschreibung verlangt Paket A ausdrücklich als
+> **Pull Request auf `AV-EFI/efi-conv`**, Modulname `efi_conv.fmdu.lido`. Er
+> liegt seit dem 01.09.2026 als
+> [AV-EFI/efi-conv#34](https://github.com/AV-EFI/efi-conv/pull/34) vor und
+> folgt diesem Repository; die Rückmeldungen darin stehen unten.
+
+---
+
+## 2026-09-10 — Elias Oltmanns, zwei Punkte in PR #34
+
+Beantwortet am 23.09.2026, dreizehn Tage später. Das ist zu spät, und es ist
+derselbe Fehler wie nach der zweiten Reviewrunde.
+
+### `--skip-removed` heißt `--skip-unknown-removed` und nimmt nur noch Exemplare ohne PID
+
+**Gemeldet von Elias Oltmanns.** Die Option ließ jedes Exemplar mit dem
+Zugangsstatus `Removed` weg, auch registrierte. Gerade die werden aber
+gebraucht: Das PID-System muss erfahren, dass das Haus sie nicht mehr besitzt,
+und erfährt es nur aus diesem Datensatz.
+
+Jetzt fallen nur Exemplare mit `Removed` **und ohne AVefi-Identifikator**. Für
+Werke und Fassungen, die dabei ohne Exemplar zurückbleiben, gilt dasselbe
+Kriterium: Sie fallen nur, wenn sie selbst keinen PID tragen. Das entspricht
+dem, was `efi-conv check` schon immer als verwaist ansieht (`dangling_record`:
+ein Datensatz mit PID ist es nie), und dem Gegenstück
+`check --preserve-status-removed`.
+
+Umbenannt nach Elias' Vorschlag, und zwar ohne Übergangsnamen. Die alte Option
+bedeutete etwas anderes; unter altem Namen neues Verhalten zu liefern, hätte
+jede bestehende Verwendung still verändert. Der alte Name führt jetzt zu einer
+Fehlermeldung.
+
+### Eine Laufzeit von null erzeugt keine Meldung mehr
+
+**Gemeldet von Elias Oltmanns.** „Running time is zero; read as not recorded"
+mit `raw_value: "0E-10"` verwirrte, weil im XML schlicht keine Laufzeit steht.
+Der Düsseldorfer Export schreibt eine leere Spalte als `0E-10`, in 1084
+Datensätzen des Referenzexports, und jeder davon erzeugte eine Meldung, die
+niemanden zu etwas auffordert. Die Laufzeit bleibt wie bisher leer; nur die
+Meldung entfällt. Die Länge eines Exemplars verwarf dieselbe Null schon immer
+still, beide Felder verhalten sich jetzt gleich.
+
+---
+
+## 2026-09-08 — Elias Oltmanns, Werkbildung (`avefi-converter#5`)
+
+### Widersprechende Datensätze zu einem Werk werden gemeldet (`4d0dfcf`)
+
+Führt die Werkbildung zwei Datensätze mit derselben Werk-Kennung zusammen,
+vergleicht sie jetzt Haupttitel, Werkart, Produktionsdatum und Regie. Vorher
+gewann still der erste, und welcher der erste ist, entschied die Reihenfolge in
+der Datei. Zusammengeführt wird weiterhin; der Widerspruch steht im Bericht.
+Die andere Hälfte der Bitte war schon erfüllt: Für LIDO entscheidet die
+`objectID` aus dem `relatedWorkSet`, Titel und Regie sind nur der Rückfall.
+
+### Klammertitel: die Verschachtelung prüfen (`e842105`)
+
+Sechs Formatmodule erkannten einen Archivtitel an
+`value.startswith("[") and value.endswith("]")`. Das ist auch für
+`[a] und [b]` wahr und machte daraus `a] und [b`. Jetzt an einer Stelle,
+`core.normalise.supplied_in_brackets()`, mit Verschachtelungsprüfung.
 
 ---
 
@@ -271,9 +328,6 @@ als Beitrag von Andreas Kasper vermerkt. Deutlich vor dem Werkvertrag.
 
 ## Offene Punkte
 
-- **Der Pull Request auf `AV-EFI/efi-conv` fehlt.** Vertraglich geschuldet und
-  unter den Liefergegenständen genannt. Die eigentliche Frage ist der Zuschnitt,
-  siehe oben. In der Mail vom 01.09.2026 zur Abstimmung gestellt.
 - **Uneindeutige Identifier auf Werksebene** im großen Testdatensatz. Kein
   Codeproblem; wird von Elias Oltmanns mit Düsseldorf geklärt. Die Konvertierung
   kann die Dubletten benennen, falls das hilft.

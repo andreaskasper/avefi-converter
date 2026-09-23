@@ -498,7 +498,9 @@ ASSUMPTIONS = (
     " is the case that matters: `efi-conv check` refuses that"
     " combination, and the refusal is how a delivery that would ask"
     " for identifiers for objects nobody holds any more is noticed."
-    " `efi-conv from --skip-removed` leaves such copies out instead.",
+    " `efi-conv from --skip-unknown-removed` leaves such copies out"
+    " instead; a given-up copy that carries an identifier stays, since"
+    " the PID system has to learn that it is gone.",
     "LIDO does not prescribe the `lido:type` values marking a colour,"
     " format or access status classification. The profile names them,"
     " and a classification of any other type becomes a genre.",
@@ -2529,8 +2531,8 @@ def apply_access_status(item, access_terms, profile, source_key) -> None:
     # the combination of Removed and no registered identifier, which
     # is how a delivery that would mint identifiers for objects nobody
     # holds any more becomes visible. Writing a different status
-    # instead would hide it, and --skip-removed is there for anyone
-    # who would rather not deliver such a copy at all.
+    # instead would hide it, and --skip-unknown-removed is there for
+    # anyone who would rather not deliver such a copy at all.
     item.has_access_status = efi.ItemAccessStatusEnum(chosen)
 
 

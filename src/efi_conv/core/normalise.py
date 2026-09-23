@@ -540,14 +540,13 @@ def normalise_duration(
         # A running time of zero is not a running time. Recording it
         # as PT00H00M00S would state that the copy runs no length,
         # where the source states that nobody measured it.
-        report_issue(
-            "info",
-            "Running time is zero; read as not recorded",
-            record_id=record_id,
-            source_field=source_field,
-            target_field=target_field,
-            raw_value=value,
-        )
+        #
+        # Nor is it reported. Cataloguing systems write an empty
+        # measurement as a zero — the Duesseldorf export does so as
+        # 0E-10 in 1084 records — so the entry would describe the
+        # source's ordinary way of saying nothing, a thousand times
+        # over, and ask nobody to do anything. The length of a copy
+        # has always dropped its zero the same way.
         return None
     hours, rest = divmod(int(round(seconds)), 3600)
     minutes, secs = divmod(rest, 60)

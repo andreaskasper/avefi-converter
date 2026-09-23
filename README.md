@@ -616,9 +616,12 @@ exits non-zero at the end.
 `Removed` whatever else the record says, and `efi-conv check` refuses
 that status on a copy with no registered identifier. That is deliberate:
 it is how a delivery that would ask for identifiers for objects nobody
-holds any more is noticed. `efi-conv from --skip-removed` leaves those
-copies out instead, together with the works and manifestations left
-with nothing, and reports each one.
+holds any more is noticed. `efi-conv from --skip-unknown-removed` leaves
+those copies out instead, together with the works and manifestations
+left with nothing, and reports each one. It leaves out only copies
+without an AVefi identifier: a given-up copy that is registered stays in
+the output, because the PID system has to learn that it is gone, and so
+does any work or manifestation that carries an identifier of its own.
 
 **The run exits non-zero although records were written.** Something was
 lost: `summary.records_skipped` in the report counts the source records

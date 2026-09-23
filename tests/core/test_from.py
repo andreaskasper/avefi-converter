@@ -345,9 +345,15 @@ class TestCopiesNoLongerHeld:
     see that status on a copy without a registered identifier. That
     refusal is the point: a delivery that would ask for identifiers
     for objects nobody holds any more has to be noticed. Whoever would
-    rather not deliver such a copy leaves it out on purpose.
+    rather not deliver such a copy leaves it out on purpose — but only
+    a copy nobody registered. One with an AVefi identifier stays: the
+    PID system has to learn that it is gone.
 
     """
+
+    PID = (
+        "https://hdl.handle.net/21.11155/11111111-2222-3333-4444-555555555555"
+    )
 
     @pytest.fixture
     def export(self, lido_page, lido_record):
@@ -399,7 +405,9 @@ class TestCopiesNoLongerHeld:
         ]
 
     def test_the_flag_leaves_it_out(self, runner, tmp_path, export):
-        records = self.convert(runner, tmp_path, export, "--skip-removed")
+        records = self.convert(
+            runner, tmp_path, export, "--skip-unknown-removed"
+        )
         assert not [
             r
             for r in records
@@ -407,7 +415,9 @@ class TestCopiesNoLongerHeld:
         ]
 
     def test_the_other_copies_are_untouched(self, runner, tmp_path, export):
-        records = self.convert(runner, tmp_path, export, "--skip-removed")
+        records = self.convert(
+            runner, tmp_path, export, "--skip-unknown-removed"
+        )
         assert [r for r in records if r.category == "avefi:Item"]
 
     def test_what_is_left_with_nothing_goes_too(
@@ -432,10 +442,81 @@ class TestCopiesNoLongerHeld:
                 "from",
                 "-f",
                 "fmdu.lido",
-                "--skip-removed",
+                "--skip-unknown-removed",
                 "-o",
                 str(target),
                 str(export),
             ],
         )
         assert not target.exists(), "nothing is left, so nothing is written"
+
+    def removed_items(self, records):
+        return [
+            r
+            for r in records
+            if r.category == "avefi:Item" and r.has_access_status == "Removed"
+        ]
+
+    def test_a_registered_copy_stays(
+        self, runner, tmp_path, lido_page, lido_record
+    ):
+        """Elias Oltmanns in AV-EFI/efi-conv#34, 10.09.2026."""
+        export = lido_page(
+            "export.xml",
+            lido_record("FMDU-0001"),
+            lido_record("FMDU-0002", keywords=("Deakzession",)),
+            lido_record(
+                "FMDU-0003", keywords=("Deakzession",), handle=self.PID
+            ),
+        )
+        records = self.convert(
+            runner, tmp_path, export, "--skip-unknown-removed"
+        )
+        removed = self.removed_items(records)
+        assert len(removed) == 1
+        assert from_.has_pid(removed[0])
+
+    def test_a_registered_parent_stays(self, runner, tmp_path, export):
+        """A manifestation with a PID is registered, copies or not.
+
+        ``efi-conv check`` does not count it as dangling, so leaving it
+        out would drop a registered record for nothing.
+
+        """
+        from avefi_schema import model_pydantic_v2 as efi
+
+        records = self.convert(runner, tmp_path, export)
+        gone = self.removed_items(records)[0]
+        parent_id = gone.is_item_of.id
+        parent = next(
+            r
+            for r in records
+            if r.category == "avefi:Manifestation"
+            and any(i.id == parent_id for i in r.has_identifier)
+        )
+        parent.has_identifier.append(
+            efi.AVefiResource(
+                id=self.PID.removeprefix("https://hdl.handle.net/")
+            )
+        )
+        kept = from_.without_unknown_removed(records)
+        assert gone not in kept
+        assert parent in kept
+
+    def test_the_old_name_is_gone(self, runner, tmp_path, export):
+        """It meant something else; keeping it would change it silently."""
+        target = tmp_path / "out.json"
+        result = runner.invoke(
+            cli_main,
+            [
+                "from",
+                "-f",
+                "fmdu.lido",
+                "--skip-removed",
+                "-o",
+                str(target),
+                str(export),
+            ],
+        )
+        assert result.exit_code != 0
+        assert "--skip-removed" in result.output

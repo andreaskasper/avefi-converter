@@ -199,6 +199,21 @@ class TestNormaliseDuration:
         """
         assert normalise_duration(value, unit) is None
 
+    @pytest.mark.parametrize("value", ["0", "0E-10"])
+    def test_zero_is_not_reported(self, value):
+        """Elias Oltmanns in AV-EFI/efi-conv#34, 10.09.2026.
+
+        The zero is how the source says nothing; a report entry for it
+        would appear once per such record and ask nobody to act.
+
+        """
+        from efi_conv.core.report import ConversionReport, collecting
+
+        report = ConversionReport()
+        with collecting(report):
+            normalise_duration(value, "h", record_id="FMDU-0001")
+        assert report.entries == []
+
     @pytest.mark.parametrize(
         ("value", "unit", "expected"),
         [

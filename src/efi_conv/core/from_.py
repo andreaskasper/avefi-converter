@@ -135,12 +135,14 @@ def print_formats(ctx, param, value):
     help="Skip input files that fail to convert instead of aborting.",
 )
 @click.option(
-    "--skip-removed",
+    "--skip-unknown-removed",
     is_flag=True,
     default=False,
-    help="Leave copies whose access status is Removed out of the"
-    " output, together with the works and manifestations that are"
-    " left with nothing. Each one is reported.",
+    help="Leave copies whose access status is Removed and which carry"
+    " no AVefi identifier out of the output, together with the works"
+    " and manifestations without one that are left with nothing. A"
+    " copy with an identifier stays, since the PID system has to learn"
+    " that it is gone. Each one left out is reported.",
 )
 @click.argument("input_files", nargs=-1, type=click.Path(exists=True))
 def efi_from(
@@ -151,7 +153,7 @@ def efi_from(
     allow_profile_format_mismatch=False,
     accept_placeholder_issuer=False,
     continue_on_error=False,
-    skip_removed=False,
+    skip_unknown_removed=False,
     **kwargs,
 ):
     """Convert files from some schema into a JSON file with AVefi records."""
@@ -213,8 +215,8 @@ def efi_from(
             if report.files_unrecognised > unrecognised_before:
                 unreadable_files.append(input_file)
         finish_shared_context(importer, context, generated_records)
-    if skip_removed:
-        generated_records = without_removed(generated_records)
+    if skip_unknown_removed:
+        generated_records = without_unknown_removed(generated_records)
     if generated_records:
         sort_source_keys(generated_records)
         generated_records = avefi.sort_records(generated_records)
@@ -339,8 +341,8 @@ def finish_shared_context(importer, context, records):
 REMOVED = "Removed"
 
 
-def without_removed(records):
-    """Return the records with the copies given up left out.
+def without_unknown_removed(records):
+    """Return the records with the given-up copies nobody registered left out.
 
     A copy the institution has given up is still described in the
     export, and by default it is converted like any other: the status
@@ -349,10 +351,15 @@ def without_removed(records):
     delivery that would ask for identifiers for objects nobody holds
     any more comes to somebody's attention.
 
-    Where that is not wanted, this leaves them out instead. Removing
-    the copy is not enough on its own — a work or manifestation whose
-    only copy has gone refers to nothing and would be reported by the
-    same check — so what is left with nothing goes too.
+    Where that is not wanted, this leaves those copies out instead —
+    only those. A given-up copy that does carry an AVefi identifier
+    stays: it is registered, and the PID system has to be told that it
+    is gone, which it learns from exactly this record.
+
+    Removing a copy is not enough on its own — a work or manifestation
+    whose only copy has gone refers to nothing and would be reported by
+    the same check — so what is left with nothing goes too, unless it
+    carries an AVefi identifier of its own.
 
     """
     kept = []
@@ -361,6 +368,7 @@ def without_removed(records):
         if (
             record.category == "avefi:Item"
             and str(getattr(record, "has_access_status", "") or "") == REMOVED
+            and not has_pid(record)
         ):
             removed_keys.append(record_label(record))
             continue
@@ -370,7 +378,8 @@ def without_removed(records):
     for label in removed_keys:
         report_issue(
             "info",
-            "Copy is no longer held and was left out of the output",
+            "Copy is no longer held and has no AVefi identifier; left out"
+            " of the output",
             record_id=label,
             source_field="has_access_status",
             target_field="—",
@@ -380,11 +389,23 @@ def without_removed(records):
     return kept
 
 
+def has_pid(record) -> bool:
+    """Return True if the record carries a registered AVefi identifier."""
+    return any(
+        identifier.category == "avefi:AVefiResource"
+        for identifier in record.has_identifier or []
+    )
+
+
 def without_orphans(records):
     """Return the records with those nothing refers to left out.
 
     Applied twice over: a manifestation may lose its last copy, and
     the work behind it may then lose its last manifestation.
+
+    A record with an AVefi identifier is never left out here. It is
+    registered whether or not anything below it is delivered, and
+    ``efi-conv check`` does not count it as dangling either.
 
     """
     for category, referring, attribute in (
@@ -404,7 +425,7 @@ def without_orphans(records):
             if record.category != category:
                 kept.append(record)
                 continue
-            if any(
+            if has_pid(record) or any(
                 identifier.id in referenced
                 for identifier in record.has_identifier or []
             ):
